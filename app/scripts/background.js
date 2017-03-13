@@ -1,5 +1,5 @@
 // Enable chromereload by uncommenting this line:
-// import 'chromereload/devonly';
+import 'chromereload/devonly';
 
 // chrome.runtime.onInstalled.addListener(function(details) {
 //   console.log('previousVersion', details.previousVersion);
@@ -56,8 +56,11 @@ chrome.runtime.onInstalled.addListener(function (details) {
 
 		}
 
+
 	}
 });
+
+var alreadyLoaded = 0;
 
 chrome.tabs.onUpdated.addListener(function (tabId, changeInfo, tab) {
 
@@ -78,57 +81,63 @@ chrome.tabs.onUpdated.addListener(function (tabId, changeInfo, tab) {
 
 	if (changeInfo.status === 'complete') {
 
-		chrome.management.getSelf(function (details) {
+		alreadyLoaded++
 
-			var installType = details.installType;
+		if (alreadyLoaded === 1) {
 
-			if (installType === 'development') {
+			chrome.management.getSelf(function (details) {
 
-				// chrome.tabs.query({
-				// 	active: true
-				// }, function (tabs) {
-				// 	chrome.tabs.sendMessage(tab.id, {
-				// 		installType: 'development'
-				// 	}, function (response) {});
-				// });
+				// var installType = details.installType;
 
-				chrome.tabs.sendMessage(
-					tab.id, {
-						installType: 'development'
-					}
-				);
+				if (details.installType === 'development') {
 
-				console.info('Running in Local Dev mode.');
+					// chrome.tabs.query({
+					// 	active: true
+					// }, function (tabs) {
+					// 	chrome.tabs.sendMessage(tab.id, {
+					// 		installType: 'development'
+					// 	}, function (response) {});
+					// });
 
-			}
+					chrome.tabs.sendMessage(
+						tab.id, {
+							installType: 'development'
+						}
+					);
 
-			// chrome.tabs.executeScript(tab.ib, {
-			//   file: 'scripts/hotjar.js'
-			// });
+					console.info('Running in Local Dev mode.');
 
-			// console.clear();
+				}
 
-			console.log('start changeInfo');
-			console.log(changeInfo);
+			});
 
-			chrome.tabs.query({
+		}
 
-				active: true
+		// chrome.tabs.executeScript(tab.ib, {
+		//   file: 'scripts/hotjar.js'
+		// });
 
-			}, function (tabs) {
+		// console.clear();
 
-				chrome.tabs.sendMessage(tab.id, {
+		console.log('start changeInfo');
+		console.log(changeInfo);
 
-					action: 'init'
+		chrome.tabs.query({
 
-				}, function (response) {});
+			active: true
 
-				chrome.pageAction.setTitle({
+		}, function (tabs) {
 
-					tabId: tab.id,
-					title: 'Click to refresh candidate page'
+			chrome.tabs.sendMessage(tab.id, {
 
-				});
+				action: 'init'
+
+			}, function (response) {});
+
+			chrome.pageAction.setTitle({
+
+				tabId: tab.id,
+				title: 'Click to refresh candidate page'
 
 			});
 
