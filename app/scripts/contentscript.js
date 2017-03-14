@@ -1534,10 +1534,40 @@ console.log('RAMP loaded');
 
 													// var skills = [];
 
-													if (json.content.Skills) {
-														$.each(json.content.Skills.skillsMpr.skills, function (key, value) {
+													RAMP.scrapeSkills = function () {
 
-															// var name = value.fmt__skill_name;
+														if ('.pv-featured-skills-section') {
+
+															console.warn('Could not fetch Skills data automaticly. Initiating manuall scraping...');
+
+															$('.pv-featured-skills-section').find('button[data-control-name="skill_details"]').click();
+
+															setTimeout(function () {
+
+																$('li.pv-skill-entity').each(function (index) {
+
+																	var $entry = $(this);
+
+																	var skillName = $entry.find('.pv-skill-entity__skill-name').text();
+
+																	// console.log(skillName);
+
+																	skills.push({
+																		'name': skillName,
+																		'rating': 0
+																	})
+
+																});
+
+															}, 500);
+
+														}
+
+													}
+
+													if (json.content.Skills.skillsMpr.skills) {
+
+														$.each(json.content.Skills.skillsMpr.skills, function (key, value) {
 
 															skills.push({
 																'name': value.fmt__skill_name,
@@ -1547,6 +1577,11 @@ console.log('RAMP loaded');
 														});
 
 														// console.log(skills);
+
+													} else {
+
+														RAMP.scrapeSkills();
+
 													}
 
 													// var summary;
