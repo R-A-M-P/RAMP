@@ -1464,13 +1464,13 @@ console.log('RAMP loaded');
 
 														} else {
 
-															RAMP.scrapeEducation();
+															// RAMP.scrapeEducation();
 
 														}
 
 													} else {
 
-														RAMP.scrapeEducation();
+														// RAMP.scrapeEducation();
 
 													}
 
