@@ -1101,55 +1101,63 @@ console.log('RAMP loaded');
 
 													}
 
-													if (json.content.Experience.positionsMpr.positions) {
+													if (json.content.Experience) {
 
-														$.each(json.content.Experience.positionsMpr.positions, function (key, value) {
+														if (json.content.Experience.positionsMpr) {
 
-															var companyName = value.companyName;
-															var title = value.title;
-															var location = value.fmt_location;
-															var description = value.summary_lb;
-															var current = 1;
+															if (json.content.Experience.positionsMpr.positions) {
 
-															if (value.hasOwnProperty('summary_lb')) {
-																description = decodeHtml(description);
-																description = description.replace(/(<br>)+/g, '\n');
-															}
+																$.each(json.content.Experience.positionsMpr.positions, function (key, value) {
 
-															if (value.startDate) {
-																if (value.startDate.isMonthDefined === true) {
-																	var startdate_iso = value.startdate_iso.split('-');
-																	var startDate = startdate_iso[2] + '.' + startdate_iso[1] + '.' + startdate_iso[0];
-																} else {
-																	var startDate = '01.01.' + value.startDate.year;
-																}
-															}
+																	var companyName = value.companyName;
+																	var title = value.title;
+																	var location = value.fmt_location;
+																	var description = value.summary_lb;
+																	var current = 1;
 
-															if (value.endDate) {
-																if (value.enddate_iso === undefined) {
-																	current = 1;
-																} else {
-																	current = 0;
-																	if (value.endDate.isMonthDefined === true) {
-																		var enddate_iso = value.enddate_iso.split('-');
-																		var endDate = enddate_iso[2] + '.' + enddate_iso[1] + '.' + enddate_iso[0];
-																	} else {
-																		var endDate = '01.01.' + value.endDate.year;
+																	if (value.hasOwnProperty('summary_lb')) {
+																		description = decodeHtml(description);
+																		description = description.replace(/(<br>)+/g, '\n');
 																	}
-																}
+
+																	if (value.startDate) {
+																		if (value.startDate.isMonthDefined === true) {
+																			var startdate_iso = value.startdate_iso.split('-');
+																			var startDate = startdate_iso[2] + '.' + startdate_iso[1] + '.' + startdate_iso[0];
+																		} else {
+																			var startDate = '01.01.' + value.startDate.year;
+																		}
+																	}
+
+																	if (value.endDate) {
+																		if (value.enddate_iso === undefined) {
+																			current = 1;
+																		} else {
+																			current = 0;
+																			if (value.endDate.isMonthDefined === true) {
+																				var enddate_iso = value.enddate_iso.split('-');
+																				var endDate = enddate_iso[2] + '.' + enddate_iso[1] + '.' + enddate_iso[0];
+																			} else {
+																				var endDate = '01.01.' + value.endDate.year;
+																			}
+																		}
+																	}
+
+																	experience.push({
+																		companyName: companyName,
+																		title: title,
+																		location: location,
+																		startDate: startDate,
+																		endDate: endDate,
+																		description: description,
+																		current: current,
+																	})
+
+																});
+
 															}
 
-															experience.push({
-																companyName: companyName,
-																title: title,
-																location: location,
-																startDate: startDate,
-																endDate: endDate,
-																description: description,
-																current: current,
-															})
-
-														});
+														}
 
 														// console.log(experience);
 
@@ -1215,214 +1223,52 @@ console.log('RAMP loaded');
 													 * Get and push Educations.
 													 */
 
-													if (json.content.Education.educationsMpr.educations) {
+													if (json.content.Education) {
 
-														$.each(json.content.Education.educationsMpr.educations, function (key, value) {
+														if (json.content.Education.educationsMpr) {
 
-															var schoolName = value.schoolName;
-															var eudcationType = value.fieldOfStudy;
-															var degree = value.degree;
-															var description = value.summary_lb;
+															if (json.content.Education.educationsMpr.educations) {
 
-															// console.log(eudcationType);
+																$.each(json.content.Education.educationsMpr.educations, function (key, value) {
 
-															if (value.hasOwnProperty('summary_lb')) {
-																description = decodeHtml(description);
-																description = description.replace(/(<br>)+/g, '\n');
-															}
+																	var schoolName = value.schoolName;
+																	var eudcationType = value.fieldOfStudy;
+																	var degree = value.degree;
+																	var description = value.summary_lb;
 
-															if (value.hasOwnProperty('startDate') && value.startDate.isMonthDefined === true) {
-																var startDate = '15.' + value.startDate.month + '.' + value.startDate.year;
-															} else if (value.hasOwnProperty('startDate')) {
-																var startDate = '15.08.' + value.startDate.year;
-															}
+																	// console.log(eudcationType);
 
-															if (value.hasOwnProperty('endDate') && value.endDate.isMonthDefined === true) {
-																var endDate = '15.' + value.endDate.month + '.' + value.endDate.year;
-															} else if (value.hasOwnProperty('endDate')) {
-																var endDate = '15.06.' + value.endDate.year;
-															}
+																	if (value.hasOwnProperty('summary_lb')) {
+																		description = decodeHtml(description);
+																		description = description.replace(/(<br>)+/g, '\n');
+																	}
 
-															education.push({
-																schoolName: schoolName,
-																eudcationType: eudcationType,
-																degree: degree,
-																startDate: startDate,
-																endDate: endDate,
-																description: description,
-															})
+																	if (value.hasOwnProperty('startDate') && value.startDate.isMonthDefined === true) {
+																		var startDate = '15.' + value.startDate.month + '.' + value.startDate.year;
+																	} else if (value.hasOwnProperty('startDate')) {
+																		var startDate = '15.08.' + value.startDate.year;
+																	}
 
-														});
-
-													} else if (json.content.Education.educationsMpr.topEducations) {
-
-														$.each(json.content.Education.educationsMpr.topEducations, function (key, value) {
-
-															var schoolName = value.schoolName;
-															var eudcationType = value.fieldOfStudy;
-															var degree = value.degree;
-															var current = 1;
-
-															if (value.startDate) {
-																if (value.startDate.isMonthDefined === true) {
-																	var startDate = '15' + '.' + value.startDate.month + '.' + value.startDate.year;
-																} else {
-																	var startDate = '15.08.' + value.startDate.year;
-																}
-															}
-
-															if (value.endDate) {
-																if (value.endDate.year === undefined) {
-																	current = 1;
-																} else {
-																	current = 0;
-																	if (value.endDate.isMonthDefined === true) {
-																		var endDate = '15' + '.' + value.endDate.month + '.' + value.endDate.year;
-																	} else {
+																	if (value.hasOwnProperty('endDate') && value.endDate.isMonthDefined === true) {
+																		var endDate = '15.' + value.endDate.month + '.' + value.endDate.year;
+																	} else if (value.hasOwnProperty('endDate')) {
 																		var endDate = '15.06.' + value.endDate.year;
 																	}
-																}
-															}
 
-															education.push({
-																schoolName: schoolName,
-																eudcationType: eudcationType,
-																degree: degree,
-																startDate: startDate,
-																endDate: endDate,
-															})
+																	education.push({
+																		schoolName: schoolName,
+																		eudcationType: eudcationType,
+																		degree: degree,
+																		startDate: startDate,
+																		endDate: endDate,
+																		description: description,
+																	})
 
-														});
+																});
 
-														if (json.content.Education.educationsMpr.moreEducations) {
+															} else if (json.content.Education.educationsMpr.topEducations) {
 
-															$.each(json.content.Education.educationsMpr.moreEducations, function (key, value) {
-
-																var schoolName = value.schoolName;
-																var eudcationType = value.fieldOfStudy;
-																var degree = value.degree;
-																var current = 1;
-
-																if (value.startDate) {
-																	if (value.startDate.isMonthDefined === true) {
-																		var startDate = '15' + '.' + value.startDate.month + '.' + value.startDate.year;
-																	} else {
-																		var startDate = '15.08.' + value.startDate.year;
-																	}
-																}
-
-																if (value.endDate) {
-																	if (value.endDate.year === undefined) {
-																		current = 1;
-																	} else {
-																		current = 0;
-																		if (value.endDate.isMonthDefined === true) {
-																			var endDate = '15' + '.' + value.endDate.month + '.' + value.endDate.year;
-																		} else {
-																			var endDate = '15.06.' + value.endDate.year;
-																		}
-																	}
-																}
-
-																education.push({
-																	schoolName: schoolName,
-																	eudcationType: eudcationType,
-																	degree: degree,
-																	startDate: startDate,
-																	endDate: endDate,
-																})
-
-															});
-
-														}
-
-
-													} else if (json.content.TopCard && json.content.TopCard.educationsMpr) {
-
-														if (json.content.TopCard.educationsMpr.educations) {
-
-															$.each(json.content.TopCard.educationsMpr.educations, function (key, value) {
-
-																var schoolName = value.schoolName;
-																var eudcationType = value.fieldOfStudy;
-																var degree = value.degree;
-																var current = 1;
-
-																if (value.startDate) {
-																	if (value.startDate.isMonthDefined === true) {
-																		var startDate = '15' + '.' + value.startDate.month + '.' + value.startDate.year;
-																	} else {
-																		var startDate = '15.08.' + value.startDate.year;
-																	}
-																}
-
-																if (value.endDate) {
-																	if (value.endDate.year === undefined) {
-																		current = 1;
-																	} else {
-																		current = 0;
-																		if (value.endDate.isMonthDefined === true) {
-																			var endDate = '15' + '.' + value.endDate.month + '.' + value.endDate.year;
-																		} else {
-																			var endDate = '15.06.' + value.endDate.year;
-																		}
-																	}
-																}
-
-																education.push({
-																	schoolName: schoolName,
-																	eudcationType: eudcationType,
-																	degree: degree,
-																	startDate: startDate,
-																	endDate: endDate,
-																})
-
-															});
-
-
-														} else if (json.content.TopCard.educationsMpr.topEducations) {
-
-															$.each(json.content.TopCard.educationsMpr.topEducations, function (key, value) {
-
-																var schoolName = value.schoolName;
-																var eudcationType = value.fieldOfStudy;
-																var degree = value.degree;
-																var current = 1;
-
-																if (value.startDate) {
-																	if (value.startDate.isMonthDefined === true) {
-																		var startDate = '15' + '.' + value.startDate.month + '.' + value.startDate.year;
-																	} else {
-																		var startDate = '15.08.' + value.startDate.year;
-																	}
-																}
-
-																if (value.endDate) {
-																	if (value.endDate.year === undefined) {
-																		current = 1;
-																	} else {
-																		current = 0;
-																		if (value.endDate.isMonthDefined === true) {
-																			var endDate = '15' + '.' + value.endDate.month + '.' + value.endDate.year;
-																		} else {
-																			var endDate = '15.06.' + value.endDate.year;
-																		}
-																	}
-																}
-
-																education.push({
-																	schoolName: schoolName,
-																	eudcationType: eudcationType,
-																	degree: degree,
-																	startDate: startDate,
-																	endDate: endDate,
-																})
-
-															});
-
-															if (json.content.TopCard.educationsMpr.moreEducations) {
-
-																$.each(json.content.TopCard.educationsMpr.moreEducations, function (key, value) {
+																$.each(json.content.Education.educationsMpr.topEducations, function (key, value) {
 
 																	var schoolName = value.schoolName;
 																	var eudcationType = value.fieldOfStudy;
@@ -1452,7 +1298,7 @@ console.log('RAMP loaded');
 
 																	education.push({
 																		schoolName: schoolName,
-																		educationType: educationType,
+																		eudcationType: eudcationType,
 																		degree: degree,
 																		startDate: startDate,
 																		endDate: endDate,
@@ -1460,21 +1306,198 @@ console.log('RAMP loaded');
 
 																});
 
+																if (json.content.Education.educationsMpr.moreEducations) {
+
+																	$.each(json.content.Education.educationsMpr.moreEducations, function (key, value) {
+
+																		var schoolName = value.schoolName;
+																		var eudcationType = value.fieldOfStudy;
+																		var degree = value.degree;
+																		var current = 1;
+
+																		if (value.startDate) {
+																			if (value.startDate.isMonthDefined === true) {
+																				var startDate = '15' + '.' + value.startDate.month + '.' + value.startDate.year;
+																			} else {
+																				var startDate = '15.08.' + value.startDate.year;
+																			}
+																		}
+
+																		if (value.endDate) {
+																			if (value.endDate.year === undefined) {
+																				current = 1;
+																			} else {
+																				current = 0;
+																				if (value.endDate.isMonthDefined === true) {
+																					var endDate = '15' + '.' + value.endDate.month + '.' + value.endDate.year;
+																				} else {
+																					var endDate = '15.06.' + value.endDate.year;
+																				}
+																			}
+																		}
+
+																		education.push({
+																			schoolName: schoolName,
+																			eudcationType: eudcationType,
+																			degree: degree,
+																			startDate: startDate,
+																			endDate: endDate,
+																		})
+
+																	});
+
+																}
+
+															} else if (json.content.TopCard && json.content.TopCard.educationsMpr) {
+
+																if (json.content.TopCard.educationsMpr.educations) {
+
+																	$.each(json.content.TopCard.educationsMpr.educations, function (key, value) {
+
+																		var schoolName = value.schoolName;
+																		var eudcationType = value.fieldOfStudy;
+																		var degree = value.degree;
+																		var current = 1;
+
+																		if (value.startDate) {
+																			if (value.startDate.isMonthDefined === true) {
+																				var startDate = '15' + '.' + value.startDate.month + '.' + value.startDate.year;
+																			} else {
+																				var startDate = '15.08.' + value.startDate.year;
+																			}
+																		}
+
+																		if (value.endDate) {
+																			if (value.endDate.year === undefined) {
+																				current = 1;
+																			} else {
+																				current = 0;
+																				if (value.endDate.isMonthDefined === true) {
+																					var endDate = '15' + '.' + value.endDate.month + '.' + value.endDate.year;
+																				} else {
+																					var endDate = '15.06.' + value.endDate.year;
+																				}
+																			}
+																		}
+
+																		education.push({
+																			schoolName: schoolName,
+																			eudcationType: eudcationType,
+																			degree: degree,
+																			startDate: startDate,
+																			endDate: endDate,
+																		})
+
+																	});
+
+
+																} else if (json.content.TopCard.educationsMpr.topEducations) {
+
+																	$.each(json.content.TopCard.educationsMpr.topEducations, function (key, value) {
+
+																		var schoolName = value.schoolName;
+																		var eudcationType = value.fieldOfStudy;
+																		var degree = value.degree;
+																		var current = 1;
+
+																		if (value.startDate) {
+																			if (value.startDate.isMonthDefined === true) {
+																				var startDate = '15' + '.' + value.startDate.month + '.' + value.startDate.year;
+																			} else {
+																				var startDate = '15.08.' + value.startDate.year;
+																			}
+																		}
+
+																		if (value.endDate) {
+																			if (value.endDate.year === undefined) {
+																				current = 1;
+																			} else {
+																				current = 0;
+																				if (value.endDate.isMonthDefined === true) {
+																					var endDate = '15' + '.' + value.endDate.month + '.' + value.endDate.year;
+																				} else {
+																					var endDate = '15.06.' + value.endDate.year;
+																				}
+																			}
+																		}
+
+																		education.push({
+																			schoolName: schoolName,
+																			eudcationType: eudcationType,
+																			degree: degree,
+																			startDate: startDate,
+																			endDate: endDate,
+																		})
+
+																	});
+
+																	if (json.content.TopCard.educationsMpr.moreEducations) {
+
+																		$.each(json.content.TopCard.educationsMpr.moreEducations, function (key, value) {
+
+																			var schoolName = value.schoolName;
+																			var eudcationType = value.fieldOfStudy;
+																			var degree = value.degree;
+																			var current = 1;
+
+																			if (value.startDate) {
+																				if (value.startDate.isMonthDefined === true) {
+																					var startDate = '15' + '.' + value.startDate.month + '.' + value.startDate.year;
+																				} else {
+																					var startDate = '15.08.' + value.startDate.year;
+																				}
+																			}
+
+																			if (value.endDate) {
+																				if (value.endDate.year === undefined) {
+																					current = 1;
+																				} else {
+																					current = 0;
+																					if (value.endDate.isMonthDefined === true) {
+																						var endDate = '15' + '.' + value.endDate.month + '.' + value.endDate.year;
+																					} else {
+																						var endDate = '15.06.' + value.endDate.year;
+																					}
+																				}
+																			}
+
+																			education.push({
+																				schoolName: schoolName,
+																				educationType: educationType,
+																				degree: degree,
+																				startDate: startDate,
+																				endDate: endDate,
+																			})
+
+																		});
+
+																	}
+
+																} else {
+
+																	RAMP.scrapeEducation();
+
+																}
+
+															} else {
+
+																RAMP.scrapeEducation();
+
 															}
 
 														} else {
 
-															// RAMP.scrapeEducation();
+															RAMP.scrapeEducation();
 
 														}
 
 													} else {
 
-														// RAMP.scrapeEducation();
+														RAMP.scrapeEducation();
 
 													}
 
-													// console.log(education);
+													console.log(education);
 
 													if (json.content.TopCard) {
 
@@ -1902,9 +1925,19 @@ console.log('RAMP loaded');
 																		}
 																	};
 
+																	// var tagData = {
+																	// 	'key': storrageResult.apiKey,
+																	// 	'scope': 'tags',
+																	// 	'operation': 'insert',
+																	// 	'data': {
+																	// 		'name': 'RAMP'
+																	// 	}
+																	// };
+
 																	console.log(candidateData);
 
 																	var candidateData = JSON.stringify(candidateData);
+																	// var tagData = JSON.stringify(tagData);
 
 																	// console.log(candidateData);
 																	// sendCandidateToRm(candidateData);
@@ -2028,6 +2061,7 @@ console.log('RAMP loaded');
 																				xhr.setRequestHeader('cache-control', 'no-cache');
 
 																				xhr.send(candidateData);
+																				// xhr.send(tagData);
 																			});
 																		},
 																		allowOutsideClick: false
