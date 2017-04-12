@@ -12,6 +12,406 @@ console.log('RAMP loaded');
 
 	window.RAMP = {};
 
+	var candidateFirstName;
+	var candidateLastName;
+	var mobilePhone;
+	var email;
+	var twitter;
+	var facebook;
+	var web;
+	var dob;
+	var summary = [];
+	var experience = [];
+	var education = [];
+	var skills = [];
+	var certifications = [];
+	var languages = [];
+	var rmLanguageList = [{
+			"languageId": 1,
+			"languageName": "Afrikaans"
+		},
+		{
+			"languageId": 2,
+			"languageName": "Arabic"
+		},
+		{
+			"languageId": 3,
+			"languageName": "Bahasa Indonesia"
+		},
+		{
+			"languageId": 4,
+			"languageName": "Azeri"
+		},
+		{
+			"languageId": 5,
+			"languageName": "Belarusian"
+		},
+		{
+			"languageId": 6,
+			"languageName": "Bulgarian"
+		},
+		{
+			"languageId": 7,
+			"languageName": "Bosnian"
+		},
+		{
+			"languageId": 8,
+			"languageName": "Catalan"
+		},
+		{
+			"languageId": 9,
+			"languageName": "Czech"
+		},
+		{
+			"languageId": 10,
+			"languageName": "Welsh"
+		},
+		{
+			"languageId": 11,
+			"languageName": "Danish"
+		},
+		{
+			"languageId": 12,
+			"languageName": "German"
+		},
+		{
+			"languageId": 13,
+			"languageName": "Divehi"
+		},
+		{
+			"languageId": 14,
+			"languageName": "Greek"
+		},
+		{
+			"languageId": 15,
+			"languageName": "English"
+		},
+		{
+			"languageId": 16,
+			"languageName": "Esperanto"
+		},
+		{
+			"languageId": 17,
+			"languageName": "Spanish"
+		},
+		{
+			"languageId": 18,
+			"languageName": "Estonian"
+		},
+		{
+			"languageId": 19,
+			"languageName": "Basque"
+		},
+		{
+			"languageId": 20,
+			"languageName": "Farsi"
+		},
+		{
+			"languageId": 21,
+			"languageName": "Finnish"
+		},
+		{
+			"languageId": 22,
+			"languageName": "Faroese"
+		},
+		{
+			"languageId": 23,
+			"languageName": "French"
+		},
+		{
+			"languageId": 24,
+			"languageName": "Galician"
+		},
+		{
+			"languageId": 25,
+			"languageName": "Gujarati"
+		},
+		{
+			"languageId": 26,
+			"languageName": "Hebrew"
+		},
+		{
+			"languageId": 27,
+			"languageName": "Hindi"
+		},
+		{
+			"languageId": 28,
+			"languageName": "Croatian"
+		},
+		{
+			"languageId": 29,
+			"languageName": "Hungarian"
+		},
+		{
+			"languageId": 30,
+			"languageName": "Armenian"
+		},
+		{
+			"languageId": 31,
+			"languageName": "Indonesian"
+		},
+		{
+			"languageId": 32,
+			"languageName": "Icelandic"
+		},
+		{
+			"languageId": 33,
+			"languageName": "Italian"
+		},
+		{
+			"languageId": 34,
+			"languageName": "Japanese"
+		},
+		{
+			"languageId": 35,
+			"languageName": "Georgian"
+		},
+		{
+			"languageId": 36,
+			"languageName": "Kazakh"
+		},
+		{
+			"languageId": 37,
+			"languageName": "Kannada"
+		},
+		{
+			"languageId": 38,
+			"languageName": "Korean"
+		},
+		{
+			"languageId": 39,
+			"languageName": "Konkani"
+		},
+		{
+			"languageId": 40,
+			"languageName": "Kyrgyz"
+		},
+		{
+			"languageId": 41,
+			"languageName": "Lithuanian"
+		},
+		{
+			"languageId": 42,
+			"languageName": "Latvian"
+		},
+		{
+			"languageId": 43,
+			"languageName": "Maori"
+		},
+		{
+			"languageId": 44,
+			"languageName": "FYRO Macedonian"
+		},
+		{
+			"languageId": 45,
+			"languageName": "Mongolian"
+		},
+		{
+			"languageId": 46,
+			"languageName": "Marathi"
+		},
+		{
+			"languageId": 47,
+			"languageName": "Malay"
+		},
+		{
+			"languageId": 48,
+			"languageName": "Maltese"
+		},
+		{
+			"languageId": 49,
+			"languageName": "Norwegian"
+		},
+		{
+			"languageId": 50,
+			"languageName": "Slovenian"
+		},
+		{
+			"languageId": 51,
+			"languageName": "Dutch"
+		},
+		{
+			"languageId": 52,
+			"languageName": "Northern Sotho"
+		},
+		{
+			"languageId": 53,
+			"languageName": "Punjabi"
+		},
+		{
+			"languageId": 54,
+			"languageName": "Polish"
+		},
+		{
+			"languageId": 55,
+			"languageName": "Pashto"
+		},
+		{
+			"languageId": 56,
+			"languageName": "Portuguese"
+		},
+		{
+			"languageId": 57,
+			"languageName": "Quechua"
+		},
+		{
+			"languageId": 58,
+			"languageName": "Romanian"
+		},
+		{
+			"languageId": 59,
+			"languageName": "Russian"
+		},
+		{
+			"languageId": 60,
+			"languageName": "Sanskrit"
+		},
+		{
+			"languageId": 61,
+			"languageName": "Sami"
+		},
+		{
+			"languageId": 62,
+			"languageName": "Slovak"
+		},
+		{
+			"languageId": 63,
+			"languageName": "Albanian"
+		},
+		{
+			"languageId": 64,
+			"languageName": "Serbian"
+		},
+		{
+			"languageId": 65,
+			"languageName": "Swedish"
+		},
+		{
+			"languageId": 66,
+			"languageName": "Swahili"
+		},
+		{
+			"languageId": 67,
+			"languageName": "Syriac"
+		},
+		{
+			"languageId": 68,
+			"languageName": "Tamil"
+		},
+		{
+			"languageId": 69,
+			"languageName": "Telugu"
+		},
+		{
+			"languageId": 70,
+			"languageName": "Thai"
+		},
+		{
+			"languageId": 71,
+			"languageName": "Tagalog"
+		},
+		{
+			"languageId": 72,
+			"languageName": "Tswana"
+		},
+		{
+			"languageId": 73,
+			"languageName": "Turkish"
+		},
+		{
+			"languageId": 74,
+			"languageName": "Tatar"
+		},
+		{
+			"languageId": 75,
+			"languageName": "Tsonga"
+		},
+		{
+			"languageId": 76,
+			"languageName": "Ukrainian"
+		},
+		{
+			"languageId": 77,
+			"languageName": "Urdu"
+		},
+		{
+			"languageId": 78,
+			"languageName": "Uzbek"
+		},
+		{
+			"languageId": 79,
+			"languageName": "Vietnamese"
+		},
+		{
+			"languageId": 80,
+			"languageName": "Xhosa"
+		},
+		{
+			"languageId": 81,
+			"languageName": "Chinese"
+		},
+		{
+			"languageId": 82,
+			"languageName": "Zulu"
+		},
+		{
+			"languageId": 85,
+			"languageName": "Somali"
+		},
+		{
+			"languageId": 86,
+			"languageName": "Norsk tegnspråk"
+		},
+		{
+			"languageId": 87,
+			"languageName": "Philippine"
+		},
+		{
+			"languageId": 88,
+			"languageName": "Kurdish"
+		},
+		{
+			"languageId": 89,
+			"languageName": "Latin"
+		},
+		{
+			"languageId": 90,
+			"languageName": "Bengali"
+		},
+		{
+			"languageId": 91,
+			"languageName": "Amharic"
+		},
+		{
+			"languageId": 92,
+			"languageName": "Dari"
+		},
+		{
+			"languageId": 93,
+			"languageName": "Nepali"
+		},
+		{
+			"languageId": 94,
+			"languageName": "Kirundi"
+		},
+		{
+			"languageId": 95,
+			"languageName": "Chechen"
+		},
+		{
+			"languageId": 96,
+			"languageName": "Burmese"
+		},
+		{
+			"languageId": 97,
+			"languageName": "Tigrinya"
+		},
+		{
+			"languageId": 98,
+			"languageName": "Greenlandic"
+		}
+	];
+
 	RAMP.init = function () {
 
 		// developers can access this
@@ -21,6 +421,7 @@ console.log('RAMP loaded');
 		RAMP.startOver();
 		// RAMP.inHotjar();
 		// debugger;
+
 	}
 
 	var preferedLanguage = localStorage.getItem('preferedLanguage');
@@ -127,7 +528,7 @@ console.log('RAMP loaded');
 
 				}, function () {
 
-					console.log('User data manually created forlocal Dev Env.');
+					console.log('User data manually created for local Dev Env.');
 
 				});
 
@@ -362,7 +763,7 @@ console.log('RAMP loaded');
 											console.warn('Initializing page reloading...');
 											location.reload();
 										}
-									)
+									).catch(swal.noop)
 								} else {
 									console.log(inMemberObject);
 
@@ -410,8 +811,8 @@ console.log('RAMP loaded');
 											// // console.log(linkedInProfileId);
 											//
 											var top_card = '%2C' + 'top_card';
-											var profile_v2_summary_upsell = '%2C' + 'profile_v2_summary_upsell';
-											var profile_v2_megaphone_marquee = '%2C' + 'profile_v2_megaphone_marquee';
+											// var profile_v2_summary_upsell = '%2C' + 'profile_v2_summary_upsell';
+											// var profile_v2_megaphone_marquee = '%2C' + 'profile_v2_megaphone_marquee';
 
 											var profile_v2_summary = '%2C' + 'profile_v2_summary';
 											var profile_v2_educations = '%2C' + 'profile_v2_educations';
@@ -433,7 +834,12 @@ console.log('RAMP loaded');
 
 											// console.log(linkedInProfileData);
 
-											$.getJSON('https://www.linkedin.com/profile/mappers?id=' + linkedInProfileId + '&promoId=&snapshotID=&primaryAction=&authToken=vCzw&locale=en_US&x-a=' + linkedInProfileData, function () {
+											var linkedInProfileDataUrl = '//www.linkedin.com/profile/mappers?id=' + linkedInProfileId + '&promoId=&snapshotID=&primaryAction=&authToken=vCzw&locale=en_US&x-a=' + linkedInProfileData;
+
+											// console.log('https:' + linkedInProfileDataUrl);
+
+											// $.getJSON('//www.linkedin.com/profile/mappers?id=' + linkedInProfileId + '&promoId=&snapshotID=&primaryAction=&authToken=vCzw&locale=en_US&x-a=' + linkedInProfileData, function () {
+											$.getJSON(linkedInProfileDataUrl, function () {
 													console.log('SUCCESS: LinkedIn profile data loaded');
 												}).done(function (json) {
 
@@ -459,85 +865,381 @@ console.log('RAMP loaded');
 													 * Get and push Experiences.
 													 */
 
-													var experience = [];
+													// var experience = [];
+
+													RAMP.scrapeExperiences = function () {
+
+														function fetchExperiences() {
+
+															if ('li.pv-position-entity') {
+
+																console.warn('Could not fetch Experience data automaticly. Initiating manuall scraping...');
+
+																$('li.pv-position-entity').each(function (index) {
+
+																	var $entry = $(this);
+
+																	// $(this).find('button.pv-profile-section__show-more-detail').click();
+
+																	var experienceTitle;
+																	var experienceCompanyName;
+																	var experienceDescription;
+																	var experienceLocation
+																	var experienceStartDate;
+																	var experienceEndDate;
+
+																	var $showMoreButton = $(this).find('button.pv-profile-section__show-more-detail');
+
+																	if ($showMoreButton) {
+
+																		$showMoreButton.click();
+
+																		setTimeout(function () {
+
+																			var $experienceDescription = $entry.find('.pv-entity__description');
+
+																			if ($experienceDescription) {
+
+																				experienceDescription = $experienceDescription
+																					.clone() //clone the element
+																					.children() //select all the children
+																					.remove() //remove all the children
+																					.end() //again go back to selected element
+																					.text();
+
+																				function myTrim(x) {
+																					return x.replace(/^\s+|\s+$/gm, '');
+																				}
+
+																				experienceDescription = myTrim(experienceDescription);
+																				experienceDescription = decodeHtml(experienceDescription);
+																				experienceDescription = experienceDescription.replace(/(<br>)+/g, '\n ');
+
+																				if (experienceDescription.trim()) {
+
+																					// console.log(experienceDescription);
+
+																				}
+
+																			} else {
+
+																				console.log('No Experience description...');
+
+																			}
+
+																		}, 400);
+
+																	}
+
+																	setTimeout(function () {
+
+																		var $experienceTitle = $entry.find('.pv-entity__summary-info > h3');
+																		var $experienceCompanyName = $entry.find('.pv-entity__summary-info > h4 > .pv-entity__secondary-title');
+																		var $experienceLocation = $entry.find('.pv-entity__summary-info > h4.pv-entity__location > span:not(.visually-hidden)');
+																		var $experienceDateRange = $entry.find('.pv-entity__summary-info > h4.pv-entity__date-range > span:not(.visually-hidden)');
+
+																		if ($experienceTitle) {
+
+																			experienceTitle = $experienceTitle.text();
+
+																		}
+
+																		if ($experienceCompanyName) {
+
+																			experienceCompanyName = $experienceCompanyName.text();
+
+																		}
+
+																		if ($experienceLocation) {
+
+																			experienceLocation = $experienceLocation.text();
+
+																		}
+
+																		if ($experienceDateRange) {
+
+																			var experienceDateRange = $experienceDateRange.text();
+
+																			// console.log(experienceDateRange);
+
+																			$experienceDateRange.each(function (index) {
+
+																				if (experienceDateRange.indexOf(' – ') > -1) {
+
+																					var experienceDatesSplit = experienceDateRange.split(' – ');
+
+																				} else if (experienceDateRange.indexOf(' - ') > -1) {
+
+																					var experienceDatesSplit = experienceDateRange.split(' - ');
+
+																				}
+
+																				var experienceDateStart = experienceDatesSplit[0];
+																				var experienceDateEnd = experienceDatesSplit[1];
+
+																				// console.log(experienceDateStart);
+																				// console.log(experienceDateEnd);
+
+																				var experienceDates = [];
+
+																				experienceDates.push(experienceDateStart);
+																				experienceDates.push(experienceDateEnd);
+
+																				// console.log(experienceDates);
+
+																				// var experienceDateLength = 0;
+
+																				var current = 0;
+
+																				$.each(experienceDates, function (index, value) {
+
+																					// experienceDateLength++
+
+																					// console.log(index + ": " + $(this).text());
+																					// console.log('index, value', index, value);
+
+																					// var experienceDate = $(this).text();
+
+																					var experienceDateSplit = value.split(' ');
+																					var experienceMonth = experienceDateSplit[0];
+																					var experienceYear = experienceDateSplit[1];
+
+																					function setExperienceMonth() {
+
+																						if (experienceMonth === 'Jan') {
+
+																							experienceMonth = '01';
+
+																						} else if (experienceMonth === 'Feb') {
+
+																							experienceMonth = '02';
+
+																						} else if (experienceMonth === 'Mar') {
+
+																							experienceMonth = '03';
+
+																						} else if (experienceMonth === 'Apr') {
+
+																							experienceMonth = '04';
+
+																						} else if (experienceMonth === 'May') {
+
+																							experienceMonth = '05';
+
+																						} else if (experienceMonth === 'Jun') {
+
+																							experienceMonth = '06';
+
+																						} else if (experienceMonth === 'Jul') {
+
+																							experienceMonth = '07';
+
+																						} else if (experienceMonth === 'Aug') {
+
+																							experienceMonth = '08';
+
+																						} else if (experienceMonth === 'Sep') {
+
+																							experienceMonth = '09';
+
+																						} else if (experienceMonth === 'Oct') {
+
+																							experienceMonth = '10';
+
+																						} else if (experienceMonth === 'Nov') {
+
+																							experienceMonth = '11';
+
+																						} else if (experienceMonth === 'Dec') {
+
+																							experienceMonth = '12';
+
+																						} else if (experienceMonth === 'jan.') {
+
+																							experienceMonth = '01';
+
+																						} else if (experienceMonth === 'feb.') {
+
+																							experienceMonth = '02';
+
+																						} else if (experienceMonth === 'mar.') {
+
+																							experienceMonth = '03';
+
+																						} else if (experienceMonth === 'apr.') {
+
+																							experienceMonth = '04';
+
+																						} else if (experienceMonth === 'mai.') {
+
+																							experienceMonth = '05';
+
+																						} else if (experienceMonth === 'jun.') {
+
+																							experienceMonth = '06';
+
+																						} else if (experienceMonth === 'jul.') {
+
+																							experienceMonth = '07';
+
+																						} else if (experienceMonth === 'aug.') {
+
+																							experienceMonth = '08';
+
+																						} else if (experienceMonth === 'sep.') {
+
+																							experienceMonth = '09';
+
+																						} else if (experienceMonth === 'okt.') {
+
+																							experienceMonth = '10';
+
+																						} else if (experienceMonth === 'nov.') {
+
+																							experienceMonth = '11';
+
+																						} else if (experienceMonth === 'des.') {
+
+																							experienceMonth = '12';
+
+																						}
+
+																						if (index === 0) {
+
+																							experienceStartDate = '01.' + experienceMonth + '.' + experienceYear;
+
+																						} else if (index === 1) {
+
+																							experienceEndDate = '01.' + experienceMonth + '.' + experienceYear;
+
+																						}
+
+																					}
+
+																					if (experienceMonth == 'Present' || value == 'nå') {
+
+																						current = 1;
+
+																						experienceEndDate = null;
+
+																					} else {
+
+																						setExperienceMonth();
+
+																					}
+
+																					// console.log(experienceDateLength);
+
+																					// if (experienceDateLength === 1) {
+																					//
+																					// 	current = 1;
+																					//
+																					// } else if (experienceDateLength === 2) {
+																					//
+																					// 	current = 0;
+																					//
+																					// }
+
+																				});
+
+																				experience.push({
+																					title: experienceTitle,
+																					companyName: experienceCompanyName,
+																					location: experienceLocation,
+																					startDate: experienceStartDate,
+																					endDate: experienceEndDate,
+																					description: experienceDescription,
+																					current: current,
+																				});
+
+																				// console.log(experience);
+
+																			});
+
+																		}
+
+																		// experience.push({
+																		// 	title: experienceTitle,
+																		// 	companyName: experienceCompanyName,
+																		// 	// location: location,
+																		// 	startDate: experienceStartDate,
+																		// 	endDate: experienceEndDate,
+																		// 	description: experienceDescription,
+																		// 	current: current,
+																		// });
+
+																		// console.log(experience);
+
+																	}, 500);
+
+																});
+
+																// console.log(experience);
+
+															} else {
+
+																console.warn('Sorry, no Experience to scrape...');
+
+															}
+
+														}
+
+														if ('button.pv-profile-section__see-more-inline') {
+
+															var $seeMorePositionsButton = $('button.pv-profile-section__see-more-inline');
+
+															console.log('click seeMorePositionsButton');
+
+															$seeMorePositionsButton.click();
+
+															setTimeout(function () {
+
+																fetchExperiences();
+
+															}, 500);
+
+														} else {
+
+															fetchExperiences()
+
+														}
+
+													}
 
 													if (json.content.Experience) {
-														$.each(json.content.Experience.positionsMpr.positions, function (key, value) {
 
-															var companyName = value.companyName;
-															var title = value.title;
-															var location = value.fmt_location;
-															var description = value.summary_lb;
-															var current = 1;
+														if (json.content.Experience.positionsMpr && json.content.Experience.positionsMpr.positions) {
 
-															if (value.hasOwnProperty('summary_lb')) {
-																description = decodeHtml(description);
-																description = description.replace(/(<br>)+/g, '\n');
-															}
-
-															if (value.startDate) {
-																if (value.startDate.isMonthDefined === true) {
-																	var startdate_iso = value.startdate_iso.split('-');
-																	var startDate = startdate_iso[2] + '.' + startdate_iso[1] + '.' + startdate_iso[0];
-																} else {
-																	var startDate = '01.01.' + value.startDate.year;
-																}
-															}
-
-															if (value.endDate) {
-																if (value.enddate_iso === undefined) {
-																	current = 1;
-																} else {
-																	current = 0;
-																	if (value.endDate.isMonthDefined === true) {
-																		var enddate_iso = value.enddate_iso.split('-');
-																		var endDate = enddate_iso[2] + '.' + enddate_iso[1] + '.' + enddate_iso[0];
-																	} else {
-																		var endDate = '01.01.' + value.endDate.year;
-																	}
-																}
-															}
-
-															experience.push({
-																companyName: companyName,
-																title: title,
-																location: location,
-																startDate: startDate,
-																endDate: endDate,
-																description: description,
-																current: current,
-															})
-
-														});
-
-														// console.log(experience);
-
-													} else if (json.content.TopCard && json.content.TopCard.positionsMpr) {
-
-														if (json.content.TopCard.positionsMpr.positions) {
-
-															$.each(json.content.TopCard.positionsMpr.positions, function (key, value) {
+															$.each(json.content.Experience.positionsMpr.positions, function (key, value) {
 
 																var companyName = value.companyName;
 																var title = value.title;
-																var location = value.locationName;
+																var location = value.fmt_location;
+																var description = value.summary_lb;
 																var current = 1;
+
+																if (value.hasOwnProperty('summary_lb')) {
+																	description = decodeHtml(description);
+																	description = description.replace(/(<br>)+/g, '\n');
+																}
 
 																if (value.startDate) {
 																	if (value.startDate.isMonthDefined === true) {
-																		var startDate = '01' + '.' + value.startDate.month + '.' + value.startDate.year;
+																		var startdate_iso = value.startdate_iso.split('-');
+																		var startDate = startdate_iso[2] + '.' + startdate_iso[1] + '.' + startdate_iso[0];
 																	} else {
 																		var startDate = '01.01.' + value.startDate.year;
 																	}
 																}
 
 																if (value.endDate) {
-																	if (value.endDate.year === undefined) {
+																	if (value.enddate_iso === undefined) {
 																		current = 1;
 																	} else {
 																		current = 0;
 																		if (value.endDate.isMonthDefined === true) {
-																			var endDate = '01' + '.' + value.endDate.month + '.' + value.endDate.year;
+																			var enddate_iso = value.enddate_iso.split('-');
+																			var endDate = enddate_iso[2] + '.' + enddate_iso[1] + '.' + enddate_iso[0];
 																		} else {
 																			var endDate = '01.01.' + value.endDate.year;
 																		}
@@ -550,45 +1252,71 @@ console.log('RAMP loaded');
 																	location: location,
 																	startDate: startDate,
 																	endDate: endDate,
+																	description: description,
 																	current: current,
 																})
 
 															});
 
+														} else if (json.content.TopCard && json.content.TopCard.positionsMpr) {
 
-														} else if (json.content.TopCard.positionsMpr.topCurrent) {
+															if (json.content.TopCard.positionsMpr.positions) {
 
-															$.each(json.content.TopCard.positionsMpr.topCurrent, function (key, value) {
-
-																var companyName = value.companyName;
-																var title = value.title;
-																var current = 1;
-
-																experience.push({
-																	companyName: companyName,
-																	title: title,
-																	current: current,
-																})
-
-															});
-
-															if (json.content.TopCard.positionsMpr.topPrevious) {
-
-																$.each(json.content.TopCard.positionsMpr.topPrevious, function (key, value) {
+																$.each(json.content.TopCard.positionsMpr.positions, function (key, value) {
 
 																	var companyName = value.companyName;
 																	var title = value.title;
+																	var location = value.locationName;
+																	var current = 1;
+
+																	if (value.startDate) {
+																		if (value.startDate.isMonthDefined === true) {
+																			var startDate = '01' + '.' + value.startDate.month + '.' + value.startDate.year;
+																		} else {
+																			var startDate = '01.01.' + value.startDate.year;
+																		}
+																	}
+
+																	if (value.endDate) {
+																		if (value.endDate.year === undefined) {
+																			current = 1;
+																		} else {
+																			current = 0;
+																			if (value.endDate.isMonthDefined === true) {
+																				var endDate = '01' + '.' + value.endDate.month + '.' + value.endDate.year;
+																			} else {
+																				var endDate = '01.01.' + value.endDate.year;
+																			}
+																		}
+																	}
 
 																	experience.push({
 																		companyName: companyName,
 																		title: title,
+																		location: location,
+																		startDate: startDate,
+																		endDate: endDate,
+																		current: current,
 																	})
 
 																});
 
+
+															} else {
+
+																RAMP.scrapeExperiences();
+
 															}
 
+														} else {
+
+															RAMP.scrapeExperiences();
+
 														}
+
+													} else {
+
+														RAMP.scrapeExperiences();
 
 													}
 
@@ -596,50 +1324,289 @@ console.log('RAMP loaded');
 													 * Get and push Educations.
 													 */
 
-													var education = [];
+													RAMP.scrapeEducations = function () {
 
-													if (json.content.Education) {
+														if ('li.pv-education-entity') {
 
-														$.each(json.content.Education.educationsMpr.educations, function (key, value) {
+															console.warn('Could not fetch Education data automaticly. Initiating manuall scraping...');
 
-															var schoolName = value.schoolName;
-															var eudcationType = value.fieldOfStudy;
-															var degree = value.degree;
-															var description = value.summary_lb;
+															// 	$('li.position-entity').each(function (index) {
+															//
+															// 		var $entry = $(this);
+															//
+															// 		// $(this).find('button.pv-profile-section__show-more-detail').click();
+															//
+															// 		var $showMoreButton = $(this).find('button.pv-profile-section__show-more-detail');
+															//
+															// 		if ($showMoreButton) {
+															//
+															// 			$showMoreButton.click();
+															//
+															// 			setTimeout(function () {
+															//
+															// 				var experienceTitle;
+															// 				var experienceCompanyName;
+															// 				var experienceDescription;
+															// 				var experienceStartDate;
+															// 				var experienceEndDate;
+															//
+															// 				var $experienceTitle = $entry.find('.pv-entity__summary-info > h3');
+															// 				var $experienceCompanyName = $entry.find('.pv-entity__summary-info > h4 > .pv-entity__secondary-title');
+															// 				var $experienceDescription = $entry.find('.pv-entity__description');
+															// 				var $experienceDateRange = $entry.find('.pv-entity__date-range');
+															//
+															// 				var current = 0;
+															//
+															// 				if ($experienceTitle) {
+															//
+															// 					experienceTitle = $experienceTitle.text();
+															//
+															// 				}
+															//
+															// 				if ($experienceCompanyName) {
+															//
+															// 					experienceCompanyName = $experienceCompanyName.text();
+															//
+															// 				}
+															//
+															// 				if ($experienceDescription) {
+															//
+															// 					experienceDescription = $experienceDescription
+															// 						.clone() //clone the element
+															// 						.children() //select all the children
+															// 						.remove() //remove all the children
+															// 						.end() //again go back to selected element
+															// 						.text();
+															//
+															// 					function myTrim(x) {
+															// 						return x.replace(/^\s+|\s+$/gm, '');
+															// 					}
+															//
+															// 					experienceDescription = myTrim(experienceDescription);
+															// 					experienceDescription = decodeHtml(experienceDescription);
+															// 					experienceDescription = experienceDescription.replace(/(<br>)+/g, '\n ');
+															//
+															// 					// console.log(experienceDescription);
+															//
+															// 				}
+															//
+															// 				if ($experienceDateRange) {
+															//
+															// 					$experienceDateRange.each(function (index) {
+															//
+															// 						var $experienceDates = $experienceDateRange.find('time');
+															//
+															// 						var experienceDateLength = 0;
+															//
+															// 						$experienceDates.each(function (index) {
+															//
+															// 							experienceDateLength++
+															//
+															// 							// console.log(index + ": " + $(this).text());
+															//
+															// 							var experienceDate = $(this).text();
+															//
+															// 							var experienceDateSplit = experienceDate.split(' ');
+															// 							var experienceMonth = experienceDateSplit[0];
+															// 							var experienceYear = experienceDateSplit[1];
+															//
+															// 							if (experienceMonth === 'Jan') {
+															//
+															// 								experienceMonth = '01';
+															//
+															// 							} else if (experienceMonth === 'Feb') {
+															//
+															// 								experienceMonth = '02';
+															//
+															// 							} else if (experienceMonth === 'Mar') {
+															//
+															// 								experienceMonth = '03';
+															//
+															// 							} else if (experienceMonth === 'Apr') {
+															//
+															// 								experienceMonth = '04';
+															//
+															// 							} else if (experienceMonth === 'May') {
+															//
+															// 								experienceMonth = '05';
+															//
+															// 							} else if (experienceMonth === 'Jun') {
+															//
+															// 								experienceMonth = '06';
+															//
+															// 							} else if (experienceMonth === 'Jul') {
+															//
+															// 								experienceMonth = '07';
+															//
+															// 							} else if (experienceMonth === 'Aug') {
+															//
+															// 								experienceMonth = '08';
+															//
+															// 							} else if (experienceMonth === 'Sep') {
+															//
+															// 								experienceMonth = '09';
+															//
+															// 							} else if (experienceMonth === 'Oct') {
+															//
+															// 								experienceMonth = '10';
+															//
+															// 							} else if (experienceMonth === 'Nov') {
+															//
+															// 								experienceMonth = '11';
+															//
+															// 							} else if (experienceMonth === 'Dec') {
+															//
+															// 								experienceMonth = '12';
+															//
+															// 							} else if (experienceMonth === 'jan.') {
+															//
+															// 								experienceMonth = '01';
+															//
+															// 							} else if (experienceMonth === 'feb.') {
+															//
+															// 								experienceMonth = '02';
+															//
+															// 							} else if (experienceMonth === 'mar.') {
+															//
+															// 								experienceMonth = '03';
+															//
+															// 							} else if (experienceMonth === 'apr.') {
+															//
+															// 								experienceMonth = '04';
+															//
+															// 							} else if (experienceMonth === 'mai.') {
+															//
+															// 								experienceMonth = '05';
+															//
+															// 							} else if (experienceMonth === 'jun.') {
+															//
+															// 								experienceMonth = '06';
+															//
+															// 							} else if (experienceMonth === 'jul.') {
+															//
+															// 								experienceMonth = '07';
+															//
+															// 							} else if (experienceMonth === 'aug.') {
+															//
+															// 								experienceMonth = '08';
+															//
+															// 							} else if (experienceMonth === 'sep.') {
+															//
+															// 								experienceMonth = '09';
+															//
+															// 							} else if (experienceMonth === 'okt.') {
+															//
+															// 								experienceMonth = '10';
+															//
+															// 							} else if (experienceMonth === 'nov.') {
+															//
+															// 								experienceMonth = '11';
+															//
+															// 							} else if (experienceMonth === 'des.') {
+															//
+															// 								experienceMonth = '12';
+															//
+															// 							}
+															//
+															// 							if (index === 0) {
+															//
+															// 								experienceStartDate = '01.' + experienceMonth + '.' + experienceYear;
+															//
+															// 							} else if (index === 1) {
+															//
+															// 								experienceEndDate = '01.' + experienceMonth + '.' + experienceYear;
+															//
+															// 							}
+															//
+															// 						});
+															//
+															// 						// console.log(experienceDateLength);
+															//
+															// 						if (experienceDateLength === 1) {
+															//
+															// 							current = 1;
+															//
+															//
+															// 						} else if (experienceDateLength === 2) {
+															//
+															// 							current = 0;
+															//
+															// 						}
+															//
+															// 					});
+															//
+															// 				}
+															//
+															// 				experience.push({
+															// 					title: experienceTitle,
+															// 					companyName: experienceCompanyName,
+															// 					// location: location,
+															// 					startDate: experienceStartDate,
+															// 					endDate: experienceEndDate,
+															// 					description: experienceDescription,
+															// 					current: current,
+															// 				});
+															//
+															// 				// console.log(experience);
+															//
+															// 			}, 500);
+															//
+															// 		}
+															//
+															// 	});
 
-															if (value.hasOwnProperty('summary_lb')) {
-																description = decodeHtml(description);
-																description = description.replace(/(<br>)+/g, '\n');
-															}
+														} else {
 
-															if (value.hasOwnProperty('startDate') && value.startDate.isMonthDefined === true) {
-																var startDate = '15.' + value.startDate.month + '.' + value.startDate.year;
-															} else if (value.hasOwnProperty('startDate')) {
-																var startDate = '15.08.' + value.startDate.year;
-															}
+															console.warn('Sorry, no Education to scrape...');
 
-															if (value.hasOwnProperty('endDate') && value.endDate.isMonthDefined === true) {
-																var endDate = '15.' + value.endDate.month + '.' + value.endDate.year;
-															} else if (value.hasOwnProperty('endDate')) {
-																var endDate = '15.06.' + value.endDate.year;
-															}
+														}
 
-															education.push({
-																schoolName: schoolName,
-																eudcationType: eudcationType,
-																degree: degree,
-																startDate: startDate,
-																endDate: endDate,
-																description: description,
-															})
+													}
 
-														});
+													if (json.content.Education && json.content.Education.educationsMpr) {
 
-													} else if (json.content.TopCard && json.content.TopCard.educationsMpr) {
+														if (json.content.Education.educationsMpr.educations) {
 
-														if (json.content.TopCard.educationsMpr.educations) {
+															$.each(json.content.Education.educationsMpr.educations, function (key, value) {
 
-															$.each(json.content.TopCard.educationsMpr.educations, function (key, value) {
+																var schoolName = value.schoolName;
+																var eudcationType = value.fieldOfStudy;
+																var degree = value.degree;
+																var description = value.summary_lb;
+
+																// console.log(eudcationType);
+
+																if (value.hasOwnProperty('summary_lb')) {
+																	description = decodeHtml(description);
+																	description = description.replace(/(<br>)+/g, '\n');
+																}
+
+																if (value.hasOwnProperty('startDate') && value.startDate.isMonthDefined === true) {
+																	var startDate = '15.' + value.startDate.month + '.' + value.startDate.year;
+																} else if (value.hasOwnProperty('startDate')) {
+																	var startDate = '15.08.' + value.startDate.year;
+																}
+
+																if (value.hasOwnProperty('endDate') && value.endDate.isMonthDefined === true) {
+																	var endDate = '15.' + value.endDate.month + '.' + value.endDate.year;
+																} else if (value.hasOwnProperty('endDate')) {
+																	var endDate = '15.06.' + value.endDate.year;
+																}
+
+																education.push({
+																	schoolName: schoolName,
+																	eudcationType: eudcationType,
+																	degree: degree,
+																	startDate: startDate,
+																	endDate: endDate,
+																	description: description,
+																})
+
+															});
+
+														} else if (json.content.Education.educationsMpr.topEducations) {
+
+															$.each(json.content.Education.educationsMpr.topEducations, function (key, value) {
 
 																var schoolName = value.schoolName;
 																var eudcationType = value.fieldOfStudy;
@@ -677,50 +1644,9 @@ console.log('RAMP loaded');
 
 															});
 
+															if (json.content.Education.educationsMpr.moreEducations) {
 
-														} else if (json.content.TopCard.educationsMpr.topEducations) {
-
-															$.each(json.content.TopCard.educationsMpr.topEducations, function (key, value) {
-
-																var schoolName = value.schoolName;
-																var eudcationType = value.fieldOfStudy;
-																var degree = value.degree;
-																var current = 1;
-
-																if (value.startDate) {
-																	if (value.startDate.isMonthDefined === true) {
-																		var startDate = '15' + '.' + value.startDate.month + '.' + value.startDate.year;
-																	} else {
-																		var startDate = '15.08.' + value.startDate.year;
-																	}
-																}
-
-																if (value.endDate) {
-																	if (value.endDate.year === undefined) {
-																		current = 1;
-																	} else {
-																		current = 0;
-																		if (value.endDate.isMonthDefined === true) {
-																			var endDate = '15' + '.' + value.endDate.month + '.' + value.endDate.year;
-																		} else {
-																			var endDate = '15.06.' + value.endDate.year;
-																		}
-																	}
-																}
-
-																education.push({
-																	schoolName: schoolName,
-																	eudcationType: eudcationType,
-																	degree: degree,
-																	startDate: startDate,
-																	endDate: endDate,
-																})
-
-															});
-
-															if (json.content.TopCard.educationsMpr.moreEducations) {
-
-																$.each(json.content.TopCard.educationsMpr.moreEducations, function (key, value) {
+																$.each(json.content.Education.educationsMpr.moreEducations, function (key, value) {
 
 																	var schoolName = value.schoolName;
 																	var eudcationType = value.fieldOfStudy;
@@ -756,12 +1682,150 @@ console.log('RAMP loaded');
 																		endDate: endDate,
 																	})
 
-
 																});
 
 															}
 
+														} else if (json.content.TopCard && json.content.TopCard.educationsMpr) {
+
+															if (json.content.TopCard.educationsMpr.educations) {
+
+																$.each(json.content.TopCard.educationsMpr.educations, function (key, value) {
+
+																	var schoolName = value.schoolName;
+																	var eudcationType = value.fieldOfStudy;
+																	var degree = value.degree;
+																	var current = 1;
+
+																	if (value.startDate) {
+																		if (value.startDate.isMonthDefined === true) {
+																			var startDate = '15' + '.' + value.startDate.month + '.' + value.startDate.year;
+																		} else {
+																			var startDate = '15.08.' + value.startDate.year;
+																		}
+																	}
+
+																	if (value.endDate) {
+																		if (value.endDate.year === undefined) {
+																			current = 1;
+																		} else {
+																			current = 0;
+																			if (value.endDate.isMonthDefined === true) {
+																				var endDate = '15' + '.' + value.endDate.month + '.' + value.endDate.year;
+																			} else {
+																				var endDate = '15.06.' + value.endDate.year;
+																			}
+																		}
+																	}
+
+																	education.push({
+																		schoolName: schoolName,
+																		eudcationType: eudcationType,
+																		degree: degree,
+																		startDate: startDate,
+																		endDate: endDate,
+																	})
+
+																});
+
+
+															} else if (json.content.TopCard.educationsMpr.topEducations) {
+
+																$.each(json.content.TopCard.educationsMpr.topEducations, function (key, value) {
+
+																	var schoolName = value.schoolName;
+																	var eudcationType = value.fieldOfStudy;
+																	var degree = value.degree;
+																	var current = 1;
+
+																	if (value.startDate) {
+																		if (value.startDate.isMonthDefined === true) {
+																			var startDate = '15' + '.' + value.startDate.month + '.' + value.startDate.year;
+																		} else {
+																			var startDate = '15.08.' + value.startDate.year;
+																		}
+																	}
+
+																	if (value.endDate) {
+																		if (value.endDate.year === undefined) {
+																			current = 1;
+																		} else {
+																			current = 0;
+																			if (value.endDate.isMonthDefined === true) {
+																				var endDate = '15' + '.' + value.endDate.month + '.' + value.endDate.year;
+																			} else {
+																				var endDate = '15.06.' + value.endDate.year;
+																			}
+																		}
+																	}
+
+																	education.push({
+																		schoolName: schoolName,
+																		eudcationType: eudcationType,
+																		degree: degree,
+																		startDate: startDate,
+																		endDate: endDate,
+																	})
+
+																});
+
+																if (json.content.TopCard.educationsMpr.moreEducations) {
+
+																	$.each(json.content.TopCard.educationsMpr.moreEducations, function (key, value) {
+
+																		var schoolName = value.schoolName;
+																		var eudcationType = value.fieldOfStudy;
+																		var degree = value.degree;
+																		var current = 1;
+
+																		if (value.startDate) {
+																			if (value.startDate.isMonthDefined === true) {
+																				var startDate = '15' + '.' + value.startDate.month + '.' + value.startDate.year;
+																			} else {
+																				var startDate = '15.08.' + value.startDate.year;
+																			}
+																		}
+
+																		if (value.endDate) {
+																			if (value.endDate.year === undefined) {
+																				current = 1;
+																			} else {
+																				current = 0;
+																				if (value.endDate.isMonthDefined === true) {
+																					var endDate = '15' + '.' + value.endDate.month + '.' + value.endDate.year;
+																				} else {
+																					var endDate = '15.06.' + value.endDate.year;
+																				}
+																			}
+																		}
+
+																		education.push({
+																			schoolName: schoolName,
+																			educationType: educationType,
+																			degree: degree,
+																			startDate: startDate,
+																			endDate: endDate,
+																		})
+
+																	});
+
+																}
+
+															} else {
+
+																RAMP.scrapeEducations();
+
+															}
+
+														} else {
+
+															RAMP.scrapeEducations();
+
 														}
+
+													} else {
+
+														RAMP.scrapeEducations();
 
 													}
 
@@ -770,24 +1834,42 @@ console.log('RAMP loaded');
 													if (json.content.TopCard) {
 
 														if (json.content.TopCard.contact_info.hasOwnProperty('phones')) {
-															var mobilePhone = json.content.TopCard.contact_info.phones[0].number;
+															mobilePhone = json.content.TopCard.contact_info.phones[0].number;
 														}
 
-														if (json.content.TopCard.contact_info.hasOwnProperty('email')) {
-															var email = json.content.TopCard.contact_info.emails[0].email;
+														if (json.content.TopCard.contact_info.emails) {
+
+															$.each(json.content.TopCard.contact_info.emails, function (i, item) {
+
+																if (item.email.indexOf('facebook.com') >= 0) {
+
+																	facebook = item.email;
+
+																	facebook = facebook.split('@');
+
+																	facebook = 'https://www.facebook.com/' + facebook[0];
+
+																} else {
+
+																	email = item.email;
+
+																}
+
+															});
+
 														}
 
 														if (json.content.TopCard.contact_info.hasOwnProperty('twitterAccounts')) {
-															var twitter = 'https://twitter.com/' + json.content.TopCard.contact_info.twitterAccounts[0].twitterHandle;
+															twitter = 'https://twitter.com/' + json.content.TopCard.contact_info.twitterAccounts[0].twitterHandle;
 														}
 
 														if (json.content.TopCard.contact_info.hasOwnProperty('websites')) {
-															var web = json.content.TopCard.contact_info.websites[0].URL;
+															web = json.content.TopCard.contact_info.websites[0].URL;
 														}
 
 														if (json.content.TopCard.additional_info.hasAdditionalInfo === true) {
 															var additional_info = json.content.TopCard.additional_info;
-															var dob = additional_info.birthDay + '.' + additional_info.birthMonth + '.' + additional_info.birthYear;
+															dob = additional_info.birthDay + '.' + additional_info.birthMonth + '.' + additional_info.birthYear;
 														}
 													}
 
@@ -805,32 +1887,224 @@ console.log('RAMP loaded');
 
 													}
 
-													var skills = [];
+													// var skills = [];
 
-													if (json.content.Skills) {
-														$.each(json.content.Skills.skillsMpr.skills, function (key, value) {
+													RAMP.scrapeSkills = function () {
 
-															// var name = value.fmt__skill_name;
+														if ('.pv-featured-skills-section') {
 
-															skills.push({
-																'name': value.fmt__skill_name,
-																'rating': 0
-															})
+															console.warn('Could not fetch Skills data automaticly. Initiating manuall scraping...');
 
-														});
+															$('.pv-featured-skills-section').find('button[data-control-name="skill_details"]').click();
 
-														// console.log(skills);
+															setTimeout(function () {
+
+																$('li.pv-skill-entity').each(function (index) {
+
+																	var $entry = $(this);
+
+																	var skillName = $entry.find('.pv-skill-entity__skill-name').text();
+
+																	// console.log(skillName);
+
+																	skills.push({
+																		'name': skillName,
+																		'rating': 0
+																	})
+
+																});
+
+															}, 500);
+
+														}
+
 													}
 
-													var summary;
+													if (json.content.Skills) {
+
+														if (json.content.Skills.skillsMpr) {
+
+															if (json.content.Skills.skillsMpr.skills) {
+
+																$.each(json.content.Skills.skillsMpr.skills, function (key, value) {
+
+																	skills.push({
+																		'name': value.fmt__skill_name,
+																		'rating': 0
+																	})
+
+																});
+
+																// console.log(skills);
+
+															} else {
+
+																RAMP.scrapeSkills();
+
+															}
+
+														} else {
+
+															RAMP.scrapeSkills();
+
+														}
+
+													} else {
+
+														RAMP.scrapeSkills();
+
+													}
+
+													// var summary;
+
+													RAMP.scrapeSummary = function () {
+
+														// swal({
+														// 	type: 'info',
+														// 	title: 'Notice!',
+														// 	html: 'This profile might be missing some relevant information like <b>Periods on Experience and Education</b> objects when sendt to Recruitment Manager.'
+														// });
+
+														if ('.pv-top-card-section__summary') {
+
+															console.warn('Could not fetch Summary data automaticly. Initiating manuall scraping...');
+
+															$('.pv-top-card-section__summary').find('button.truncate-multiline--button').click();
+
+															setTimeout(function () {
+
+																var summaryText = $('p.pv-top-card-section__summary')
+																	.clone() //clone the element
+																	.children() //select all the children
+																	.remove() //remove all the children
+																	.end() //again go back to selected element
+																	.text();
+
+																function myTrim(x) {
+																	return x.replace(/^\s+|\s+$/gm, '');
+																}
+
+																summaryText = myTrim(summaryText);
+
+																summaryText = decodeHtml(summaryText);
+																summaryText = summaryText.replace(/(<br>)+/g, '\n');
+
+																summary.push(summaryText);
+
+																// console.log(summary);
+
+															}, 500);
+
+														}
+
+													}
 
 													if (json.content.Summary) {
 
 														if (json.content.Summary.summary.hasOwnProperty('summary_lb')) {
-															summary = json.content.Summary.summary.summary_lb;
-															summary = decodeHtml(summary);
-															summary = summary.replace(/(<br>)+/g, '\n');
+
+															var summaryText = json.content.Summary.summary.summary_lb;
+															summaryText = decodeHtml(summaryText);
+															summaryText = summaryText.replace(/(<br>)+/g, '\n');
+
+															summary.push(summaryText);
+
+														} else {
+
+															RAMP.scrapeSummary();
+
 														}
+
+													} else {
+
+														RAMP.scrapeSummary();
+
+													}
+
+													if (json.content.Languages && json.content.Languages.languages && json.content.Languages.languages.languagesData) {
+
+														var proficiency;
+
+														$.each(json.content.Languages.languages.languagesData, function (key, value) {
+
+															if (value.proficiencyData && value.proficiencyData === 'elementary') {
+
+																proficiency = 'elementary';
+
+															} else if (value.proficiencyData && value.proficiencyData === 'limited_working') {
+
+																proficiency = 'limitedWorking';
+
+															} else if (value.proficiencyData && value.proficiencyData === 'professional_working') {
+
+																proficiency = 'professionalWorking';
+
+															} else if (value.proficiencyData && value.proficiencyData === 'full_professional') {
+
+																proficiency = 'fullProfessional';
+
+															} else if (value.proficiencyData && value.proficiencyData === 'native_or_bilingual') {
+
+																proficiency = 'navtiveOrBilingual';
+
+															}
+
+															$.each(rmLanguageList, function (k, v) {
+
+																if (value.proficiencyData && value.lang === v.languageName) {
+
+																	languages.push({
+																		languageId: v.languageId,
+																		proficiency: proficiency
+																	});
+
+																} else if (value.lang === v.languageName) {
+
+																	// console.log(v.languageId);
+																	// console.log(v.languageName);
+
+																	languages.push({
+																		languageId: v.languageId,
+																		proficiency: 'elementary'
+																	});
+
+																}
+
+															});
+
+														});
+
+													}
+
+													if (json.content.Courses && json.content.Courses.courses_by_occupation && json.content.Courses.courses_by_occupation.occupationsCourses) {
+
+														$.each(json.content.Courses.courses_by_occupation.occupationsCourses, function (key, value) {
+
+															if (value.courses) {
+
+																$.each(value.courses, function (k, v) {
+
+																	certifications.push({
+																		name: v.name
+																	});
+
+																});
+
+															}
+
+														});
+
+													}
+
+													if (json.content.Certifications && json.content.Certifications.certsMpr && json.content.Certifications.certsMpr.certifications) {
+
+														$.each(json.content.Certifications.certsMpr.certifications, function (key, value) {
+
+															certifications.push({
+																name: value.certificationName
+															});
+
+														});
 
 													}
 
@@ -839,11 +2113,11 @@ console.log('RAMP loaded');
 														if (json.content.TopCard.picture.pictureID === undefined) {
 															var imageUrl = json.content.TopCard.img_blank_200;
 															var profileImageExtension = 'png';
-															console.log(imageUrl);
+															// console.log(imageUrl);
 														} else {
-															var imageUrl = 'https://media.licdn.com/mpr/mpr' + json.content.TopCard.picture.pictureID;
+															var imageUrl = '//media.licdn.com/mpr/mpr' + json.content.TopCard.picture.pictureID;
 															var profileImageExtension = 'jpg';
-															console.log(imageUrl);
+															// console.log(imageUrl);
 														}
 
 														if (json.content.Experience === undefined && json.content.TopCard.positionsMpr.positions === undefined && json.content.Education === undefined && json.content.TopCard.educationsMpr.educations === undefined) {
@@ -851,7 +2125,7 @@ console.log('RAMP loaded');
 															swal({
 																type: 'info',
 																title: 'Notice!',
-																text: 'This profile might be missing some relevant information like <b>Job Title</b> on Experience objects and <b>Description</b> and <b>Periods</b> on both Experience and Education objects when sendt to Recruitment Manager.'
+																html: 'This profile might be missing some relevant information like <b>Job Title</b> on Experience objects and <b>Description</b> and <b>Periods on Experience and Education</b> objects when sendt to Recruitment Manager.'
 															})
 
 														} else if (json.content.Experience === undefined && json.content.TopCard.positionsMpr.positions === undefined && json.content.Education !== undefined && json.content.TopCard.educationsMpr.educations !== undefined) {
@@ -859,7 +2133,7 @@ console.log('RAMP loaded');
 															swal({
 																type: 'info',
 																title: 'Notice!',
-																text: 'This profile might be missing some relevant information like <b>Job Title</b>, <b>Job Description</b> and <b>Job Period</b> on objects when sendt to Recruitment Manager.'
+																html: 'This profile might be missing some relevant information like <b>Job Title</b>, <b>Job Description</b> and <b>Job Period</b> on objects when sendt to Recruitment Manager.'
 															})
 
 														} else if (json.content.Experience !== undefined && json.content.TopCard.positionsMpr.positions === undefined && json.content.Education !== undefined && json.content.TopCard.educationsMpr.educations !== undefined) {
@@ -867,12 +2141,13 @@ console.log('RAMP loaded');
 															swal({
 																type: 'info',
 																title: 'Notice!',
-																text: 'This profile might be missing some relevant information like <b>Education Periods</b> on objects when sendt to Recruitment Manager.'
+																html: 'This profile might be missing some relevant information like <b>Education Periods</b> on objects when sendt to Recruitment Manager.'
 															})
 
 														}
 
 													} else {
+
 														swal({
 															type: 'warning',
 															title: 'We\'re sorry!',
@@ -924,40 +2199,40 @@ console.log('RAMP loaded');
 																	'base64': result.base64Img
 																};
 
-																var candidateData = {
-																	'key': storrageResult.apiKey,
-																	'scope': 'candidate',
-																	'operation': 'insert',
-																	'data': {
-																		// 'corporationId': 2,
-																		'corporationId': storrageResult.corporation_id,
-																		'connectDepartment': [storrageResult.department_id],
-																		'connectUser': [storrageResult.intercom_employeee_id],
-																		'firstName': candidateFirstName,
-																		'lastName': candidateLastName,
-																		'title': json.content.TopCard.basic_info.memberHeadline,
-																		'mobilePhone': mobilePhone,
-																		'email': email,
-																		'twitter': twitter,
-																		'web': web,
-																		'dob': dob,
-																		'description': summary,
-																		'linkedin': json.content.TopCard.public_url.canonicalUrl,
-																		'experience': experience,
-																		'education': education,
-																		'skills': skills,
-																		'profilePicture': profilePicture,
-																		// 'certifications': certifications,
-																		// 'languages': languages,
-																		'notes': notes
-																	}
-																};
-
-																// console.log(candidateData);
-
-																var candidateData = JSON.stringify(candidateData);
-
-																// console.log(candidateData);
+																// var candidateData = {
+																// 	'key': storrageResult.apiKey,
+																// 	'scope': 'candidate',
+																// 	'operation': 'insert',
+																// 	'data': {
+																// 		// 'corporationId': 2,
+																// 		'corporationId': storrageResult.corporation_id,
+																// 		'connectDepartment': [storrageResult.department_id],
+																// 		'connectUser': [storrageResult.intercom_employeee_id],
+																// 		'firstName': candidateFirstName,
+																// 		'lastName': candidateLastName,
+																// 		'title': json.content.TopCard.basic_info.memberHeadline,
+																// 		'mobilePhone': mobilePhone,
+																// 		'email': email,
+																// 		'twitter': twitter,
+																// 		'web': web,
+																// 		'dob': dob,
+																// 		'description': summary,
+																// 		'linkedin': json.content.TopCard.public_url.canonicalUrl,
+																// 		'experience': experience,
+																// 		'education': education,
+																// 		'skills': skills,
+																// 		'profilePicture': profilePicture,
+																// 		// 'certifications': certifications,
+																// 		// 'languages': languages,
+																// 		'notes': notes
+																// 	}
+																// };
+																//
+																// // console.log(candidateData);
+																//
+																// var candidateData = JSON.stringify(candidateData);
+																//
+																// // console.log(candidateData);
 
 																$('#send_to_rm').prop('disabled', false);
 
@@ -966,6 +2241,54 @@ console.log('RAMP loaded');
 																// console.log(json.content.Skills.skillsMpr.skills);
 
 																$('#send_to_rm').on('click', function (e) {
+
+																	// console.log(summary);
+
+																	var candidateData = {
+																		'key': storrageResult.apiKey,
+																		'scope': 'candidate',
+																		'operation': 'insert',
+																		'data': {
+																			'corporationId': storrageResult.corporation_id,
+																			'connectDepartment': [storrageResult.department_id],
+																			'connectUser': [storrageResult.intercom_employeee_id],
+																			'firstName': candidateFirstName,
+																			'lastName': candidateLastName,
+																			'title': json.content.TopCard.basic_info.memberHeadline,
+																			'mobilePhone': mobilePhone,
+																			'email': email,
+																			'twitter': twitter,
+																			'facebook': facebook,
+																			'web': web,
+																			'dob': dob,
+																			'description': summary[0],
+																			'linkedin': json.content.TopCard.public_url.canonicalUrl,
+																			'experience': experience,
+																			'education': education,
+																			'skills': skills,
+																			'profilePicture': profilePicture,
+																			'certifications': certifications,
+																			'languages': languages,
+																			'notes': notes,
+																			'tags': [2, 5]
+																		}
+																	};
+
+																	// var tagData = {
+																	// 	'key': storrageResult.apiKey,
+																	// 	'scope': 'tags',
+																	// 	'operation': 'insert',
+																	// 	'data': {
+																	// 		'name': 'RAMP'
+																	// 	}
+																	// };
+
+																	console.info(candidateData);
+
+																	var candidateData = JSON.stringify(candidateData);
+																	// var tagData = JSON.stringify(tagData);
+
+																	// console.log(candidateData);
 																	// sendCandidateToRm(candidateData);
 
 																	console.log('API Key: ' + storrageResult.apiKey);
@@ -999,25 +2322,43 @@ console.log('RAMP loaded');
 																						if (response.success === true) {
 
 																							console.group('CANDIDATE EXPORT INITIATED');
-																							console.log(this.responseText);
+																							console.info(this.response);
+																							// console.info(this.responseText);
 
 																							var totalExportedLinkedInRef = firebase.database().ref('statistics/candidates/exported/LinkedIn');
+
 																							totalExportedLinkedInRef.transaction(function (currentExported) {
+
 																								return currentExported + 1;
+
 																							}, function (error, committed, snapshot) {
+
 																								if (error) {
+
 																									console.log('Transaction failed abnormally!', error);
+
 																								} else if (!committed) {
+
 																									console.log('We aborted the transaction (because ada already exists).');
+
 																								} else {
+
 																									var totalExportedRef = firebase.database().ref('statistics/candidates/exported/total');
+
 																									totalExportedRef.transaction(function (currentExported) {
+
 																										return currentExported + 1;
+
 																									}, function (error, committed, snapshot) {
+
 																										if (error) {
+
 																											console.log('Transaction failed abnormally!', error);
+
 																										} else if (!committed) {
+
 																											console.log('We aborted the transaction (because ada already exists).');
+
 																										} else {
 																											// setTimeout(function() {
 																											swal({
@@ -1025,16 +2366,22 @@ console.log('RAMP loaded');
 																												title: callback.dialog__text_plain__dialog_success_title_generic.message,
 																												text: candidateFirstName + ' ' + candidateLastName + ' ' + callback.dialog__text_plain__request_success_message.message + ' ' + callback.didialog__text_service__service_name_recruitmentmanager.message,
 																												timer: 3000
-																											})
+																											}).catch(swal.noop)
 																											// }, 2000)
 																											// console.log(candidateData);
 																											console.log('Total number of candidates added: ', snapshot.val());
 																										}
+
 																									});
+
 																									console.log('Total number of candidates added from LinkedIn: ', snapshot.val());
+
 																								}
+
 																							});
+
 																							console.groupEnd();
+
 																						} else if (response.success === false) {
 
 																							console.log(response);
@@ -1051,8 +2398,11 @@ console.log('RAMP loaded');
 																									cancelButtonText: callback.dialog__button_cancel__dialog_button_cancel.message,
 																									confirmButtonText: callback.dialog__button_confirm__dialog_button_try_again.message,
 																								}).then(function () {
+
 																									$('#send_to_rm').click();
+
 																								})
+
 																							}, 2000)
 
 																						} else {
@@ -1060,6 +2410,7 @@ console.log('RAMP loaded');
 																							console.log(response);
 
 																							setTimeout(function () {
+
 																								swal({
 																									type: 'error',
 																									title: callback.dialog__text_plain__dialog_error_title_generic.message,
@@ -1071,8 +2422,11 @@ console.log('RAMP loaded');
 																									cancelButtonText: callback.dialog__button_cancel__dialog_button_cancel.message,
 																									confirmButtonText: callback.dialog__button_confirm__dialog_button_try_again.message,
 																								}).then(function () {
+
 																									$('#send_to_rm').click();
+
 																								})
+
 																							}, 2000)
 
 																						}
@@ -1087,6 +2441,7 @@ console.log('RAMP loaded');
 																				xhr.setRequestHeader('cache-control', 'no-cache');
 
 																				xhr.send(candidateData);
+																				// xhr.send(tagData);
 																			});
 																		},
 																		allowOutsideClick: false
@@ -1225,7 +2580,7 @@ console.log('RAMP loaded');
 				console.warn('Initializing page reloading...');
 				location.reload();
 			}
-		)
+		).catch(swal.noop)
 	}
 
 	RAMP.whoThatMember = function () {
