@@ -763,7 +763,7 @@ console.log('RAMP loaded');
 											console.warn('Initializing page reloading...');
 											location.reload();
 										}
-									)
+									).catch(swal.noop)
 								} else {
 									console.log(inMemberObject);
 
@@ -834,7 +834,12 @@ console.log('RAMP loaded');
 
 											// console.log(linkedInProfileData);
 
-											$.getJSON('//www.linkedin.com/profile/mappers?id=' + linkedInProfileId + '&promoId=&snapshotID=&primaryAction=&authToken=vCzw&locale=en_US&x-a=' + linkedInProfileData, function () {
+											var linkedInProfileDataUrl = '//www.linkedin.com/profile/mappers?id=' + linkedInProfileId + '&promoId=&snapshotID=&primaryAction=&authToken=vCzw&locale=en_US&x-a=' + linkedInProfileData;
+
+											// console.log('https:' + linkedInProfileDataUrl);
+
+											// $.getJSON('//www.linkedin.com/profile/mappers?id=' + linkedInProfileId + '&promoId=&snapshotID=&primaryAction=&authToken=vCzw&locale=en_US&x-a=' + linkedInProfileData, function () {
+											$.getJSON(linkedInProfileDataUrl, function () {
 													console.log('SUCCESS: LinkedIn profile data loaded');
 												}).done(function (json) {
 
@@ -864,36 +869,74 @@ console.log('RAMP loaded');
 
 													RAMP.scrapeExperiences = function () {
 
-														if ('li.position-entity') {
+														function fetchExperiences() {
 
-															console.warn('Could not fetch Experience data automaticly. Initiating manuall scraping...');
+															if ('li.pv-position-entity') {
 
-															$('li.position-entity').each(function (index) {
+																console.warn('Could not fetch Experience data automaticly. Initiating manuall scraping...');
 
-																var $entry = $(this);
+																$('li.pv-position-entity').each(function (index) {
 
-																// $(this).find('button.pv-profile-section__show-more-detail').click();
+																	var $entry = $(this);
 
-																var $showMoreButton = $(this).find('button.pv-profile-section__show-more-detail');
+																	// $(this).find('button.pv-profile-section__show-more-detail').click();
 
-																if ($showMoreButton) {
+																	var experienceTitle;
+																	var experienceCompanyName;
+																	var experienceDescription;
+																	var experienceLocation
+																	var experienceStartDate;
+																	var experienceEndDate;
 
-																	$showMoreButton.click();
+																	var $showMoreButton = $(this).find('button.pv-profile-section__show-more-detail');
+
+																	if ($showMoreButton) {
+
+																		$showMoreButton.click();
+
+																		setTimeout(function () {
+
+																			var $experienceDescription = $entry.find('.pv-entity__description');
+
+																			if ($experienceDescription) {
+
+																				experienceDescription = $experienceDescription
+																					.clone() //clone the element
+																					.children() //select all the children
+																					.remove() //remove all the children
+																					.end() //again go back to selected element
+																					.text();
+
+																				function myTrim(x) {
+																					return x.replace(/^\s+|\s+$/gm, '');
+																				}
+
+																				experienceDescription = myTrim(experienceDescription);
+																				experienceDescription = decodeHtml(experienceDescription);
+																				experienceDescription = experienceDescription.replace(/(<br>)+/g, '\n ');
+
+																				if (experienceDescription.trim()) {
+
+																					// console.log(experienceDescription);
+
+																				}
+
+																			} else {
+
+																				console.log('No Experience description...');
+
+																			}
+
+																		}, 400);
+
+																	}
 
 																	setTimeout(function () {
 
-																		var experienceTitle;
-																		var experienceCompanyName;
-																		var experienceDescription;
-																		var experienceStartDate;
-																		var experienceEndDate;
-
 																		var $experienceTitle = $entry.find('.pv-entity__summary-info > h3');
 																		var $experienceCompanyName = $entry.find('.pv-entity__summary-info > h4 > .pv-entity__secondary-title');
-																		var $experienceDescription = $entry.find('.pv-entity__description');
-																		var $experienceDateRange = $entry.find('.pv-entity__date-range');
-
-																		var current = 0;
+																		var $experienceLocation = $entry.find('.pv-entity__summary-info > h4.pv-entity__location > span:not(.visually-hidden)');
+																		var $experienceDateRange = $entry.find('.pv-entity__summary-info > h4.pv-entity__date-range > span:not(.visually-hidden)');
 
 																		if ($experienceTitle) {
 
@@ -907,195 +950,257 @@ console.log('RAMP loaded');
 
 																		}
 
-																		if ($experienceDescription) {
+																		if ($experienceLocation) {
 
-																			experienceDescription = $experienceDescription
-																				.clone() //clone the element
-																				.children() //select all the children
-																				.remove() //remove all the children
-																				.end() //again go back to selected element
-																				.text();
-
-																			function myTrim(x) {
-																				return x.replace(/^\s+|\s+$/gm, '');
-																			}
-
-																			experienceDescription = myTrim(experienceDescription);
-																			experienceDescription = decodeHtml(experienceDescription);
-																			experienceDescription = experienceDescription.replace(/(<br>)+/g, '\n ');
-
-																			// console.log(experienceDescription);
+																			experienceLocation = $experienceLocation.text();
 
 																		}
 
 																		if ($experienceDateRange) {
 
+																			var experienceDateRange = $experienceDateRange.text();
+
+																			// console.log(experienceDateRange);
+
 																			$experienceDateRange.each(function (index) {
 
-																				var $experienceDates = $experienceDateRange.find('time');
+																				if (experienceDateRange.indexOf(' – ') > -1) {
 
-																				var experienceDateLength = 0;
+																					var experienceDatesSplit = experienceDateRange.split(' – ');
 
-																				$experienceDates.each(function (index) {
+																				} else if (experienceDateRange.indexOf(' - ') > -1) {
 
-																					experienceDateLength++
+																					var experienceDatesSplit = experienceDateRange.split(' - ');
+
+																				}
+
+																				var experienceDateStart = experienceDatesSplit[0];
+																				var experienceDateEnd = experienceDatesSplit[1];
+
+																				// console.log(experienceDateStart);
+																				// console.log(experienceDateEnd);
+
+																				var experienceDates = [];
+
+																				experienceDates.push(experienceDateStart);
+																				experienceDates.push(experienceDateEnd);
+
+																				// console.log(experienceDates);
+
+																				// var experienceDateLength = 0;
+
+																				var current = 0;
+
+																				$.each(experienceDates, function (index, value) {
+
+																					// experienceDateLength++
 
 																					// console.log(index + ": " + $(this).text());
+																					// console.log('index, value', index, value);
 
-																					var experienceDate = $(this).text();
+																					// var experienceDate = $(this).text();
 
-																					var experienceDateSplit = experienceDate.split(' ');
+																					var experienceDateSplit = value.split(' ');
 																					var experienceMonth = experienceDateSplit[0];
 																					var experienceYear = experienceDateSplit[1];
 
-																					if (experienceMonth === 'Jan') {
+																					function setExperienceMonth() {
 
-																						experienceMonth = '01';
+																						if (experienceMonth === 'Jan') {
 
-																					} else if (experienceMonth === 'Feb') {
+																							experienceMonth = '01';
 
-																						experienceMonth = '02';
+																						} else if (experienceMonth === 'Feb') {
 
-																					} else if (experienceMonth === 'Mar') {
+																							experienceMonth = '02';
 
-																						experienceMonth = '03';
+																						} else if (experienceMonth === 'Mar') {
 
-																					} else if (experienceMonth === 'Apr') {
+																							experienceMonth = '03';
 
-																						experienceMonth = '04';
+																						} else if (experienceMonth === 'Apr') {
 
-																					} else if (experienceMonth === 'May') {
+																							experienceMonth = '04';
 
-																						experienceMonth = '05';
+																						} else if (experienceMonth === 'May') {
 
-																					} else if (experienceMonth === 'Jun') {
+																							experienceMonth = '05';
 
-																						experienceMonth = '06';
+																						} else if (experienceMonth === 'Jun') {
 
-																					} else if (experienceMonth === 'Jul') {
+																							experienceMonth = '06';
 
-																						experienceMonth = '07';
+																						} else if (experienceMonth === 'Jul') {
 
-																					} else if (experienceMonth === 'Aug') {
+																							experienceMonth = '07';
 
-																						experienceMonth = '08';
+																						} else if (experienceMonth === 'Aug') {
 
-																					} else if (experienceMonth === 'Sep') {
+																							experienceMonth = '08';
 
-																						experienceMonth = '09';
+																						} else if (experienceMonth === 'Sep') {
 
-																					} else if (experienceMonth === 'Oct') {
+																							experienceMonth = '09';
 
-																						experienceMonth = '10';
+																						} else if (experienceMonth === 'Oct') {
 
-																					} else if (experienceMonth === 'Nov') {
+																							experienceMonth = '10';
 
-																						experienceMonth = '11';
+																						} else if (experienceMonth === 'Nov') {
 
-																					} else if (experienceMonth === 'Dec') {
+																							experienceMonth = '11';
 
-																						experienceMonth = '12';
+																						} else if (experienceMonth === 'Dec') {
 
-																					} else if (experienceMonth === 'jan.') {
+																							experienceMonth = '12';
 
-																						experienceMonth = '01';
+																						} else if (experienceMonth === 'jan.') {
 
-																					} else if (experienceMonth === 'feb.') {
+																							experienceMonth = '01';
 
-																						experienceMonth = '02';
+																						} else if (experienceMonth === 'feb.') {
 
-																					} else if (experienceMonth === 'mar.') {
+																							experienceMonth = '02';
 
-																						experienceMonth = '03';
+																						} else if (experienceMonth === 'mar.') {
 
-																					} else if (experienceMonth === 'apr.') {
+																							experienceMonth = '03';
 
-																						experienceMonth = '04';
+																						} else if (experienceMonth === 'apr.') {
 
-																					} else if (experienceMonth === 'mai.') {
+																							experienceMonth = '04';
 
-																						experienceMonth = '05';
+																						} else if (experienceMonth === 'mai.') {
 
-																					} else if (experienceMonth === 'jun.') {
+																							experienceMonth = '05';
 
-																						experienceMonth = '06';
+																						} else if (experienceMonth === 'jun.') {
 
-																					} else if (experienceMonth === 'jul.') {
+																							experienceMonth = '06';
 
-																						experienceMonth = '07';
+																						} else if (experienceMonth === 'jul.') {
 
-																					} else if (experienceMonth === 'aug.') {
+																							experienceMonth = '07';
 
-																						experienceMonth = '08';
+																						} else if (experienceMonth === 'aug.') {
 
-																					} else if (experienceMonth === 'sep.') {
+																							experienceMonth = '08';
 
-																						experienceMonth = '09';
+																						} else if (experienceMonth === 'sep.') {
 
-																					} else if (experienceMonth === 'okt.') {
+																							experienceMonth = '09';
 
-																						experienceMonth = '10';
+																						} else if (experienceMonth === 'okt.') {
 
-																					} else if (experienceMonth === 'nov.') {
+																							experienceMonth = '10';
 
-																						experienceMonth = '11';
+																						} else if (experienceMonth === 'nov.') {
 
-																					} else if (experienceMonth === 'des.') {
+																							experienceMonth = '11';
 
-																						experienceMonth = '12';
+																						} else if (experienceMonth === 'des.') {
+
+																							experienceMonth = '12';
+
+																						}
+
+																						if (index === 0) {
+
+																							experienceStartDate = '01.' + experienceMonth + '.' + experienceYear;
+
+																						} else if (index === 1) {
+
+																							experienceEndDate = '01.' + experienceMonth + '.' + experienceYear;
+
+																						}
 
 																					}
 
-																					if (index === 0) {
+																					if (experienceMonth == 'Present' || value == 'nå') {
 
-																						experienceStartDate = '01.' + experienceMonth + '.' + experienceYear;
+																						current = 1;
 
-																					} else if (index === 1) {
+																						experienceEndDate = null;
 
-																						experienceEndDate = '01.' + experienceMonth + '.' + experienceYear;
+																					} else {
+
+																						setExperienceMonth();
 
 																					}
+
+																					// console.log(experienceDateLength);
+
+																					// if (experienceDateLength === 1) {
+																					//
+																					// 	current = 1;
+																					//
+																					// } else if (experienceDateLength === 2) {
+																					//
+																					// 	current = 0;
+																					//
+																					// }
 
 																				});
 
-																				// console.log(experienceDateLength);
+																				experience.push({
+																					title: experienceTitle,
+																					companyName: experienceCompanyName,
+																					location: experienceLocation,
+																					startDate: experienceStartDate,
+																					endDate: experienceEndDate,
+																					description: experienceDescription,
+																					current: current,
+																				});
 
-																				if (experienceDateLength === 1) {
-
-																					current = 1;
-
-
-																				} else if (experienceDateLength === 2) {
-
-																					current = 0;
-
-																				}
+																				// console.log(experience);
 
 																			});
 
 																		}
 
-																		experience.push({
-																			title: experienceTitle,
-																			companyName: experienceCompanyName,
-																			// location: location,
-																			startDate: experienceStartDate,
-																			endDate: experienceEndDate,
-																			description: experienceDescription,
-																			current: current,
-																		});
+																		// experience.push({
+																		// 	title: experienceTitle,
+																		// 	companyName: experienceCompanyName,
+																		// 	// location: location,
+																		// 	startDate: experienceStartDate,
+																		// 	endDate: experienceEndDate,
+																		// 	description: experienceDescription,
+																		// 	current: current,
+																		// });
 
 																		// console.log(experience);
 
 																	}, 500);
 
-																}
+																});
 
-															});
+																// console.log(experience);
+
+															} else {
+
+																console.warn('Sorry, no Experience to scrape...');
+
+															}
+
+														}
+
+														if ('button.pv-profile-section__see-more-inline') {
+
+															var $seeMorePositionsButton = $('button.pv-profile-section__see-more-inline');
+
+															console.log('click seeMorePositionsButton');
+
+															$seeMorePositionsButton.click();
+
+															setTimeout(function () {
+
+																fetchExperiences();
+
+															}, 500);
 
 														} else {
 
-															console.warn('Sorry, no Experience to scrape...');
+															fetchExperiences()
 
 														}
 
@@ -1103,90 +1208,38 @@ console.log('RAMP loaded');
 
 													if (json.content.Experience) {
 
-														if (json.content.Experience.positionsMpr) {
+														if (json.content.Experience.positionsMpr && json.content.Experience.positionsMpr.positions) {
 
-															if (json.content.Experience.positionsMpr.positions) {
-
-																$.each(json.content.Experience.positionsMpr.positions, function (key, value) {
-
-																	var companyName = value.companyName;
-																	var title = value.title;
-																	var location = value.fmt_location;
-																	var description = value.summary_lb;
-																	var current = 1;
-
-																	if (value.hasOwnProperty('summary_lb')) {
-																		description = decodeHtml(description);
-																		description = description.replace(/(<br>)+/g, '\n');
-																	}
-
-																	if (value.startDate) {
-																		if (value.startDate.isMonthDefined === true) {
-																			var startdate_iso = value.startdate_iso.split('-');
-																			var startDate = startdate_iso[2] + '.' + startdate_iso[1] + '.' + startdate_iso[0];
-																		} else {
-																			var startDate = '01.01.' + value.startDate.year;
-																		}
-																	}
-
-																	if (value.endDate) {
-																		if (value.enddate_iso === undefined) {
-																			current = 1;
-																		} else {
-																			current = 0;
-																			if (value.endDate.isMonthDefined === true) {
-																				var enddate_iso = value.enddate_iso.split('-');
-																				var endDate = enddate_iso[2] + '.' + enddate_iso[1] + '.' + enddate_iso[0];
-																			} else {
-																				var endDate = '01.01.' + value.endDate.year;
-																			}
-																		}
-																	}
-
-																	experience.push({
-																		companyName: companyName,
-																		title: title,
-																		location: location,
-																		startDate: startDate,
-																		endDate: endDate,
-																		description: description,
-																		current: current,
-																	})
-
-																});
-
-															}
-
-														}
-
-														// console.log(experience);
-
-													} else if (json.content.TopCard && json.content.TopCard.positionsMpr) {
-
-														if (json.content.TopCard.positionsMpr.positions) {
-
-															$.each(json.content.TopCard.positionsMpr.positions, function (key, value) {
+															$.each(json.content.Experience.positionsMpr.positions, function (key, value) {
 
 																var companyName = value.companyName;
 																var title = value.title;
-																var location = value.locationName;
+																var location = value.fmt_location;
+																var description = value.summary_lb;
 																var current = 1;
+
+																if (value.hasOwnProperty('summary_lb')) {
+																	description = decodeHtml(description);
+																	description = description.replace(/(<br>)+/g, '\n');
+																}
 
 																if (value.startDate) {
 																	if (value.startDate.isMonthDefined === true) {
-																		var startDate = '01' + '.' + value.startDate.month + '.' + value.startDate.year;
+																		var startdate_iso = value.startdate_iso.split('-');
+																		var startDate = startdate_iso[2] + '.' + startdate_iso[1] + '.' + startdate_iso[0];
 																	} else {
 																		var startDate = '01.01.' + value.startDate.year;
 																	}
 																}
 
 																if (value.endDate) {
-																	if (value.endDate.year === undefined) {
+																	if (value.enddate_iso === undefined) {
 																		current = 1;
 																	} else {
 																		current = 0;
 																		if (value.endDate.isMonthDefined === true) {
-																			var endDate = '01' + '.' + value.endDate.month + '.' + value.endDate.year;
+																			var enddate_iso = value.enddate_iso.split('-');
+																			var endDate = enddate_iso[2] + '.' + enddate_iso[1] + '.' + enddate_iso[0];
 																		} else {
 																			var endDate = '01.01.' + value.endDate.year;
 																		}
@@ -1199,11 +1252,61 @@ console.log('RAMP loaded');
 																	location: location,
 																	startDate: startDate,
 																	endDate: endDate,
+																	description: description,
 																	current: current,
 																})
 
 															});
 
+														} else if (json.content.TopCard && json.content.TopCard.positionsMpr) {
+
+															if (json.content.TopCard.positionsMpr.positions) {
+
+																$.each(json.content.TopCard.positionsMpr.positions, function (key, value) {
+
+																	var companyName = value.companyName;
+																	var title = value.title;
+																	var location = value.locationName;
+																	var current = 1;
+
+																	if (value.startDate) {
+																		if (value.startDate.isMonthDefined === true) {
+																			var startDate = '01' + '.' + value.startDate.month + '.' + value.startDate.year;
+																		} else {
+																			var startDate = '01.01.' + value.startDate.year;
+																		}
+																	}
+
+																	if (value.endDate) {
+																		if (value.endDate.year === undefined) {
+																			current = 1;
+																		} else {
+																			current = 0;
+																			if (value.endDate.isMonthDefined === true) {
+																				var endDate = '01' + '.' + value.endDate.month + '.' + value.endDate.year;
+																			} else {
+																				var endDate = '01.01.' + value.endDate.year;
+																			}
+																		}
+																	}
+
+																	experience.push({
+																		companyName: companyName,
+																		title: title,
+																		location: location,
+																		startDate: startDate,
+																		endDate: endDate,
+																		current: current,
+																	})
+
+																});
+
+
+															} else {
+
+																RAMP.scrapeExperiences();
+
+															}
 
 														} else {
 
@@ -1217,58 +1320,333 @@ console.log('RAMP loaded');
 
 													}
 
-													// console.log(experience);
-
 													/**
 													 * Get and push Educations.
 													 */
 
-													if (json.content.Education) {
+													RAMP.scrapeEducations = function () {
 
-														if (json.content.Education.educationsMpr) {
+														if ('li.pv-education-entity') {
 
-															if (json.content.Education.educationsMpr.educations) {
+															console.warn('Could not fetch Education data automaticly. Initiating manuall scraping...');
 
-																$.each(json.content.Education.educationsMpr.educations, function (key, value) {
+															// 	$('li.position-entity').each(function (index) {
+															//
+															// 		var $entry = $(this);
+															//
+															// 		// $(this).find('button.pv-profile-section__show-more-detail').click();
+															//
+															// 		var $showMoreButton = $(this).find('button.pv-profile-section__show-more-detail');
+															//
+															// 		if ($showMoreButton) {
+															//
+															// 			$showMoreButton.click();
+															//
+															// 			setTimeout(function () {
+															//
+															// 				var experienceTitle;
+															// 				var experienceCompanyName;
+															// 				var experienceDescription;
+															// 				var experienceStartDate;
+															// 				var experienceEndDate;
+															//
+															// 				var $experienceTitle = $entry.find('.pv-entity__summary-info > h3');
+															// 				var $experienceCompanyName = $entry.find('.pv-entity__summary-info > h4 > .pv-entity__secondary-title');
+															// 				var $experienceDescription = $entry.find('.pv-entity__description');
+															// 				var $experienceDateRange = $entry.find('.pv-entity__date-range');
+															//
+															// 				var current = 0;
+															//
+															// 				if ($experienceTitle) {
+															//
+															// 					experienceTitle = $experienceTitle.text();
+															//
+															// 				}
+															//
+															// 				if ($experienceCompanyName) {
+															//
+															// 					experienceCompanyName = $experienceCompanyName.text();
+															//
+															// 				}
+															//
+															// 				if ($experienceDescription) {
+															//
+															// 					experienceDescription = $experienceDescription
+															// 						.clone() //clone the element
+															// 						.children() //select all the children
+															// 						.remove() //remove all the children
+															// 						.end() //again go back to selected element
+															// 						.text();
+															//
+															// 					function myTrim(x) {
+															// 						return x.replace(/^\s+|\s+$/gm, '');
+															// 					}
+															//
+															// 					experienceDescription = myTrim(experienceDescription);
+															// 					experienceDescription = decodeHtml(experienceDescription);
+															// 					experienceDescription = experienceDescription.replace(/(<br>)+/g, '\n ');
+															//
+															// 					// console.log(experienceDescription);
+															//
+															// 				}
+															//
+															// 				if ($experienceDateRange) {
+															//
+															// 					$experienceDateRange.each(function (index) {
+															//
+															// 						var $experienceDates = $experienceDateRange.find('time');
+															//
+															// 						var experienceDateLength = 0;
+															//
+															// 						$experienceDates.each(function (index) {
+															//
+															// 							experienceDateLength++
+															//
+															// 							// console.log(index + ": " + $(this).text());
+															//
+															// 							var experienceDate = $(this).text();
+															//
+															// 							var experienceDateSplit = experienceDate.split(' ');
+															// 							var experienceMonth = experienceDateSplit[0];
+															// 							var experienceYear = experienceDateSplit[1];
+															//
+															// 							if (experienceMonth === 'Jan') {
+															//
+															// 								experienceMonth = '01';
+															//
+															// 							} else if (experienceMonth === 'Feb') {
+															//
+															// 								experienceMonth = '02';
+															//
+															// 							} else if (experienceMonth === 'Mar') {
+															//
+															// 								experienceMonth = '03';
+															//
+															// 							} else if (experienceMonth === 'Apr') {
+															//
+															// 								experienceMonth = '04';
+															//
+															// 							} else if (experienceMonth === 'May') {
+															//
+															// 								experienceMonth = '05';
+															//
+															// 							} else if (experienceMonth === 'Jun') {
+															//
+															// 								experienceMonth = '06';
+															//
+															// 							} else if (experienceMonth === 'Jul') {
+															//
+															// 								experienceMonth = '07';
+															//
+															// 							} else if (experienceMonth === 'Aug') {
+															//
+															// 								experienceMonth = '08';
+															//
+															// 							} else if (experienceMonth === 'Sep') {
+															//
+															// 								experienceMonth = '09';
+															//
+															// 							} else if (experienceMonth === 'Oct') {
+															//
+															// 								experienceMonth = '10';
+															//
+															// 							} else if (experienceMonth === 'Nov') {
+															//
+															// 								experienceMonth = '11';
+															//
+															// 							} else if (experienceMonth === 'Dec') {
+															//
+															// 								experienceMonth = '12';
+															//
+															// 							} else if (experienceMonth === 'jan.') {
+															//
+															// 								experienceMonth = '01';
+															//
+															// 							} else if (experienceMonth === 'feb.') {
+															//
+															// 								experienceMonth = '02';
+															//
+															// 							} else if (experienceMonth === 'mar.') {
+															//
+															// 								experienceMonth = '03';
+															//
+															// 							} else if (experienceMonth === 'apr.') {
+															//
+															// 								experienceMonth = '04';
+															//
+															// 							} else if (experienceMonth === 'mai.') {
+															//
+															// 								experienceMonth = '05';
+															//
+															// 							} else if (experienceMonth === 'jun.') {
+															//
+															// 								experienceMonth = '06';
+															//
+															// 							} else if (experienceMonth === 'jul.') {
+															//
+															// 								experienceMonth = '07';
+															//
+															// 							} else if (experienceMonth === 'aug.') {
+															//
+															// 								experienceMonth = '08';
+															//
+															// 							} else if (experienceMonth === 'sep.') {
+															//
+															// 								experienceMonth = '09';
+															//
+															// 							} else if (experienceMonth === 'okt.') {
+															//
+															// 								experienceMonth = '10';
+															//
+															// 							} else if (experienceMonth === 'nov.') {
+															//
+															// 								experienceMonth = '11';
+															//
+															// 							} else if (experienceMonth === 'des.') {
+															//
+															// 								experienceMonth = '12';
+															//
+															// 							}
+															//
+															// 							if (index === 0) {
+															//
+															// 								experienceStartDate = '01.' + experienceMonth + '.' + experienceYear;
+															//
+															// 							} else if (index === 1) {
+															//
+															// 								experienceEndDate = '01.' + experienceMonth + '.' + experienceYear;
+															//
+															// 							}
+															//
+															// 						});
+															//
+															// 						// console.log(experienceDateLength);
+															//
+															// 						if (experienceDateLength === 1) {
+															//
+															// 							current = 1;
+															//
+															//
+															// 						} else if (experienceDateLength === 2) {
+															//
+															// 							current = 0;
+															//
+															// 						}
+															//
+															// 					});
+															//
+															// 				}
+															//
+															// 				experience.push({
+															// 					title: experienceTitle,
+															// 					companyName: experienceCompanyName,
+															// 					// location: location,
+															// 					startDate: experienceStartDate,
+															// 					endDate: experienceEndDate,
+															// 					description: experienceDescription,
+															// 					current: current,
+															// 				});
+															//
+															// 				// console.log(experience);
+															//
+															// 			}, 500);
+															//
+															// 		}
+															//
+															// 	});
 
-																	var schoolName = value.schoolName;
-																	var eudcationType = value.fieldOfStudy;
-																	var degree = value.degree;
-																	var description = value.summary_lb;
+														} else {
 
-																	// console.log(eudcationType);
+															console.warn('Sorry, no Education to scrape...');
 
-																	if (value.hasOwnProperty('summary_lb')) {
-																		description = decodeHtml(description);
-																		description = description.replace(/(<br>)+/g, '\n');
-																	}
+														}
 
-																	if (value.hasOwnProperty('startDate') && value.startDate.isMonthDefined === true) {
-																		var startDate = '15.' + value.startDate.month + '.' + value.startDate.year;
-																	} else if (value.hasOwnProperty('startDate')) {
+													}
+
+													if (json.content.Education && json.content.Education.educationsMpr) {
+
+														if (json.content.Education.educationsMpr.educations) {
+
+															$.each(json.content.Education.educationsMpr.educations, function (key, value) {
+
+																var schoolName = value.schoolName;
+																var eudcationType = value.fieldOfStudy;
+																var degree = value.degree;
+																var description = value.summary_lb;
+
+																// console.log(eudcationType);
+
+																if (value.hasOwnProperty('summary_lb')) {
+																	description = decodeHtml(description);
+																	description = description.replace(/(<br>)+/g, '\n');
+																}
+
+																if (value.hasOwnProperty('startDate') && value.startDate.isMonthDefined === true) {
+																	var startDate = '15.' + value.startDate.month + '.' + value.startDate.year;
+																} else if (value.hasOwnProperty('startDate')) {
+																	var startDate = '15.08.' + value.startDate.year;
+																}
+
+																if (value.hasOwnProperty('endDate') && value.endDate.isMonthDefined === true) {
+																	var endDate = '15.' + value.endDate.month + '.' + value.endDate.year;
+																} else if (value.hasOwnProperty('endDate')) {
+																	var endDate = '15.06.' + value.endDate.year;
+																}
+
+																education.push({
+																	schoolName: schoolName,
+																	eudcationType: eudcationType,
+																	degree: degree,
+																	startDate: startDate,
+																	endDate: endDate,
+																	description: description,
+																})
+
+															});
+
+														} else if (json.content.Education.educationsMpr.topEducations) {
+
+															$.each(json.content.Education.educationsMpr.topEducations, function (key, value) {
+
+																var schoolName = value.schoolName;
+																var eudcationType = value.fieldOfStudy;
+																var degree = value.degree;
+																var current = 1;
+
+																if (value.startDate) {
+																	if (value.startDate.isMonthDefined === true) {
+																		var startDate = '15' + '.' + value.startDate.month + '.' + value.startDate.year;
+																	} else {
 																		var startDate = '15.08.' + value.startDate.year;
 																	}
+																}
 
-																	if (value.hasOwnProperty('endDate') && value.endDate.isMonthDefined === true) {
-																		var endDate = '15.' + value.endDate.month + '.' + value.endDate.year;
-																	} else if (value.hasOwnProperty('endDate')) {
-																		var endDate = '15.06.' + value.endDate.year;
+																if (value.endDate) {
+																	if (value.endDate.year === undefined) {
+																		current = 1;
+																	} else {
+																		current = 0;
+																		if (value.endDate.isMonthDefined === true) {
+																			var endDate = '15' + '.' + value.endDate.month + '.' + value.endDate.year;
+																		} else {
+																			var endDate = '15.06.' + value.endDate.year;
+																		}
 																	}
+																}
 
-																	education.push({
-																		schoolName: schoolName,
-																		eudcationType: eudcationType,
-																		degree: degree,
-																		startDate: startDate,
-																		endDate: endDate,
-																		description: description,
-																	})
+																education.push({
+																	schoolName: schoolName,
+																	eudcationType: eudcationType,
+																	degree: degree,
+																	startDate: startDate,
+																	endDate: endDate,
+																})
 
-																});
+															});
 
-															} else if (json.content.Education.educationsMpr.topEducations) {
+															if (json.content.Education.educationsMpr.moreEducations) {
 
-																$.each(json.content.Education.educationsMpr.topEducations, function (key, value) {
+																$.each(json.content.Education.educationsMpr.moreEducations, function (key, value) {
 
 																	var schoolName = value.schoolName;
 																	var eudcationType = value.fieldOfStudy;
@@ -1306,198 +1684,152 @@ console.log('RAMP loaded');
 
 																});
 
-																if (json.content.Education.educationsMpr.moreEducations) {
+															}
 
-																	$.each(json.content.Education.educationsMpr.moreEducations, function (key, value) {
+														} else if (json.content.TopCard && json.content.TopCard.educationsMpr) {
 
-																		var schoolName = value.schoolName;
-																		var eudcationType = value.fieldOfStudy;
-																		var degree = value.degree;
-																		var current = 1;
+															if (json.content.TopCard.educationsMpr.educations) {
 
-																		if (value.startDate) {
-																			if (value.startDate.isMonthDefined === true) {
-																				var startDate = '15' + '.' + value.startDate.month + '.' + value.startDate.year;
-																			} else {
-																				var startDate = '15.08.' + value.startDate.year;
-																			}
+																$.each(json.content.TopCard.educationsMpr.educations, function (key, value) {
+
+																	var schoolName = value.schoolName;
+																	var eudcationType = value.fieldOfStudy;
+																	var degree = value.degree;
+																	var current = 1;
+
+																	if (value.startDate) {
+																		if (value.startDate.isMonthDefined === true) {
+																			var startDate = '15' + '.' + value.startDate.month + '.' + value.startDate.year;
+																		} else {
+																			var startDate = '15.08.' + value.startDate.year;
 																		}
-
-																		if (value.endDate) {
-																			if (value.endDate.year === undefined) {
-																				current = 1;
-																			} else {
-																				current = 0;
-																				if (value.endDate.isMonthDefined === true) {
-																					var endDate = '15' + '.' + value.endDate.month + '.' + value.endDate.year;
-																				} else {
-																					var endDate = '15.06.' + value.endDate.year;
-																				}
-																			}
-																		}
-
-																		education.push({
-																			schoolName: schoolName,
-																			eudcationType: eudcationType,
-																			degree: degree,
-																			startDate: startDate,
-																			endDate: endDate,
-																		})
-
-																	});
-
-																}
-
-															} else if (json.content.TopCard && json.content.TopCard.educationsMpr) {
-
-																if (json.content.TopCard.educationsMpr.educations) {
-
-																	$.each(json.content.TopCard.educationsMpr.educations, function (key, value) {
-
-																		var schoolName = value.schoolName;
-																		var eudcationType = value.fieldOfStudy;
-																		var degree = value.degree;
-																		var current = 1;
-
-																		if (value.startDate) {
-																			if (value.startDate.isMonthDefined === true) {
-																				var startDate = '15' + '.' + value.startDate.month + '.' + value.startDate.year;
-																			} else {
-																				var startDate = '15.08.' + value.startDate.year;
-																			}
-																		}
-
-																		if (value.endDate) {
-																			if (value.endDate.year === undefined) {
-																				current = 1;
-																			} else {
-																				current = 0;
-																				if (value.endDate.isMonthDefined === true) {
-																					var endDate = '15' + '.' + value.endDate.month + '.' + value.endDate.year;
-																				} else {
-																					var endDate = '15.06.' + value.endDate.year;
-																				}
-																			}
-																		}
-
-																		education.push({
-																			schoolName: schoolName,
-																			eudcationType: eudcationType,
-																			degree: degree,
-																			startDate: startDate,
-																			endDate: endDate,
-																		})
-
-																	});
-
-
-																} else if (json.content.TopCard.educationsMpr.topEducations) {
-
-																	$.each(json.content.TopCard.educationsMpr.topEducations, function (key, value) {
-
-																		var schoolName = value.schoolName;
-																		var eudcationType = value.fieldOfStudy;
-																		var degree = value.degree;
-																		var current = 1;
-
-																		if (value.startDate) {
-																			if (value.startDate.isMonthDefined === true) {
-																				var startDate = '15' + '.' + value.startDate.month + '.' + value.startDate.year;
-																			} else {
-																				var startDate = '15.08.' + value.startDate.year;
-																			}
-																		}
-
-																		if (value.endDate) {
-																			if (value.endDate.year === undefined) {
-																				current = 1;
-																			} else {
-																				current = 0;
-																				if (value.endDate.isMonthDefined === true) {
-																					var endDate = '15' + '.' + value.endDate.month + '.' + value.endDate.year;
-																				} else {
-																					var endDate = '15.06.' + value.endDate.year;
-																				}
-																			}
-																		}
-
-																		education.push({
-																			schoolName: schoolName,
-																			eudcationType: eudcationType,
-																			degree: degree,
-																			startDate: startDate,
-																			endDate: endDate,
-																		})
-
-																	});
-
-																	if (json.content.TopCard.educationsMpr.moreEducations) {
-
-																		$.each(json.content.TopCard.educationsMpr.moreEducations, function (key, value) {
-
-																			var schoolName = value.schoolName;
-																			var eudcationType = value.fieldOfStudy;
-																			var degree = value.degree;
-																			var current = 1;
-
-																			if (value.startDate) {
-																				if (value.startDate.isMonthDefined === true) {
-																					var startDate = '15' + '.' + value.startDate.month + '.' + value.startDate.year;
-																				} else {
-																					var startDate = '15.08.' + value.startDate.year;
-																				}
-																			}
-
-																			if (value.endDate) {
-																				if (value.endDate.year === undefined) {
-																					current = 1;
-																				} else {
-																					current = 0;
-																					if (value.endDate.isMonthDefined === true) {
-																						var endDate = '15' + '.' + value.endDate.month + '.' + value.endDate.year;
-																					} else {
-																						var endDate = '15.06.' + value.endDate.year;
-																					}
-																				}
-																			}
-
-																			education.push({
-																				schoolName: schoolName,
-																				educationType: educationType,
-																				degree: degree,
-																				startDate: startDate,
-																				endDate: endDate,
-																			})
-
-																		});
-
 																	}
 
-																} else {
+																	if (value.endDate) {
+																		if (value.endDate.year === undefined) {
+																			current = 1;
+																		} else {
+																			current = 0;
+																			if (value.endDate.isMonthDefined === true) {
+																				var endDate = '15' + '.' + value.endDate.month + '.' + value.endDate.year;
+																			} else {
+																				var endDate = '15.06.' + value.endDate.year;
+																			}
+																		}
+																	}
 
-																	RAMP.scrapeEducation();
+																	education.push({
+																		schoolName: schoolName,
+																		eudcationType: eudcationType,
+																		degree: degree,
+																		startDate: startDate,
+																		endDate: endDate,
+																	})
+
+																});
+
+
+															} else if (json.content.TopCard.educationsMpr.topEducations) {
+
+																$.each(json.content.TopCard.educationsMpr.topEducations, function (key, value) {
+
+																	var schoolName = value.schoolName;
+																	var eudcationType = value.fieldOfStudy;
+																	var degree = value.degree;
+																	var current = 1;
+
+																	if (value.startDate) {
+																		if (value.startDate.isMonthDefined === true) {
+																			var startDate = '15' + '.' + value.startDate.month + '.' + value.startDate.year;
+																		} else {
+																			var startDate = '15.08.' + value.startDate.year;
+																		}
+																	}
+
+																	if (value.endDate) {
+																		if (value.endDate.year === undefined) {
+																			current = 1;
+																		} else {
+																			current = 0;
+																			if (value.endDate.isMonthDefined === true) {
+																				var endDate = '15' + '.' + value.endDate.month + '.' + value.endDate.year;
+																			} else {
+																				var endDate = '15.06.' + value.endDate.year;
+																			}
+																		}
+																	}
+
+																	education.push({
+																		schoolName: schoolName,
+																		eudcationType: eudcationType,
+																		degree: degree,
+																		startDate: startDate,
+																		endDate: endDate,
+																	})
+
+																});
+
+																if (json.content.TopCard.educationsMpr.moreEducations) {
+
+																	$.each(json.content.TopCard.educationsMpr.moreEducations, function (key, value) {
+
+																		var schoolName = value.schoolName;
+																		var eudcationType = value.fieldOfStudy;
+																		var degree = value.degree;
+																		var current = 1;
+
+																		if (value.startDate) {
+																			if (value.startDate.isMonthDefined === true) {
+																				var startDate = '15' + '.' + value.startDate.month + '.' + value.startDate.year;
+																			} else {
+																				var startDate = '15.08.' + value.startDate.year;
+																			}
+																		}
+
+																		if (value.endDate) {
+																			if (value.endDate.year === undefined) {
+																				current = 1;
+																			} else {
+																				current = 0;
+																				if (value.endDate.isMonthDefined === true) {
+																					var endDate = '15' + '.' + value.endDate.month + '.' + value.endDate.year;
+																				} else {
+																					var endDate = '15.06.' + value.endDate.year;
+																				}
+																			}
+																		}
+
+																		education.push({
+																			schoolName: schoolName,
+																			educationType: educationType,
+																			degree: degree,
+																			startDate: startDate,
+																			endDate: endDate,
+																		})
+
+																	});
 
 																}
 
 															} else {
 
-																RAMP.scrapeEducation();
+																RAMP.scrapeEducations();
 
 															}
 
 														} else {
 
-															RAMP.scrapeEducation();
+															RAMP.scrapeEducations();
 
 														}
 
 													} else {
 
-														RAMP.scrapeEducation();
+														RAMP.scrapeEducations();
 
 													}
 
-													console.log(education);
+													// console.log(education);
 
 													if (json.content.TopCard) {
 
@@ -1588,18 +1920,34 @@ console.log('RAMP loaded');
 
 													}
 
-													if (json.content.Skills.skillsMpr.skills) {
+													if (json.content.Skills) {
 
-														$.each(json.content.Skills.skillsMpr.skills, function (key, value) {
+														if (json.content.Skills.skillsMpr) {
 
-															skills.push({
-																'name': value.fmt__skill_name,
-																'rating': 0
-															})
+															if (json.content.Skills.skillsMpr.skills) {
 
-														});
+																$.each(json.content.Skills.skillsMpr.skills, function (key, value) {
 
-														// console.log(skills);
+																	skills.push({
+																		'name': value.fmt__skill_name,
+																		'rating': 0
+																	})
+
+																});
+
+																// console.log(skills);
+
+															} else {
+
+																RAMP.scrapeSkills();
+
+															}
+
+														} else {
+
+															RAMP.scrapeSkills();
+
+														}
 
 													} else {
 
@@ -1673,7 +2021,7 @@ console.log('RAMP loaded');
 
 													}
 
-													if (json.content.Languages.languages.languagesData) {
+													if (json.content.Languages && json.content.Languages.languages && json.content.Languages.languages.languagesData) {
 
 														var proficiency;
 
@@ -1748,7 +2096,7 @@ console.log('RAMP loaded');
 
 													}
 
-													if (json.content.Certifications.certsMpr.certifications) {
+													if (json.content.Certifications && json.content.Certifications.certsMpr && json.content.Certifications.certsMpr.certifications) {
 
 														$.each(json.content.Certifications.certsMpr.certifications, function (key, value) {
 
@@ -1921,7 +2269,8 @@ console.log('RAMP loaded');
 																			'profilePicture': profilePicture,
 																			'certifications': certifications,
 																			'languages': languages,
-																			'notes': notes
+																			'notes': notes,
+																			'tags': [2, 5]
 																		}
 																	};
 
@@ -1934,7 +2283,7 @@ console.log('RAMP loaded');
 																	// 	}
 																	// };
 
-																	console.log(candidateData);
+																	console.info(candidateData);
 
 																	var candidateData = JSON.stringify(candidateData);
 																	// var tagData = JSON.stringify(tagData);
@@ -1973,25 +2322,43 @@ console.log('RAMP loaded');
 																						if (response.success === true) {
 
 																							console.group('CANDIDATE EXPORT INITIATED');
-																							console.log(this.responseText);
+																							console.info(this.response);
+																							// console.info(this.responseText);
 
 																							var totalExportedLinkedInRef = firebase.database().ref('statistics/candidates/exported/LinkedIn');
+
 																							totalExportedLinkedInRef.transaction(function (currentExported) {
+
 																								return currentExported + 1;
+
 																							}, function (error, committed, snapshot) {
+
 																								if (error) {
+
 																									console.log('Transaction failed abnormally!', error);
+
 																								} else if (!committed) {
+
 																									console.log('We aborted the transaction (because ada already exists).');
+
 																								} else {
+
 																									var totalExportedRef = firebase.database().ref('statistics/candidates/exported/total');
+
 																									totalExportedRef.transaction(function (currentExported) {
+
 																										return currentExported + 1;
+
 																									}, function (error, committed, snapshot) {
+
 																										if (error) {
+
 																											console.log('Transaction failed abnormally!', error);
+
 																										} else if (!committed) {
+
 																											console.log('We aborted the transaction (because ada already exists).');
+
 																										} else {
 																											// setTimeout(function() {
 																											swal({
@@ -1999,16 +2366,22 @@ console.log('RAMP loaded');
 																												title: callback.dialog__text_plain__dialog_success_title_generic.message,
 																												text: candidateFirstName + ' ' + candidateLastName + ' ' + callback.dialog__text_plain__request_success_message.message + ' ' + callback.didialog__text_service__service_name_recruitmentmanager.message,
 																												timer: 3000
-																											})
+																											}).catch(swal.noop)
 																											// }, 2000)
 																											// console.log(candidateData);
 																											console.log('Total number of candidates added: ', snapshot.val());
 																										}
+
 																									});
+
 																									console.log('Total number of candidates added from LinkedIn: ', snapshot.val());
+
 																								}
+
 																							});
+
 																							console.groupEnd();
+
 																						} else if (response.success === false) {
 
 																							console.log(response);
@@ -2025,8 +2398,11 @@ console.log('RAMP loaded');
 																									cancelButtonText: callback.dialog__button_cancel__dialog_button_cancel.message,
 																									confirmButtonText: callback.dialog__button_confirm__dialog_button_try_again.message,
 																								}).then(function () {
+
 																									$('#send_to_rm').click();
+
 																								})
+
 																							}, 2000)
 
 																						} else {
@@ -2034,6 +2410,7 @@ console.log('RAMP loaded');
 																							console.log(response);
 
 																							setTimeout(function () {
+
 																								swal({
 																									type: 'error',
 																									title: callback.dialog__text_plain__dialog_error_title_generic.message,
@@ -2045,8 +2422,11 @@ console.log('RAMP loaded');
 																									cancelButtonText: callback.dialog__button_cancel__dialog_button_cancel.message,
 																									confirmButtonText: callback.dialog__button_confirm__dialog_button_try_again.message,
 																								}).then(function () {
+
 																									$('#send_to_rm').click();
+
 																								})
+
 																							}, 2000)
 
 																						}
@@ -2200,7 +2580,7 @@ console.log('RAMP loaded');
 				console.warn('Initializing page reloading...');
 				location.reload();
 			}
-		)
+		).catch(swal.noop)
 	}
 
 	RAMP.whoThatMember = function () {
