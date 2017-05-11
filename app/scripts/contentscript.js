@@ -2199,6 +2199,7 @@ console.log('RAMP loaded');
 															'base64': base64Img
 														};
 
+
 														console.log(profilePicture);
 														// console.log(profilePicture.extension);
 														// console.log(profilePicture.base64);
