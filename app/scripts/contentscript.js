@@ -1,4 +1,4 @@
-import $ from 'jquery';
+responseimport $ from 'jquery';
 import swal from 'sweetalert2';
 import * as firebase from 'firebase/app';
 import 'firebase/database';
@@ -411,6 +411,7 @@ console.log('RAMP loaded');
 			"languageName": "Greenlandic"
 		}
 	];
+	var candidateData;
 
 	RAMP.init = function () {
 
@@ -747,12 +748,12 @@ console.log('RAMP loaded');
 								if (inMemberObject === undefined) {
 									console.error('Error fetching "inMemberObject"...');
 									swal({
-										title: 'Oops...',
-										text: 'Something went wrong!',
-										type: 'error',
+										title: 'Working...',
+										text: 'Communicating with LinkedIn',
+										type: 'info',
 										allowOutsideClick: false,
 										allowEscapeKey: false,
-										confirmButtonText: 'Click to reload page',
+										confirmButtonText: 'Speed Up',
 										timer: 5000
 									}).then(
 										function () {
@@ -1861,6 +1862,8 @@ console.log('RAMP loaded');
 
 														if (json.content.TopCard.contact_info.hasOwnProperty('twitterAccounts')) {
 															twitter = 'https://twitter.com/' + json.content.TopCard.contact_info.twitterAccounts[0].twitterHandle;
+														} else {
+															twitter = null;
 														}
 
 														if (json.content.TopCard.contact_info.hasOwnProperty('websites')) {
@@ -2182,152 +2185,121 @@ console.log('RAMP loaded');
 														img.src = url;
 													}
 
+													// console.log(imageUrl);
+
 													toDataUrl(imageUrl, function (base64Img) {
+
+														// console.log(base64Img);
+
 														var base64ImgSplit = base64Img.split(',');
 														base64Img = base64ImgSplit[1];
 
-														chrome.storage.local.set({
-															'base64Img': base64Img
-														}, function () {
-															// Notify that we saved.
+														var profilePicture = {
+															'extension': profileImageExtension,
+															'base64': base64Img
+														};
 
-															chrome.storage.local.get('base64Img', function (result) {
-																console.log(result);
+														console.log(profilePicture);
+														// console.log(profilePicture.extension);
+														// console.log(profilePicture.base64);
 
-																var profilePicture = {
-																	'extension': profileImageExtension,
-																	'base64': result.base64Img
-																};
+														$('#send_to_rm').prop('disabled', false);
 
-																// var candidateData = {
-																// 	'key': storrageResult.apiKey,
-																// 	'scope': 'candidate',
-																// 	'operation': 'insert',
-																// 	'data': {
-																// 		// 'corporationId': 2,
-																// 		'corporationId': storrageResult.corporation_id,
-																// 		'connectDepartment': [storrageResult.department_id],
-																// 		'connectUser': [storrageResult.intercom_employeee_id],
-																// 		'firstName': candidateFirstName,
-																// 		'lastName': candidateLastName,
-																// 		'title': json.content.TopCard.basic_info.memberHeadline,
-																// 		'mobilePhone': mobilePhone,
-																// 		'email': email,
-																// 		'twitter': twitter,
-																// 		'web': web,
-																// 		'dob': dob,
-																// 		'description': summary,
-																// 		'linkedin': json.content.TopCard.public_url.canonicalUrl,
-																// 		'experience': experience,
-																// 		'education': education,
-																// 		'skills': skills,
-																// 		'profilePicture': profilePicture,
-																// 		// 'certifications': certifications,
-																// 		// 'languages': languages,
-																// 		'notes': notes
-																// 	}
-																// };
-																//
-																// // console.log(candidateData);
-																//
-																// var candidateData = JSON.stringify(candidateData);
-																//
-																// // console.log(candidateData);
+														// console.log('candidateData', candidateData);
 
-																$('#send_to_rm').prop('disabled', false);
+														$('#send_to_rm').on('click', function (e) {
 
-																// console.log(candidateData);
+															candidateData = {
+																'key': storrageResult.apiKey,
+																'scope': 'candidate',
+																'operation': 'insert',
+																'data': {
+																	'corporationId': storrageResult.corporation_id,
+																	'connectDepartment': [storrageResult.department_id],
+																	'connectUser': [storrageResult.intercom_employeee_id],
+																	'firstName': candidateFirstName,
+																	'lastName': candidateLastName,
+																	'title': json.content.TopCard.basic_info.memberHeadline,
+																	'mobilePhone': mobilePhone,
+																	'email': email,
+																	'twitter': twitter,
+																	'facebook': facebook,
+																	'web': web,
+																	'dob': dob,
+																	'description': summary[0],
+																	'linkedin': json.content.TopCard.public_url.canonicalUrl,
+																	'experience': experience,
+																	'education': education,
+																	'skills': skills,
+																	// 'profilePicture': profilePicture,
+																	'certifications': certifications,
+																	'languages': languages,
+																	'notes': notes,
+																}
+															};
 
-																// console.log(json.content.Skills.skillsMpr.skills);
+															console.info('candidateData', candidateData);
 
-																$('#send_to_rm').on('click', function (e) {
+															var candidateData = JSON.stringify(candidateData);
+															// var  candidateData = candidateData;
 
-																	// console.log(summary);
+															console.log('API Key: ' + storrageResult.apiKey);
+															console.log('Corporation ID: ' + storrageResult.corporation_id);
+															console.log('Department ID: ' + storrageResult.department_id);
+															console.log('User ID: ' + storrageResult.intercom_employeee_id);
 
-																	var candidateData = {
-																		'key': storrageResult.apiKey,
-																		'scope': 'candidate',
-																		'operation': 'insert',
-																		'data': {
-																			'corporationId': storrageResult.corporation_id,
-																			'connectDepartment': [storrageResult.department_id],
-																			'connectUser': [storrageResult.intercom_employeee_id],
-																			'firstName': candidateFirstName,
-																			'lastName': candidateLastName,
-																			'title': json.content.TopCard.basic_info.memberHeadline,
-																			'mobilePhone': mobilePhone,
-																			'email': email,
-																			'twitter': twitter,
-																			'facebook': facebook,
-																			'web': web,
-																			'dob': dob,
-																			'description': summary[0],
-																			'linkedin': json.content.TopCard.public_url.canonicalUrl,
-																			'experience': experience,
-																			'education': education,
-																			'skills': skills,
-																			'profilePicture': profilePicture,
-																			'certifications': certifications,
-																			'languages': languages,
-																			'notes': notes,
-																			'tags': [2, 5]
-																		}
-																	};
+															swal({
+																title: callback.dialog__text_plain__request_process_title_generic.message,
+																text: callback.dialog__text_plain__request_process_message_generic.message,
+																type: "info",
+																showLoaderOnConfirm: true,
+																onOpen: function () {
+																	swal.clickConfirm();
+																},
+																preConfirm: function () {
+																	return new Promise(function (resolve) {
 
-																	// var tagData = {
-																	// 	'key': storrageResult.apiKey,
-																	// 	'scope': 'tags',
-																	// 	'operation': 'insert',
-																	// 	'data': {
-																	// 		'name': 'RAMP'
-																	// 	}
-																	// };
+																		var xhr = new XMLHttpRequest();
+																		// xhr.withCredentials = true;
 
-																	console.info(candidateData);
+																		xhr.addEventListener('readystatechange', function () {
 
-																	var candidateData = JSON.stringify(candidateData);
-																	// var tagData = JSON.stringify(tagData);
+																			console.log(this.response);
 
-																	// console.log(candidateData);
-																	// sendCandidateToRm(candidateData);
+																			if (this.readyState === 4) {
 
-																	console.log('API Key: ' + storrageResult.apiKey);
-																	console.log('Corporation ID: ' + storrageResult.corporation_id);
-																	console.log('Department ID: ' + storrageResult.department_id);
-																	console.log('User ID: ' + storrageResult.intercom_employeee_id);
+																				var response = $.parseJSON(this.response);
 
-																	swal({
-																		title: callback.dialog__text_plain__request_process_title_generic.message,
-																		text: callback.dialog__text_plain__request_process_message_generic.message,
-																		type: "info",
-																		showLoaderOnConfirm: true,
-																		onOpen: function () {
-																			swal.clickConfirm();
-																		},
-																		preConfirm: function () {
-																			return new Promise(function (resolve) {
+																				// var response = this.response;
+																				console.log(response);
 
-																				var xhr = new XMLHttpRequest();
-																				// xhr.withCredentials = true;
+																				if (response.success === true) {
 
-																				xhr.addEventListener('readystatechange', function () {
+																					console.group('CANDIDATE EXPORT INITIATED');
+																					console.info(this.response);
+																					// console.info(this.responseText);
 
-																					// console.log(this);
+																					var totalExportedLinkedInRef = firebase.database().ref('statistics/candidates/exported/LinkedIn');
 
-																					if (this.readyState === 4) {
+																					totalExportedLinkedInRef.transaction(function (currentExported) {
 
-																						var response = $.parseJSON(this.response);
-																						// console.log(response);
+																						return currentExported + 1;
 
-																						if (response.success === true) {
+																					}, function (error, committed, snapshot) {
 
-																							console.group('CANDIDATE EXPORT INITIATED');
-																							console.info(this.response);
-																							// console.info(this.responseText);
+																						if (error) {
 
-																							var totalExportedLinkedInRef = firebase.database().ref('statistics/candidates/exported/LinkedIn');
+																							console.log('Transaction failed abnormally!', error);
 
-																							totalExportedLinkedInRef.transaction(function (currentExported) {
+																						} else if (!committed) {
+
+																							console.log('We aborted the transaction (because ada already exists).');
+
+																						} else {
+
+																							var totalExportedRef = firebase.database().ref('statistics/candidates/exported/total');
+
+																							totalExportedRef.transaction(function (currentExported) {
 
 																								return currentExported + 1;
 
@@ -2342,115 +2314,316 @@ console.log('RAMP loaded');
 																									console.log('We aborted the transaction (because ada already exists).');
 
 																								} else {
-
-																									var totalExportedRef = firebase.database().ref('statistics/candidates/exported/total');
-
-																									totalExportedRef.transaction(function (currentExported) {
-
-																										return currentExported + 1;
-
-																									}, function (error, committed, snapshot) {
-
-																										if (error) {
-
-																											console.log('Transaction failed abnormally!', error);
-
-																										} else if (!committed) {
-
-																											console.log('We aborted the transaction (because ada already exists).');
-
-																										} else {
-																											// setTimeout(function() {
-																											swal({
-																												type: 'success',
-																												title: callback.dialog__text_plain__dialog_success_title_generic.message,
-																												text: candidateFirstName + ' ' + candidateLastName + ' ' + callback.dialog__text_plain__request_success_message.message + ' ' + callback.didialog__text_service__service_name_recruitmentmanager.message,
-																												timer: 3000
-																											}).catch(swal.noop)
-																											// }, 2000)
-																											// console.log(candidateData);
-																											console.log('Total number of candidates added: ', snapshot.val());
-																										}
-
-																									});
-
-																									console.log('Total number of candidates added from LinkedIn: ', snapshot.val());
-
+																									// setTimeout(function() {
+																									swal({
+																										type: 'success',
+																										title: callback.dialog__text_plain__dialog_success_title_generic.message,
+																										text: candidateFirstName + ' ' + candidateLastName + ' ' + callback.dialog__text_plain__request_success_message.message + ' ' + callback.didialog__text_service__service_name_recruitmentmanager.message,
+																										timer: 3000
+																									}).catch(swal.noop)
+																									// }, 2000)
+																									// console.log(candidateData);
+																									console.log('Total number of candidates added: ', snapshot.val());
 																								}
 
 																							});
 
-																							console.groupEnd();
-
-																						} else if (response.success === false) {
-
-																							console.log(response);
-
-																							setTimeout(function () {
-																								swal({
-																									type: 'error',
-																									title: callback.dialog__text_plain__dialog_error_title_generic.message,
-																									text: callback.dialog__text_plain__request_error_message.message,
-																									allowOutsideClick: false,
-																									allowEscapeKey: false,
-																									showCancelButton: true,
-																									reverseButtons: true,
-																									cancelButtonText: callback.dialog__button_cancel__dialog_button_cancel.message,
-																									confirmButtonText: callback.dialog__button_confirm__dialog_button_try_again.message,
-																								}).then(function () {
-
-																									$('#send_to_rm').click();
-
-																								})
-
-																							}, 2000)
-
-																						} else {
-
-																							console.log(response);
-
-																							setTimeout(function () {
-
-																								swal({
-																									type: 'error',
-																									title: callback.dialog__text_plain__dialog_error_title_generic.message,
-																									text: callback.dialog__text_plain__request_error_message.message,
-																									allowOutsideClick: false,
-																									allowEscapeKey: false,
-																									showCancelButton: true,
-																									reverseButtons: true,
-																									cancelButtonText: callback.dialog__button_cancel__dialog_button_cancel.message,
-																									confirmButtonText: callback.dialog__button_confirm__dialog_button_try_again.message,
-																								}).then(function () {
-
-																									$('#send_to_rm').click();
-
-																								})
-
-																							}, 2000)
+																							console.log('Total number of candidates added from LinkedIn: ', snapshot.val());
 
 																						}
 
-																					}
+																					});
 
-																				});
+																					console.groupEnd();
 
-																				xhr.open('POST', 'https://api.recman.no/post/');
-																				// xhr.open('POST', 'https://api.recman.no/dgfhfgh/');
-																				xhr.setRequestHeader('content-type', 'application/json');
-																				xhr.setRequestHeader('cache-control', 'no-cache');
+																				} else if (response.success === false) {
 
-																				xhr.send(candidateData);
-																				// xhr.send(tagData);
-																			});
-																		},
-																		allowOutsideClick: false
+																					console.log(response);
+
+																					setTimeout(function () {
+																						swal({
+																							type: 'error',
+																							title: callback.dialog__text_plain__dialog_error_title_generic.message,
+																							text: callback.dialog__text_plain__request_error_message.message,
+																							allowOutsideClick: false,
+																							allowEscapeKey: false,
+																							showCancelButton: true,
+																							reverseButtons: true,
+																							cancelButtonText: callback.dialog__button_cancel__dialog_button_cancel.message,
+																							confirmButtonText: callback.dialog__button_confirm__dialog_button_try_again.message,
+																						}).then(function () {
+
+																							$('#send_to_rm').click();
+
+																						})
+
+																					}, 2000)
+
+																				} else {
+
+																					console.log(response);
+
+																					setTimeout(function () {
+
+																						swal({
+																							type: 'error',
+																							title: callback.dialog__text_plain__dialog_error_title_generic.message,
+																							text: callback.dialog__text_plain__request_error_message.message,
+																							allowOutsideClick: false,
+																							allowEscapeKey: false,
+																							showCancelButton: true,
+																							reverseButtons: true,
+																							cancelButtonText: callback.dialog__button_cancel__dialog_button_cancel.message,
+																							confirmButtonText: callback.dialog__button_confirm__dialog_button_try_again.message,
+																						}).then(function () {
+
+																							$('#send_to_rm').click();
+
+																						})
+
+																					}, 2000)
+
+																				}
+
+																			}
+
+																		});
+
+																		xhr.open('POST', 'https://api.recman.no/post/');
+																		// xhr.open('POST', 'https://api.recman.no/dgfhfgh/');
+																		xhr.setRequestHeader('content-type', 'application/json');
+																		xhr.setRequestHeader('cache-control', 'no-cache');
+
+																		xhr.send(candidateData);
+																		// xhr.send(tagData);
 																	});
-
-																});
-
+																},
+																allowOutsideClick: false
 															});
+
 														});
+
+														// chrome.storage.local.set({
+														// 	'base64Img': base64Img
+														// }, function () {
+														// 	// Notify that we saved.
+														//
+														// 	chrome.storage.local.get('base64Img', function (base64ImgResult) {
+														//
+														// 		// console.log(base64ImgResult);
+														//
+														// 		var profilePicture = {
+														// 			'extension': profileImageExtension,
+														// 			'base64': base64ImgResult.base64Img
+														// 		};
+														//
+														// 		console.log(profilePicture);
+														// 		// console.log(profilePicture.extension);
+														// 		// console.log(profilePicture.base64);
+														//
+														// 		$('#send_to_rm').prop('disabled', false);
+														//
+														// 		// console.log('candidateData', candidateData);
+														//
+														// 		$('#send_to_rm').on('click', function (e) {
+														//
+														// 			candidateData = {
+														// 				'key': storrageResult.apiKey,
+														// 				'scope': 'candidate',
+														// 				'operation': 'insert',
+														// 				'data': {
+														// 					'corporationId': storrageResult.corporation_id,
+														// 					'connectDepartment': [storrageResult.department_id],
+														// 					'connectUser': [storrageResult.intercom_employeee_id],
+														// 					'firstName': candidateFirstName,
+														// 					'lastName': candidateLastName,
+														// 					'title': json.content.TopCard.basic_info.memberHeadline,
+														// 					'mobilePhone': mobilePhone,
+														// 					'email': email,
+														// 					'twitter': twitter,
+														// 					'facebook': facebook,
+														// 					'web': web,
+														// 					'dob': dob,
+														// 					'description': summary[0],
+														// 					'linkedin': json.content.TopCard.public_url.canonicalUrl,
+														// 					'experience': experience,
+														// 					'education': education,
+														// 					'skills': skills,
+														// 					// 'profilePicture': profilePicture,
+														// 					'certifications': certifications,
+														// 					'languages': languages,
+														// 					'notes': notes,
+														// 				}
+														// 			};
+														//
+														// 			console.info('candidateData', candidateData);
+														//
+														// 			var candidateData = JSON.stringify(candidateData);
+														// 			// var  candidateData = candidateData;
+														//
+														// 			console.log('API Key: ' + storrageResult.apiKey);
+														// 			console.log('Corporation ID: ' + storrageResult.corporation_id);
+														// 			console.log('Department ID: ' + storrageResult.department_id);
+														// 			console.log('User ID: ' + storrageResult.intercom_employeee_id);
+														//
+														// 			swal({
+														// 				title: callback.dialog__text_plain__request_process_title_generic.message,
+														// 				text: callback.dialog__text_plain__request_process_message_generic.message,
+														// 				type: "info",
+														// 				showLoaderOnConfirm: true,
+														// 				onOpen: function () {
+														// 					swal.clickConfirm();
+														// 				},
+														// 				preConfirm: function () {
+														// 					return new Promise(function (resolve) {
+														//
+														// 						var xhr = new XMLHttpRequest();
+														// 						// xhr.withCredentials = true;
+														//
+														// 						xhr.addEventListener('readystatechange', function () {
+														//
+														// 							// console.log(this);
+														//
+														// 							if (this.readyState === 4) {
+														//
+														// 								var response = $.parseJSON(this.response);
+														//
+														// 								// var response = this.response;
+														// 								console.log(response);
+														//
+														// 								if (response.success === true) {
+														//
+														// 									console.group('CANDIDATE EXPORT INITIATED');
+														// 									console.info(this.response);
+														// 									// console.info(this.responseText);
+														//
+														// 									var totalExportedLinkedInRef = firebase.database().ref('statistics/candidates/exported/LinkedIn');
+														//
+														// 									totalExportedLinkedInRef.transaction(function (currentExported) {
+														//
+														// 										return currentExported + 1;
+														//
+														// 									}, function (error, committed, snapshot) {
+														//
+														// 										if (error) {
+														//
+														// 											console.log('Transaction failed abnormally!', error);
+														//
+														// 										} else if (!committed) {
+														//
+														// 											console.log('We aborted the transaction (because ada already exists).');
+														//
+														// 										} else {
+														//
+														// 											var totalExportedRef = firebase.database().ref('statistics/candidates/exported/total');
+														//
+														// 											totalExportedRef.transaction(function (currentExported) {
+														//
+														// 												return currentExported + 1;
+														//
+														// 											}, function (error, committed, snapshot) {
+														//
+														// 												if (error) {
+														//
+														// 													console.log('Transaction failed abnormally!', error);
+														//
+														// 												} else if (!committed) {
+														//
+														// 													console.log('We aborted the transaction (because ada already exists).');
+														//
+														// 												} else {
+														// 													// setTimeout(function() {
+														// 													swal({
+														// 														type: 'success',
+														// 														title: callback.dialog__text_plain__dialog_success_title_generic.message,
+														// 														text: candidateFirstName + ' ' + candidateLastName + ' ' + callback.dialog__text_plain__request_success_message.message + ' ' + callback.didialog__text_service__service_name_recruitmentmanager.message,
+														// 														timer: 3000
+														// 													}).catch(swal.noop)
+														// 													// }, 2000)
+														// 													// console.log(candidateData);
+														// 													console.log('Total number of candidates added: ', snapshot.val());
+														// 												}
+														//
+														// 											});
+														//
+														// 											console.log('Total number of candidates added from LinkedIn: ', snapshot.val());
+														//
+														// 										}
+														//
+														// 									});
+														//
+														// 									console.groupEnd();
+														//
+														// 								} else if (response.success === false) {
+														//
+														// 									console.log(response);
+														//
+														// 									setTimeout(function () {
+														// 										swal({
+														// 											type: 'error',
+														// 											title: callback.dialog__text_plain__dialog_error_title_generic.message,
+														// 											text: callback.dialog__text_plain__request_error_message.message,
+														// 											allowOutsideClick: false,
+														// 											allowEscapeKey: false,
+														// 											showCancelButton: true,
+														// 											reverseButtons: true,
+														// 											cancelButtonText: callback.dialog__button_cancel__dialog_button_cancel.message,
+														// 											confirmButtonText: callback.dialog__button_confirm__dialog_button_try_again.message,
+														// 										}).then(function () {
+														//
+														// 											$('#send_to_rm').click();
+														//
+														// 										})
+														//
+														// 									}, 2000)
+														//
+														// 								} else {
+														//
+														// 									console.log(response);
+														//
+														// 									setTimeout(function () {
+														//
+														// 										swal({
+														// 											type: 'error',
+														// 											title: callback.dialog__text_plain__dialog_error_title_generic.message,
+														// 											text: callback.dialog__text_plain__request_error_message.message,
+														// 											allowOutsideClick: false,
+														// 											allowEscapeKey: false,
+														// 											showCancelButton: true,
+														// 											reverseButtons: true,
+														// 											cancelButtonText: callback.dialog__button_cancel__dialog_button_cancel.message,
+														// 											confirmButtonText: callback.dialog__button_confirm__dialog_button_try_again.message,
+														// 										}).then(function () {
+														//
+														// 											$('#send_to_rm').click();
+														//
+														// 										})
+														//
+														// 									}, 2000)
+														//
+														// 								}
+														//
+														// 							}
+														//
+														// 						});
+														//
+														// 						xhr.open('POST', 'https://api.recman.no/post/');
+														// 						// xhr.open('POST', 'https://api.recman.no/dgfhfgh/');
+														// 						xhr.setRequestHeader('content-type', 'application/json');
+														// 						xhr.setRequestHeader('cache-control', 'no-cache');
+														//
+														// 						xhr.send(candidateData);
+														// 						// xhr.send(tagData);
+														// 					});
+														// 				},
+														// 				allowOutsideClick: false
+														// 			});
+														//
+														// 		});
+														//
+														// 	});
+														//
+														// });
 
 													});
 
