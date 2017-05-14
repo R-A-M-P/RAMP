@@ -1,4 +1,4 @@
-responseimport $ from 'jquery';
+import $ from 'jquery';
 import swal from 'sweetalert2';
 import * as firebase from 'firebase/app';
 import 'firebase/database';
@@ -2109,6 +2109,7 @@ console.log('RAMP loaded');
 
 														});
 
+
 													}
 
 													if (json.content.TopCard) {
@@ -2199,7 +2200,6 @@ console.log('RAMP loaded');
 															'base64': base64Img
 														};
 
-
 														console.log(profilePicture);
 														// console.log(profilePicture.extension);
 														// console.log(profilePicture.base64);
@@ -2265,7 +2265,6 @@ console.log('RAMP loaded');
 
 																		xhr.addEventListener('readystatechange', function () {
 
-																			console.log(this.response);
 
 																			if (this.readyState === 4) {
 
