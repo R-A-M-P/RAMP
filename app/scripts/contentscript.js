@@ -2232,7 +2232,7 @@ console.log('RAMP loaded');
 																	'experience': experience,
 																	'education': education,
 																	'skills': skills,
-																	// 'profilePicture': profilePicture,
+																	'profilePicture': profilePicture,
 																	'certifications': certifications,
 																	'languages': languages,
 																	'notes': notes,
