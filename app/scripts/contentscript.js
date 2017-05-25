@@ -18,6 +18,7 @@ console.log('RAMP loaded');
 	var email;
 	var twitter;
 	var facebook;
+	var linkedin;
 	var web;
 	var dob;
 	var summary = [];
@@ -412,6 +413,8 @@ console.log('RAMP loaded');
 		}
 	];
 	var candidateData;
+	var imageUrl;
+	var profileImageExtension;
 
 	RAMP.init = function () {
 
@@ -837,7 +840,742 @@ console.log('RAMP loaded');
 
 											var linkedInProfileDataUrl = '//www.linkedin.com/profile/mappers?id=' + linkedInProfileId + '&promoId=&snapshotID=&primaryAction=&authToken=vCzw&locale=en_US&x-a=' + linkedInProfileData;
 
+											function decodeHtml(html) {
+												var txt = document.createElement("textarea");
+												txt.innerHTML = html;
+												return txt.value;
+											}
+
+											function toDataUrl(url, callback, outputFormat) {
+												var img = new Image();
+												img.crossOrigin = 'Anonymous';
+												img.onload = function () {
+													var canvas = document.createElement('CANVAS');
+													var ctx = canvas.getContext('2d');
+													var dataURL;
+													canvas.height = this.height;
+													canvas.width = this.width;
+													ctx.drawImage(this, 0, 0);
+													dataURL = canvas.toDataURL(outputFormat);
+													callback(dataURL);
+													canvas = null;
+												};
+												img.src = url;
+											}
+
+											RAMP.scrapeExperiences = function () {
+
+												function fetchExperiences() {
+
+													if ('li.pv-position-entity') {
+
+														console.warn('Could not fetch Experience data automaticly. Initiating manuall scraping...');
+
+														$('li.pv-position-entity').each(function (index) {
+
+															var $entry = $(this);
+
+															// $(this).find('button.pv-profile-section__show-more-detail').click();
+
+															var experienceTitle;
+															var experienceCompanyName;
+															var experienceDescription;
+															var experienceLocation
+															var experienceStartDate;
+															var experienceEndDate;
+
+															var $showMoreButton = $(this).find('button.pv-profile-section__show-more-detail');
+
+															if ($showMoreButton) {
+
+																$showMoreButton.click();
+
+																setTimeout(function () {
+
+																	var $experienceDescription = $entry.find('.pv-entity__description');
+
+																	if ($experienceDescription) {
+
+																		experienceDescription = $experienceDescription
+																			.clone() //clone the element
+																			.children() //select all the children
+																			.remove() //remove all the children
+																			.end() //again go back to selected element
+																			.text();
+
+																		function myTrim(x) {
+																			return x.replace(/^\s+|\s+$/gm, '');
+																		}
+
+																		experienceDescription = myTrim(experienceDescription);
+																		experienceDescription = decodeHtml(experienceDescription);
+																		experienceDescription = experienceDescription.replace(/(<br>)+/g, '\n ');
+
+																		if (experienceDescription.trim()) {
+
+																			// console.log(experienceDescription);
+
+																		}
+
+																	} else {
+
+																		console.log('No Experience description...');
+
+																	}
+
+																}, 400);
+
+															}
+
+															setTimeout(function () {
+
+																var $experienceTitle = $entry.find('.pv-entity__summary-info > h3');
+																var $experienceCompanyName = $entry.find('.pv-entity__summary-info > h4 > .pv-entity__secondary-title');
+																var $experienceLocation = $entry.find('.pv-entity__summary-info > h4.pv-entity__location > span:not(.visually-hidden)');
+																var $experienceDateRange = $entry.find('.pv-entity__summary-info > h4.pv-entity__date-range > span:not(.visually-hidden)');
+
+																if ($experienceTitle) {
+
+																	experienceTitle = $experienceTitle.text();
+
+																}
+
+																if ($experienceCompanyName) {
+
+																	experienceCompanyName = $experienceCompanyName.text();
+
+																}
+
+																if ($experienceLocation) {
+
+																	experienceLocation = $experienceLocation.text();
+
+																}
+
+																if ($experienceDateRange) {
+
+																	var experienceDateRange = $experienceDateRange.text();
+
+																	// console.log(experienceDateRange);
+
+																	$experienceDateRange.each(function (index) {
+
+																		if (experienceDateRange.indexOf(' – ') > -1) {
+
+																			var experienceDatesSplit = experienceDateRange.split(' – ');
+
+																		} else if (experienceDateRange.indexOf(' - ') > -1) {
+
+																			var experienceDatesSplit = experienceDateRange.split(' - ');
+
+																		}
+
+																		var experienceDateStart = experienceDatesSplit[0];
+																		var experienceDateEnd = experienceDatesSplit[1];
+
+																		// console.log(experienceDateStart);
+																		// console.log(experienceDateEnd);
+
+																		var experienceDates = [];
+
+																		experienceDates.push(experienceDateStart);
+																		experienceDates.push(experienceDateEnd);
+
+																		// console.log(experienceDates);
+
+																		// var experienceDateLength = 0;
+
+																		var current = 0;
+
+																		$.each(experienceDates, function (index, value) {
+
+																			// experienceDateLength++
+
+																			// console.log(index + ": " + $(this).text());
+																			// console.log('index, value', index, value);
+
+																			// var experienceDate = $(this).text();
+
+																			var experienceDateSplit = value.split(' ');
+																			var experienceMonth = experienceDateSplit[0];
+																			var experienceYear = experienceDateSplit[1];
+
+																			function setExperienceMonth() {
+
+																				if (experienceMonth === 'Jan') {
+
+																					experienceMonth = '01';
+
+																				} else if (experienceMonth === 'Feb') {
+
+																					experienceMonth = '02';
+
+																				} else if (experienceMonth === 'Mar') {
+
+																					experienceMonth = '03';
+
+																				} else if (experienceMonth === 'Apr') {
+
+																					experienceMonth = '04';
+
+																				} else if (experienceMonth === 'May') {
+
+																					experienceMonth = '05';
+
+																				} else if (experienceMonth === 'Jun') {
+
+																					experienceMonth = '06';
+
+																				} else if (experienceMonth === 'Jul') {
+
+																					experienceMonth = '07';
+
+																				} else if (experienceMonth === 'Aug') {
+
+																					experienceMonth = '08';
+
+																				} else if (experienceMonth === 'Sep') {
+
+																					experienceMonth = '09';
+
+																				} else if (experienceMonth === 'Oct') {
+
+																					experienceMonth = '10';
+
+																				} else if (experienceMonth === 'Nov') {
+
+																					experienceMonth = '11';
+
+																				} else if (experienceMonth === 'Dec') {
+
+																					experienceMonth = '12';
+
+																				} else if (experienceMonth === 'jan.') {
+
+																					experienceMonth = '01';
+
+																				} else if (experienceMonth === 'feb.') {
+
+																					experienceMonth = '02';
+
+																				} else if (experienceMonth === 'mar.') {
+
+																					experienceMonth = '03';
+
+																				} else if (experienceMonth === 'apr.') {
+
+																					experienceMonth = '04';
+
+																				} else if (experienceMonth === 'mai.') {
+
+																					experienceMonth = '05';
+
+																				} else if (experienceMonth === 'jun.') {
+
+																					experienceMonth = '06';
+
+																				} else if (experienceMonth === 'jul.') {
+
+																					experienceMonth = '07';
+
+																				} else if (experienceMonth === 'aug.') {
+
+																					experienceMonth = '08';
+
+																				} else if (experienceMonth === 'sep.') {
+
+																					experienceMonth = '09';
+
+																				} else if (experienceMonth === 'okt.') {
+
+																					experienceMonth = '10';
+
+																				} else if (experienceMonth === 'nov.') {
+
+																					experienceMonth = '11';
+
+																				} else if (experienceMonth === 'des.') {
+
+																					experienceMonth = '12';
+
+																				}
+
+																				if (index === 0) {
+
+																					experienceStartDate = '01.' + experienceMonth + '.' + experienceYear;
+
+																				} else if (index === 1) {
+
+																					experienceEndDate = '01.' + experienceMonth + '.' + experienceYear;
+
+																				}
+
+																			}
+
+																			if (experienceMonth == 'Present' || value == 'nå') {
+
+																				current = 1;
+
+																				experienceEndDate = null;
+
+																			} else {
+
+																				setExperienceMonth();
+
+																			}
+
+																			// console.log(experienceDateLength);
+
+																			// if (experienceDateLength === 1) {
+																			//
+																			// 	current = 1;
+																			//
+																			// } else if (experienceDateLength === 2) {
+																			//
+																			// 	current = 0;
+																			//
+																			// }
+
+																		});
+
+																		experience.push({
+																			title: experienceTitle,
+																			companyName: experienceCompanyName,
+																			location: experienceLocation,
+																			startDate: experienceStartDate,
+																			endDate: experienceEndDate,
+																			description: experienceDescription,
+																			current: current,
+																		});
+
+																		// console.log(experience);
+
+																	});
+
+																}
+
+																// experience.push({
+																// 	title: experienceTitle,
+																// 	companyName: experienceCompanyName,
+																// 	// location: location,
+																// 	startDate: experienceStartDate,
+																// 	endDate: experienceEndDate,
+																// 	description: experienceDescription,
+																// 	current: current,
+																// });
+
+																// console.log(experience);
+
+															}, 500);
+
+														});
+
+														// console.log(experience);
+
+													} else {
+
+														console.warn('Sorry, no Experience to scrape...');
+
+													}
+
+												}
+
+												if ('button.pv-profile-section__see-more-inline') {
+
+													var $seeMorePositionsButton = $('button.pv-profile-section__see-more-inline');
+
+													console.log('click seeMorePositionsButton');
+
+													$seeMorePositionsButton.click();
+
+													setTimeout(function () {
+
+														fetchExperiences();
+
+													}, 500);
+
+												} else {
+
+													fetchExperiences()
+
+												}
+
+											}
+
+											RAMP.scrapeEducations = function () {
+
+												if ('li.pv-education-entity') {
+
+													console.warn('Could not fetch Education data automaticly. Initiating manuall scraping...');
+
+													// 	$('li.position-entity').each(function (index) {
+													//
+													// 		var $entry = $(this);
+													//
+													// 		// $(this).find('button.pv-profile-section__show-more-detail').click();
+													//
+													// 		var $showMoreButton = $(this).find('button.pv-profile-section__show-more-detail');
+													//
+													// 		if ($showMoreButton) {
+													//
+													// 			$showMoreButton.click();
+													//
+													// 			setTimeout(function () {
+													//
+													// 				var experienceTitle;
+													// 				var experienceCompanyName;
+													// 				var experienceDescription;
+													// 				var experienceStartDate;
+													// 				var experienceEndDate;
+													//
+													// 				var $experienceTitle = $entry.find('.pv-entity__summary-info > h3');
+													// 				var $experienceCompanyName = $entry.find('.pv-entity__summary-info > h4 > .pv-entity__secondary-title');
+													// 				var $experienceDescription = $entry.find('.pv-entity__description');
+													// 				var $experienceDateRange = $entry.find('.pv-entity__date-range');
+													//
+													// 				var current = 0;
+													//
+													// 				if ($experienceTitle) {
+													//
+													// 					experienceTitle = $experienceTitle.text();
+													//
+													// 				}
+													//
+													// 				if ($experienceCompanyName) {
+													//
+													// 					experienceCompanyName = $experienceCompanyName.text();
+													//
+													// 				}
+													//
+													// 				if ($experienceDescription) {
+													//
+													// 					experienceDescription = $experienceDescription
+													// 						.clone() //clone the element
+													// 						.children() //select all the children
+													// 						.remove() //remove all the children
+													// 						.end() //again go back to selected element
+													// 						.text();
+													//
+													// 					function myTrim(x) {
+													// 						return x.replace(/^\s+|\s+$/gm, '');
+													// 					}
+													//
+													// 					experienceDescription = myTrim(experienceDescription);
+													// 					experienceDescription = decodeHtml(experienceDescription);
+													// 					experienceDescription = experienceDescription.replace(/(<br>)+/g, '\n ');
+													//
+													// 					// console.log(experienceDescription);
+													//
+													// 				}
+													//
+													// 				if ($experienceDateRange) {
+													//
+													// 					$experienceDateRange.each(function (index) {
+													//
+													// 						var $experienceDates = $experienceDateRange.find('time');
+													//
+													// 						var experienceDateLength = 0;
+													//
+													// 						$experienceDates.each(function (index) {
+													//
+													// 							experienceDateLength++
+													//
+													// 							// console.log(index + ": " + $(this).text());
+													//
+													// 							var experienceDate = $(this).text();
+													//
+													// 							var experienceDateSplit = experienceDate.split(' ');
+													// 							var experienceMonth = experienceDateSplit[0];
+													// 							var experienceYear = experienceDateSplit[1];
+													//
+													// 							if (experienceMonth === 'Jan') {
+													//
+													// 								experienceMonth = '01';
+													//
+													// 							} else if (experienceMonth === 'Feb') {
+													//
+													// 								experienceMonth = '02';
+													//
+													// 							} else if (experienceMonth === 'Mar') {
+													//
+													// 								experienceMonth = '03';
+													//
+													// 							} else if (experienceMonth === 'Apr') {
+													//
+													// 								experienceMonth = '04';
+													//
+													// 							} else if (experienceMonth === 'May') {
+													//
+													// 								experienceMonth = '05';
+													//
+													// 							} else if (experienceMonth === 'Jun') {
+													//
+													// 								experienceMonth = '06';
+													//
+													// 							} else if (experienceMonth === 'Jul') {
+													//
+													// 								experienceMonth = '07';
+													//
+													// 							} else if (experienceMonth === 'Aug') {
+													//
+													// 								experienceMonth = '08';
+													//
+													// 							} else if (experienceMonth === 'Sep') {
+													//
+													// 								experienceMonth = '09';
+													//
+													// 							} else if (experienceMonth === 'Oct') {
+													//
+													// 								experienceMonth = '10';
+													//
+													// 							} else if (experienceMonth === 'Nov') {
+													//
+													// 								experienceMonth = '11';
+													//
+													// 							} else if (experienceMonth === 'Dec') {
+													//
+													// 								experienceMonth = '12';
+													//
+													// 							} else if (experienceMonth === 'jan.') {
+													//
+													// 								experienceMonth = '01';
+													//
+													// 							} else if (experienceMonth === 'feb.') {
+													//
+													// 								experienceMonth = '02';
+													//
+													// 							} else if (experienceMonth === 'mar.') {
+													//
+													// 								experienceMonth = '03';
+													//
+													// 							} else if (experienceMonth === 'apr.') {
+													//
+													// 								experienceMonth = '04';
+													//
+													// 							} else if (experienceMonth === 'mai.') {
+													//
+													// 								experienceMonth = '05';
+													//
+													// 							} else if (experienceMonth === 'jun.') {
+													//
+													// 								experienceMonth = '06';
+													//
+													// 							} else if (experienceMonth === 'jul.') {
+													//
+													// 								experienceMonth = '07';
+													//
+													// 							} else if (experienceMonth === 'aug.') {
+													//
+													// 								experienceMonth = '08';
+													//
+													// 							} else if (experienceMonth === 'sep.') {
+													//
+													// 								experienceMonth = '09';
+													//
+													// 							} else if (experienceMonth === 'okt.') {
+													//
+													// 								experienceMonth = '10';
+													//
+													// 							} else if (experienceMonth === 'nov.') {
+													//
+													// 								experienceMonth = '11';
+													//
+													// 							} else if (experienceMonth === 'des.') {
+													//
+													// 								experienceMonth = '12';
+													//
+													// 							}
+													//
+													// 							if (index === 0) {
+													//
+													// 								experienceStartDate = '01.' + experienceMonth + '.' + experienceYear;
+													//
+													// 							} else if (index === 1) {
+													//
+													// 								experienceEndDate = '01.' + experienceMonth + '.' + experienceYear;
+													//
+													// 							}
+													//
+													// 						});
+													//
+													// 						// console.log(experienceDateLength);
+													//
+													// 						if (experienceDateLength === 1) {
+													//
+													// 							current = 1;
+													//
+													//
+													// 						} else if (experienceDateLength === 2) {
+													//
+													// 							current = 0;
+													//
+													// 						}
+													//
+													// 					});
+													//
+													// 				}
+													//
+													// 				experience.push({
+													// 					title: experienceTitle,
+													// 					companyName: experienceCompanyName,
+													// 					// location: location,
+													// 					startDate: experienceStartDate,
+													// 					endDate: experienceEndDate,
+													// 					description: experienceDescription,
+													// 					current: current,
+													// 				});
+													//
+													// 				// console.log(experience);
+													//
+													// 			}, 500);
+													//
+													// 		}
+													//
+													// 	});
+
+												} else {
+
+													console.warn('Sorry, no Education to scrape...');
+
+												}
+
+											}
+
+											RAMP.scrapeSkills = function () {
+
+												if ('.pv-featured-skills-section') {
+
+													console.warn('Could not fetch Skills data automaticly. Initiating manuall scraping...');
+
+													$('.pv-featured-skills-section').find('button[data-control-name="skill_details"]').click();
+
+													setTimeout(function () {
+
+														$('li.pv-skill-entity').each(function (index) {
+
+															var $entry = $(this);
+
+															var skillName = $entry.find('.pv-skill-entity__skill-name').text();
+
+															// console.log(skillName);
+
+															skills.push({
+																'name': skillName,
+																'rating': 0
+															})
+
+														});
+
+													}, 500);
+
+												}
+
+											}
+
+											RAMP.scrapeSummary = function () {
+
+												// swal({
+												// 	type: 'info',
+												// 	title: 'Notice!',
+												// 	html: 'This profile might be missing some relevant information like <b>Periods on Experience and Education</b> objects when sendt to Recruitment Manager.'
+												// });
+
+												if ('.pv-top-card-section__summary') {
+
+													console.warn('Could not fetch Summary data automaticly. Initiating manuall scraping...');
+
+													$('.pv-top-card-section__summary').find('button.truncate-multiline--button').click();
+
+													setTimeout(function () {
+
+														var summaryText = $('p.pv-top-card-section__summary')
+															.clone() //clone the element
+															.children() //select all the children
+															.remove() //remove all the children
+															.end() //again go back to selected element
+															.text();
+
+														function myTrim(x) {
+															return x.replace(/^\s+|\s+$/gm, '');
+														}
+
+														summaryText = myTrim(summaryText);
+
+														summaryText = decodeHtml(summaryText);
+														summaryText = summaryText.replace(/(<br>)+/g, '\n');
+
+														summary.push(summaryText);
+
+														// console.log(summary);
+
+													}, 500);
+
+												}
+
+											}
+
+											RAMP.scrapeProfilePicture = function () {
+
+												imageUrl = $('.pv-top-card-section__image').attr('src');
+												profileImageExtension = 'jpg';
+
+												console.log(imageUrl);
+											}
+
+											RAMP.scrapeContactInfo = function () {
+
+												$('button[data-control-name="contact_see_more"]').click();
+
+												if($('.pv-contact-info__contact-type.ci-vanity-url')) {
+
+													var linkedinUrl = $('.pv-contact-info__contact-type.ci-vanity-url .pv-contact-info__ci-container .pv-contact-info__contact-item').text();
+
+													// console.log(linkedinUrl);
+
+													linkedinUrl = linkedinUrl.replace(/(\r\n|\n|\r)/gm,"");
+
+													// console.log(linkedinUrl);
+
+													linkedinUrl = $.trim(linkedinUrl);
+
+													// console.log(linkedinUrl);
+
+													linkedin = 'https://' + linkedinUrl;
+
+													// console.log(linkedin);
+
+												}
+
+											}
+
 											// console.log('https:' + linkedInProfileDataUrl);
+											//
+											// var codeElements = []
+											// $('code').each(function (index) {
+											//
+											// 	// var currentCodeElement = $.parseJSON($(this).html());
+											// 	// codeElements.push($(this).text());
+											// 	console.log(index + ": " + $(this).html());
+											// });
+
+											// console.log(codeElements);
+
+											// var fuckFuck = $.parseJSON('{"request":"/voyager/api/identity/profiles/iamchriswick/treasuryMediaItems?q=backgroundMedia&section=POSITION","status":200,"body":"bpr-guid-1002971"}');
+											//
+											// console.log('fuckFuck', fuckFuck);
+											//
+											// $.getJSON(' https://www.linkedin.com/voyager/api/identity/profiles/iamchriswick/', function () {
+											// 		console.log('SUCCESS: Voyager data loaded...');
+											// 	}).done(function (json) {
+											//
+											// console.log(json);
+											//
+											// 	})
+											// 	.fail(function (jqxhr, textStatus, error) {
+											//
+											// 		console.log('FAIL: Could not load Voyager data...');
+											//
+											// 	});
 
 											// $.getJSON('//www.linkedin.com/profile/mappers?id=' + linkedInProfileId + '&promoId=&snapshotID=&primaryAction=&authToken=vCzw&locale=en_US&x-a=' + linkedInProfileData, function () {
 											$.getJSON(linkedInProfileDataUrl, function () {
@@ -854,11 +1592,11 @@ console.log('RAMP loaded');
 													// 	});
 													// }
 
-													function decodeHtml(html) {
-														var txt = document.createElement("textarea");
-														txt.innerHTML = html;
-														return txt.value;
-													}
+													// function decodeHtml(html) {
+													// 	var txt = document.createElement("textarea");
+													// 	txt.innerHTML = html;
+													// 	return txt.value;
+													// }
 
 													console.log(json);
 
@@ -868,344 +1606,344 @@ console.log('RAMP loaded');
 
 													// var experience = [];
 
-													RAMP.scrapeExperiences = function () {
-
-														function fetchExperiences() {
-
-															if ('li.pv-position-entity') {
-
-																console.warn('Could not fetch Experience data automaticly. Initiating manuall scraping...');
-
-																$('li.pv-position-entity').each(function (index) {
-
-																	var $entry = $(this);
-
-																	// $(this).find('button.pv-profile-section__show-more-detail').click();
-
-																	var experienceTitle;
-																	var experienceCompanyName;
-																	var experienceDescription;
-																	var experienceLocation
-																	var experienceStartDate;
-																	var experienceEndDate;
-
-																	var $showMoreButton = $(this).find('button.pv-profile-section__show-more-detail');
-
-																	if ($showMoreButton) {
-
-																		$showMoreButton.click();
-
-																		setTimeout(function () {
-
-																			var $experienceDescription = $entry.find('.pv-entity__description');
-
-																			if ($experienceDescription) {
-
-																				experienceDescription = $experienceDescription
-																					.clone() //clone the element
-																					.children() //select all the children
-																					.remove() //remove all the children
-																					.end() //again go back to selected element
-																					.text();
-
-																				function myTrim(x) {
-																					return x.replace(/^\s+|\s+$/gm, '');
-																				}
-
-																				experienceDescription = myTrim(experienceDescription);
-																				experienceDescription = decodeHtml(experienceDescription);
-																				experienceDescription = experienceDescription.replace(/(<br>)+/g, '\n ');
-
-																				if (experienceDescription.trim()) {
-
-																					// console.log(experienceDescription);
-
-																				}
-
-																			} else {
-
-																				console.log('No Experience description...');
-
-																			}
-
-																		}, 400);
-
-																	}
-
-																	setTimeout(function () {
-
-																		var $experienceTitle = $entry.find('.pv-entity__summary-info > h3');
-																		var $experienceCompanyName = $entry.find('.pv-entity__summary-info > h4 > .pv-entity__secondary-title');
-																		var $experienceLocation = $entry.find('.pv-entity__summary-info > h4.pv-entity__location > span:not(.visually-hidden)');
-																		var $experienceDateRange = $entry.find('.pv-entity__summary-info > h4.pv-entity__date-range > span:not(.visually-hidden)');
-
-																		if ($experienceTitle) {
-
-																			experienceTitle = $experienceTitle.text();
-
-																		}
-
-																		if ($experienceCompanyName) {
-
-																			experienceCompanyName = $experienceCompanyName.text();
-
-																		}
-
-																		if ($experienceLocation) {
-
-																			experienceLocation = $experienceLocation.text();
-
-																		}
-
-																		if ($experienceDateRange) {
-
-																			var experienceDateRange = $experienceDateRange.text();
-
-																			// console.log(experienceDateRange);
-
-																			$experienceDateRange.each(function (index) {
-
-																				if (experienceDateRange.indexOf(' – ') > -1) {
-
-																					var experienceDatesSplit = experienceDateRange.split(' – ');
-
-																				} else if (experienceDateRange.indexOf(' - ') > -1) {
-
-																					var experienceDatesSplit = experienceDateRange.split(' - ');
-
-																				}
-
-																				var experienceDateStart = experienceDatesSplit[0];
-																				var experienceDateEnd = experienceDatesSplit[1];
-
-																				// console.log(experienceDateStart);
-																				// console.log(experienceDateEnd);
-
-																				var experienceDates = [];
-
-																				experienceDates.push(experienceDateStart);
-																				experienceDates.push(experienceDateEnd);
-
-																				// console.log(experienceDates);
-
-																				// var experienceDateLength = 0;
-
-																				var current = 0;
-
-																				$.each(experienceDates, function (index, value) {
-
-																					// experienceDateLength++
-
-																					// console.log(index + ": " + $(this).text());
-																					// console.log('index, value', index, value);
-
-																					// var experienceDate = $(this).text();
-
-																					var experienceDateSplit = value.split(' ');
-																					var experienceMonth = experienceDateSplit[0];
-																					var experienceYear = experienceDateSplit[1];
-
-																					function setExperienceMonth() {
-
-																						if (experienceMonth === 'Jan') {
-
-																							experienceMonth = '01';
-
-																						} else if (experienceMonth === 'Feb') {
-
-																							experienceMonth = '02';
-
-																						} else if (experienceMonth === 'Mar') {
-
-																							experienceMonth = '03';
-
-																						} else if (experienceMonth === 'Apr') {
-
-																							experienceMonth = '04';
-
-																						} else if (experienceMonth === 'May') {
-
-																							experienceMonth = '05';
-
-																						} else if (experienceMonth === 'Jun') {
-
-																							experienceMonth = '06';
-
-																						} else if (experienceMonth === 'Jul') {
-
-																							experienceMonth = '07';
-
-																						} else if (experienceMonth === 'Aug') {
-
-																							experienceMonth = '08';
-
-																						} else if (experienceMonth === 'Sep') {
-
-																							experienceMonth = '09';
-
-																						} else if (experienceMonth === 'Oct') {
-
-																							experienceMonth = '10';
-
-																						} else if (experienceMonth === 'Nov') {
-
-																							experienceMonth = '11';
-
-																						} else if (experienceMonth === 'Dec') {
-
-																							experienceMonth = '12';
-
-																						} else if (experienceMonth === 'jan.') {
-
-																							experienceMonth = '01';
-
-																						} else if (experienceMonth === 'feb.') {
-
-																							experienceMonth = '02';
-
-																						} else if (experienceMonth === 'mar.') {
-
-																							experienceMonth = '03';
-
-																						} else if (experienceMonth === 'apr.') {
-
-																							experienceMonth = '04';
-
-																						} else if (experienceMonth === 'mai.') {
-
-																							experienceMonth = '05';
-
-																						} else if (experienceMonth === 'jun.') {
-
-																							experienceMonth = '06';
-
-																						} else if (experienceMonth === 'jul.') {
-
-																							experienceMonth = '07';
-
-																						} else if (experienceMonth === 'aug.') {
-
-																							experienceMonth = '08';
-
-																						} else if (experienceMonth === 'sep.') {
-
-																							experienceMonth = '09';
-
-																						} else if (experienceMonth === 'okt.') {
-
-																							experienceMonth = '10';
-
-																						} else if (experienceMonth === 'nov.') {
-
-																							experienceMonth = '11';
-
-																						} else if (experienceMonth === 'des.') {
-
-																							experienceMonth = '12';
-
-																						}
-
-																						if (index === 0) {
-
-																							experienceStartDate = '01.' + experienceMonth + '.' + experienceYear;
-
-																						} else if (index === 1) {
-
-																							experienceEndDate = '01.' + experienceMonth + '.' + experienceYear;
-
-																						}
-
-																					}
-
-																					if (experienceMonth == 'Present' || value == 'nå') {
-
-																						current = 1;
-
-																						experienceEndDate = null;
-
-																					} else {
-
-																						setExperienceMonth();
-
-																					}
-
-																					// console.log(experienceDateLength);
-
-																					// if (experienceDateLength === 1) {
-																					//
-																					// 	current = 1;
-																					//
-																					// } else if (experienceDateLength === 2) {
-																					//
-																					// 	current = 0;
-																					//
-																					// }
-
-																				});
-
-																				experience.push({
-																					title: experienceTitle,
-																					companyName: experienceCompanyName,
-																					location: experienceLocation,
-																					startDate: experienceStartDate,
-																					endDate: experienceEndDate,
-																					description: experienceDescription,
-																					current: current,
-																				});
-
-																				// console.log(experience);
-
-																			});
-
-																		}
-
-																		// experience.push({
-																		// 	title: experienceTitle,
-																		// 	companyName: experienceCompanyName,
-																		// 	// location: location,
-																		// 	startDate: experienceStartDate,
-																		// 	endDate: experienceEndDate,
-																		// 	description: experienceDescription,
-																		// 	current: current,
-																		// });
-
-																		// console.log(experience);
-
-																	}, 500);
-
-																});
-
-																// console.log(experience);
-
-															} else {
-
-																console.warn('Sorry, no Experience to scrape...');
-
-															}
-
-														}
-
-														if ('button.pv-profile-section__see-more-inline') {
-
-															var $seeMorePositionsButton = $('button.pv-profile-section__see-more-inline');
-
-															console.log('click seeMorePositionsButton');
-
-															$seeMorePositionsButton.click();
-
-															setTimeout(function () {
-
-																fetchExperiences();
-
-															}, 500);
-
-														} else {
-
-															fetchExperiences()
-
-														}
-
-													}
+													// RAMP.scrapeExperiences = function () {
+													//
+													// 	function fetchExperiences() {
+													//
+													// 		if ('li.pv-position-entity') {
+													//
+													// 			console.warn('Could not fetch Experience data automaticly. Initiating manuall scraping...');
+													//
+													// 			$('li.pv-position-entity').each(function (index) {
+													//
+													// 				var $entry = $(this);
+													//
+													// 				// $(this).find('button.pv-profile-section__show-more-detail').click();
+													//
+													// 				var experienceTitle;
+													// 				var experienceCompanyName;
+													// 				var experienceDescription;
+													// 				var experienceLocation
+													// 				var experienceStartDate;
+													// 				var experienceEndDate;
+													//
+													// 				var $showMoreButton = $(this).find('button.pv-profile-section__show-more-detail');
+													//
+													// 				if ($showMoreButton) {
+													//
+													// 					$showMoreButton.click();
+													//
+													// 					setTimeout(function () {
+													//
+													// 						var $experienceDescription = $entry.find('.pv-entity__description');
+													//
+													// 						if ($experienceDescription) {
+													//
+													// 							experienceDescription = $experienceDescription
+													// 								.clone() //clone the element
+													// 								.children() //select all the children
+													// 								.remove() //remove all the children
+													// 								.end() //again go back to selected element
+													// 								.text();
+													//
+													// 							function myTrim(x) {
+													// 								return x.replace(/^\s+|\s+$/gm, '');
+													// 							}
+													//
+													// 							experienceDescription = myTrim(experienceDescription);
+													// 							experienceDescription = decodeHtml(experienceDescription);
+													// 							experienceDescription = experienceDescription.replace(/(<br>)+/g, '\n ');
+													//
+													// 							if (experienceDescription.trim()) {
+													//
+													// 								// console.log(experienceDescription);
+													//
+													// 							}
+													//
+													// 						} else {
+													//
+													// 							console.log('No Experience description...');
+													//
+													// 						}
+													//
+													// 					}, 400);
+													//
+													// 				}
+													//
+													// 				setTimeout(function () {
+													//
+													// 					var $experienceTitle = $entry.find('.pv-entity__summary-info > h3');
+													// 					var $experienceCompanyName = $entry.find('.pv-entity__summary-info > h4 > .pv-entity__secondary-title');
+													// 					var $experienceLocation = $entry.find('.pv-entity__summary-info > h4.pv-entity__location > span:not(.visually-hidden)');
+													// 					var $experienceDateRange = $entry.find('.pv-entity__summary-info > h4.pv-entity__date-range > span:not(.visually-hidden)');
+													//
+													// 					if ($experienceTitle) {
+													//
+													// 						experienceTitle = $experienceTitle.text();
+													//
+													// 					}
+													//
+													// 					if ($experienceCompanyName) {
+													//
+													// 						experienceCompanyName = $experienceCompanyName.text();
+													//
+													// 					}
+													//
+													// 					if ($experienceLocation) {
+													//
+													// 						experienceLocation = $experienceLocation.text();
+													//
+													// 					}
+													//
+													// 					if ($experienceDateRange) {
+													//
+													// 						var experienceDateRange = $experienceDateRange.text();
+													//
+													// 						// console.log(experienceDateRange);
+													//
+													// 						$experienceDateRange.each(function (index) {
+													//
+													// 							if (experienceDateRange.indexOf(' – ') > -1) {
+													//
+													// 								var experienceDatesSplit = experienceDateRange.split(' – ');
+													//
+													// 							} else if (experienceDateRange.indexOf(' - ') > -1) {
+													//
+													// 								var experienceDatesSplit = experienceDateRange.split(' - ');
+													//
+													// 							}
+													//
+													// 							var experienceDateStart = experienceDatesSplit[0];
+													// 							var experienceDateEnd = experienceDatesSplit[1];
+													//
+													// 							// console.log(experienceDateStart);
+													// 							// console.log(experienceDateEnd);
+													//
+													// 							var experienceDates = [];
+													//
+													// 							experienceDates.push(experienceDateStart);
+													// 							experienceDates.push(experienceDateEnd);
+													//
+													// 							// console.log(experienceDates);
+													//
+													// 							// var experienceDateLength = 0;
+													//
+													// 							var current = 0;
+													//
+													// 							$.each(experienceDates, function (index, value) {
+													//
+													// 								// experienceDateLength++
+													//
+													// 								// console.log(index + ": " + $(this).text());
+													// 								// console.log('index, value', index, value);
+													//
+													// 								// var experienceDate = $(this).text();
+													//
+													// 								var experienceDateSplit = value.split(' ');
+													// 								var experienceMonth = experienceDateSplit[0];
+													// 								var experienceYear = experienceDateSplit[1];
+													//
+													// 								function setExperienceMonth() {
+													//
+													// 									if (experienceMonth === 'Jan') {
+													//
+													// 										experienceMonth = '01';
+													//
+													// 									} else if (experienceMonth === 'Feb') {
+													//
+													// 										experienceMonth = '02';
+													//
+													// 									} else if (experienceMonth === 'Mar') {
+													//
+													// 										experienceMonth = '03';
+													//
+													// 									} else if (experienceMonth === 'Apr') {
+													//
+													// 										experienceMonth = '04';
+													//
+													// 									} else if (experienceMonth === 'May') {
+													//
+													// 										experienceMonth = '05';
+													//
+													// 									} else if (experienceMonth === 'Jun') {
+													//
+													// 										experienceMonth = '06';
+													//
+													// 									} else if (experienceMonth === 'Jul') {
+													//
+													// 										experienceMonth = '07';
+													//
+													// 									} else if (experienceMonth === 'Aug') {
+													//
+													// 										experienceMonth = '08';
+													//
+													// 									} else if (experienceMonth === 'Sep') {
+													//
+													// 										experienceMonth = '09';
+													//
+													// 									} else if (experienceMonth === 'Oct') {
+													//
+													// 										experienceMonth = '10';
+													//
+													// 									} else if (experienceMonth === 'Nov') {
+													//
+													// 										experienceMonth = '11';
+													//
+													// 									} else if (experienceMonth === 'Dec') {
+													//
+													// 										experienceMonth = '12';
+													//
+													// 									} else if (experienceMonth === 'jan.') {
+													//
+													// 										experienceMonth = '01';
+													//
+													// 									} else if (experienceMonth === 'feb.') {
+													//
+													// 										experienceMonth = '02';
+													//
+													// 									} else if (experienceMonth === 'mar.') {
+													//
+													// 										experienceMonth = '03';
+													//
+													// 									} else if (experienceMonth === 'apr.') {
+													//
+													// 										experienceMonth = '04';
+													//
+													// 									} else if (experienceMonth === 'mai.') {
+													//
+													// 										experienceMonth = '05';
+													//
+													// 									} else if (experienceMonth === 'jun.') {
+													//
+													// 										experienceMonth = '06';
+													//
+													// 									} else if (experienceMonth === 'jul.') {
+													//
+													// 										experienceMonth = '07';
+													//
+													// 									} else if (experienceMonth === 'aug.') {
+													//
+													// 										experienceMonth = '08';
+													//
+													// 									} else if (experienceMonth === 'sep.') {
+													//
+													// 										experienceMonth = '09';
+													//
+													// 									} else if (experienceMonth === 'okt.') {
+													//
+													// 										experienceMonth = '10';
+													//
+													// 									} else if (experienceMonth === 'nov.') {
+													//
+													// 										experienceMonth = '11';
+													//
+													// 									} else if (experienceMonth === 'des.') {
+													//
+													// 										experienceMonth = '12';
+													//
+													// 									}
+													//
+													// 									if (index === 0) {
+													//
+													// 										experienceStartDate = '01.' + experienceMonth + '.' + experienceYear;
+													//
+													// 									} else if (index === 1) {
+													//
+													// 										experienceEndDate = '01.' + experienceMonth + '.' + experienceYear;
+													//
+													// 									}
+													//
+													// 								}
+													//
+													// 								if (experienceMonth == 'Present' || value == 'nå') {
+													//
+													// 									current = 1;
+													//
+													// 									experienceEndDate = null;
+													//
+													// 								} else {
+													//
+													// 									setExperienceMonth();
+													//
+													// 								}
+													//
+													// 								// console.log(experienceDateLength);
+													//
+													// 								// if (experienceDateLength === 1) {
+													// 								//
+													// 								// 	current = 1;
+													// 								//
+													// 								// } else if (experienceDateLength === 2) {
+													// 								//
+													// 								// 	current = 0;
+													// 								//
+													// 								// }
+													//
+													// 							});
+													//
+													// 							experience.push({
+													// 								title: experienceTitle,
+													// 								companyName: experienceCompanyName,
+													// 								location: experienceLocation,
+													// 								startDate: experienceStartDate,
+													// 								endDate: experienceEndDate,
+													// 								description: experienceDescription,
+													// 								current: current,
+													// 							});
+													//
+													// 							// console.log(experience);
+													//
+													// 						});
+													//
+													// 					}
+													//
+													// 					// experience.push({
+													// 					// 	title: experienceTitle,
+													// 					// 	companyName: experienceCompanyName,
+													// 					// 	// location: location,
+													// 					// 	startDate: experienceStartDate,
+													// 					// 	endDate: experienceEndDate,
+													// 					// 	description: experienceDescription,
+													// 					// 	current: current,
+													// 					// });
+													//
+													// 					// console.log(experience);
+													//
+													// 				}, 500);
+													//
+													// 			});
+													//
+													// 			// console.log(experience);
+													//
+													// 		} else {
+													//
+													// 			console.warn('Sorry, no Experience to scrape...');
+													//
+													// 		}
+													//
+													// 	}
+													//
+													// 	if ('button.pv-profile-section__see-more-inline') {
+													//
+													// 		var $seeMorePositionsButton = $('button.pv-profile-section__see-more-inline');
+													//
+													// 		console.log('click seeMorePositionsButton');
+													//
+													// 		$seeMorePositionsButton.click();
+													//
+													// 		setTimeout(function () {
+													//
+													// 			fetchExperiences();
+													//
+													// 		}, 500);
+													//
+													// 	} else {
+													//
+													// 		fetchExperiences()
+													//
+													// 	}
+													//
+													// }
 
 													if (json.content.Experience) {
 
@@ -1325,244 +2063,244 @@ console.log('RAMP loaded');
 													 * Get and push Educations.
 													 */
 
-													RAMP.scrapeEducations = function () {
-
-														if ('li.pv-education-entity') {
-
-															console.warn('Could not fetch Education data automaticly. Initiating manuall scraping...');
-
-															// 	$('li.position-entity').each(function (index) {
-															//
-															// 		var $entry = $(this);
-															//
-															// 		// $(this).find('button.pv-profile-section__show-more-detail').click();
-															//
-															// 		var $showMoreButton = $(this).find('button.pv-profile-section__show-more-detail');
-															//
-															// 		if ($showMoreButton) {
-															//
-															// 			$showMoreButton.click();
-															//
-															// 			setTimeout(function () {
-															//
-															// 				var experienceTitle;
-															// 				var experienceCompanyName;
-															// 				var experienceDescription;
-															// 				var experienceStartDate;
-															// 				var experienceEndDate;
-															//
-															// 				var $experienceTitle = $entry.find('.pv-entity__summary-info > h3');
-															// 				var $experienceCompanyName = $entry.find('.pv-entity__summary-info > h4 > .pv-entity__secondary-title');
-															// 				var $experienceDescription = $entry.find('.pv-entity__description');
-															// 				var $experienceDateRange = $entry.find('.pv-entity__date-range');
-															//
-															// 				var current = 0;
-															//
-															// 				if ($experienceTitle) {
-															//
-															// 					experienceTitle = $experienceTitle.text();
-															//
-															// 				}
-															//
-															// 				if ($experienceCompanyName) {
-															//
-															// 					experienceCompanyName = $experienceCompanyName.text();
-															//
-															// 				}
-															//
-															// 				if ($experienceDescription) {
-															//
-															// 					experienceDescription = $experienceDescription
-															// 						.clone() //clone the element
-															// 						.children() //select all the children
-															// 						.remove() //remove all the children
-															// 						.end() //again go back to selected element
-															// 						.text();
-															//
-															// 					function myTrim(x) {
-															// 						return x.replace(/^\s+|\s+$/gm, '');
-															// 					}
-															//
-															// 					experienceDescription = myTrim(experienceDescription);
-															// 					experienceDescription = decodeHtml(experienceDescription);
-															// 					experienceDescription = experienceDescription.replace(/(<br>)+/g, '\n ');
-															//
-															// 					// console.log(experienceDescription);
-															//
-															// 				}
-															//
-															// 				if ($experienceDateRange) {
-															//
-															// 					$experienceDateRange.each(function (index) {
-															//
-															// 						var $experienceDates = $experienceDateRange.find('time');
-															//
-															// 						var experienceDateLength = 0;
-															//
-															// 						$experienceDates.each(function (index) {
-															//
-															// 							experienceDateLength++
-															//
-															// 							// console.log(index + ": " + $(this).text());
-															//
-															// 							var experienceDate = $(this).text();
-															//
-															// 							var experienceDateSplit = experienceDate.split(' ');
-															// 							var experienceMonth = experienceDateSplit[0];
-															// 							var experienceYear = experienceDateSplit[1];
-															//
-															// 							if (experienceMonth === 'Jan') {
-															//
-															// 								experienceMonth = '01';
-															//
-															// 							} else if (experienceMonth === 'Feb') {
-															//
-															// 								experienceMonth = '02';
-															//
-															// 							} else if (experienceMonth === 'Mar') {
-															//
-															// 								experienceMonth = '03';
-															//
-															// 							} else if (experienceMonth === 'Apr') {
-															//
-															// 								experienceMonth = '04';
-															//
-															// 							} else if (experienceMonth === 'May') {
-															//
-															// 								experienceMonth = '05';
-															//
-															// 							} else if (experienceMonth === 'Jun') {
-															//
-															// 								experienceMonth = '06';
-															//
-															// 							} else if (experienceMonth === 'Jul') {
-															//
-															// 								experienceMonth = '07';
-															//
-															// 							} else if (experienceMonth === 'Aug') {
-															//
-															// 								experienceMonth = '08';
-															//
-															// 							} else if (experienceMonth === 'Sep') {
-															//
-															// 								experienceMonth = '09';
-															//
-															// 							} else if (experienceMonth === 'Oct') {
-															//
-															// 								experienceMonth = '10';
-															//
-															// 							} else if (experienceMonth === 'Nov') {
-															//
-															// 								experienceMonth = '11';
-															//
-															// 							} else if (experienceMonth === 'Dec') {
-															//
-															// 								experienceMonth = '12';
-															//
-															// 							} else if (experienceMonth === 'jan.') {
-															//
-															// 								experienceMonth = '01';
-															//
-															// 							} else if (experienceMonth === 'feb.') {
-															//
-															// 								experienceMonth = '02';
-															//
-															// 							} else if (experienceMonth === 'mar.') {
-															//
-															// 								experienceMonth = '03';
-															//
-															// 							} else if (experienceMonth === 'apr.') {
-															//
-															// 								experienceMonth = '04';
-															//
-															// 							} else if (experienceMonth === 'mai.') {
-															//
-															// 								experienceMonth = '05';
-															//
-															// 							} else if (experienceMonth === 'jun.') {
-															//
-															// 								experienceMonth = '06';
-															//
-															// 							} else if (experienceMonth === 'jul.') {
-															//
-															// 								experienceMonth = '07';
-															//
-															// 							} else if (experienceMonth === 'aug.') {
-															//
-															// 								experienceMonth = '08';
-															//
-															// 							} else if (experienceMonth === 'sep.') {
-															//
-															// 								experienceMonth = '09';
-															//
-															// 							} else if (experienceMonth === 'okt.') {
-															//
-															// 								experienceMonth = '10';
-															//
-															// 							} else if (experienceMonth === 'nov.') {
-															//
-															// 								experienceMonth = '11';
-															//
-															// 							} else if (experienceMonth === 'des.') {
-															//
-															// 								experienceMonth = '12';
-															//
-															// 							}
-															//
-															// 							if (index === 0) {
-															//
-															// 								experienceStartDate = '01.' + experienceMonth + '.' + experienceYear;
-															//
-															// 							} else if (index === 1) {
-															//
-															// 								experienceEndDate = '01.' + experienceMonth + '.' + experienceYear;
-															//
-															// 							}
-															//
-															// 						});
-															//
-															// 						// console.log(experienceDateLength);
-															//
-															// 						if (experienceDateLength === 1) {
-															//
-															// 							current = 1;
-															//
-															//
-															// 						} else if (experienceDateLength === 2) {
-															//
-															// 							current = 0;
-															//
-															// 						}
-															//
-															// 					});
-															//
-															// 				}
-															//
-															// 				experience.push({
-															// 					title: experienceTitle,
-															// 					companyName: experienceCompanyName,
-															// 					// location: location,
-															// 					startDate: experienceStartDate,
-															// 					endDate: experienceEndDate,
-															// 					description: experienceDescription,
-															// 					current: current,
-															// 				});
-															//
-															// 				// console.log(experience);
-															//
-															// 			}, 500);
-															//
-															// 		}
-															//
-															// 	});
-
-														} else {
-
-															console.warn('Sorry, no Education to scrape...');
-
-														}
-
-													}
+													// RAMP.scrapeEducations = function () {
+													//
+													// 	if ('li.pv-education-entity') {
+													//
+													// 		console.warn('Could not fetch Education data automaticly. Initiating manuall scraping...');
+													//
+													// 		// 	$('li.position-entity').each(function (index) {
+													// 		//
+													// 		// 		var $entry = $(this);
+													// 		//
+													// 		// 		// $(this).find('button.pv-profile-section__show-more-detail').click();
+													// 		//
+													// 		// 		var $showMoreButton = $(this).find('button.pv-profile-section__show-more-detail');
+													// 		//
+													// 		// 		if ($showMoreButton) {
+													// 		//
+													// 		// 			$showMoreButton.click();
+													// 		//
+													// 		// 			setTimeout(function () {
+													// 		//
+													// 		// 				var experienceTitle;
+													// 		// 				var experienceCompanyName;
+													// 		// 				var experienceDescription;
+													// 		// 				var experienceStartDate;
+													// 		// 				var experienceEndDate;
+													// 		//
+													// 		// 				var $experienceTitle = $entry.find('.pv-entity__summary-info > h3');
+													// 		// 				var $experienceCompanyName = $entry.find('.pv-entity__summary-info > h4 > .pv-entity__secondary-title');
+													// 		// 				var $experienceDescription = $entry.find('.pv-entity__description');
+													// 		// 				var $experienceDateRange = $entry.find('.pv-entity__date-range');
+													// 		//
+													// 		// 				var current = 0;
+													// 		//
+													// 		// 				if ($experienceTitle) {
+													// 		//
+													// 		// 					experienceTitle = $experienceTitle.text();
+													// 		//
+													// 		// 				}
+													// 		//
+													// 		// 				if ($experienceCompanyName) {
+													// 		//
+													// 		// 					experienceCompanyName = $experienceCompanyName.text();
+													// 		//
+													// 		// 				}
+													// 		//
+													// 		// 				if ($experienceDescription) {
+													// 		//
+													// 		// 					experienceDescription = $experienceDescription
+													// 		// 						.clone() //clone the element
+													// 		// 						.children() //select all the children
+													// 		// 						.remove() //remove all the children
+													// 		// 						.end() //again go back to selected element
+													// 		// 						.text();
+													// 		//
+													// 		// 					function myTrim(x) {
+													// 		// 						return x.replace(/^\s+|\s+$/gm, '');
+													// 		// 					}
+													// 		//
+													// 		// 					experienceDescription = myTrim(experienceDescription);
+													// 		// 					experienceDescription = decodeHtml(experienceDescription);
+													// 		// 					experienceDescription = experienceDescription.replace(/(<br>)+/g, '\n ');
+													// 		//
+													// 		// 					// console.log(experienceDescription);
+													// 		//
+													// 		// 				}
+													// 		//
+													// 		// 				if ($experienceDateRange) {
+													// 		//
+													// 		// 					$experienceDateRange.each(function (index) {
+													// 		//
+													// 		// 						var $experienceDates = $experienceDateRange.find('time');
+													// 		//
+													// 		// 						var experienceDateLength = 0;
+													// 		//
+													// 		// 						$experienceDates.each(function (index) {
+													// 		//
+													// 		// 							experienceDateLength++
+													// 		//
+													// 		// 							// console.log(index + ": " + $(this).text());
+													// 		//
+													// 		// 							var experienceDate = $(this).text();
+													// 		//
+													// 		// 							var experienceDateSplit = experienceDate.split(' ');
+													// 		// 							var experienceMonth = experienceDateSplit[0];
+													// 		// 							var experienceYear = experienceDateSplit[1];
+													// 		//
+													// 		// 							if (experienceMonth === 'Jan') {
+													// 		//
+													// 		// 								experienceMonth = '01';
+													// 		//
+													// 		// 							} else if (experienceMonth === 'Feb') {
+													// 		//
+													// 		// 								experienceMonth = '02';
+													// 		//
+													// 		// 							} else if (experienceMonth === 'Mar') {
+													// 		//
+													// 		// 								experienceMonth = '03';
+													// 		//
+													// 		// 							} else if (experienceMonth === 'Apr') {
+													// 		//
+													// 		// 								experienceMonth = '04';
+													// 		//
+													// 		// 							} else if (experienceMonth === 'May') {
+													// 		//
+													// 		// 								experienceMonth = '05';
+													// 		//
+													// 		// 							} else if (experienceMonth === 'Jun') {
+													// 		//
+													// 		// 								experienceMonth = '06';
+													// 		//
+													// 		// 							} else if (experienceMonth === 'Jul') {
+													// 		//
+													// 		// 								experienceMonth = '07';
+													// 		//
+													// 		// 							} else if (experienceMonth === 'Aug') {
+													// 		//
+													// 		// 								experienceMonth = '08';
+													// 		//
+													// 		// 							} else if (experienceMonth === 'Sep') {
+													// 		//
+													// 		// 								experienceMonth = '09';
+													// 		//
+													// 		// 							} else if (experienceMonth === 'Oct') {
+													// 		//
+													// 		// 								experienceMonth = '10';
+													// 		//
+													// 		// 							} else if (experienceMonth === 'Nov') {
+													// 		//
+													// 		// 								experienceMonth = '11';
+													// 		//
+													// 		// 							} else if (experienceMonth === 'Dec') {
+													// 		//
+													// 		// 								experienceMonth = '12';
+													// 		//
+													// 		// 							} else if (experienceMonth === 'jan.') {
+													// 		//
+													// 		// 								experienceMonth = '01';
+													// 		//
+													// 		// 							} else if (experienceMonth === 'feb.') {
+													// 		//
+													// 		// 								experienceMonth = '02';
+													// 		//
+													// 		// 							} else if (experienceMonth === 'mar.') {
+													// 		//
+													// 		// 								experienceMonth = '03';
+													// 		//
+													// 		// 							} else if (experienceMonth === 'apr.') {
+													// 		//
+													// 		// 								experienceMonth = '04';
+													// 		//
+													// 		// 							} else if (experienceMonth === 'mai.') {
+													// 		//
+													// 		// 								experienceMonth = '05';
+													// 		//
+													// 		// 							} else if (experienceMonth === 'jun.') {
+													// 		//
+													// 		// 								experienceMonth = '06';
+													// 		//
+													// 		// 							} else if (experienceMonth === 'jul.') {
+													// 		//
+													// 		// 								experienceMonth = '07';
+													// 		//
+													// 		// 							} else if (experienceMonth === 'aug.') {
+													// 		//
+													// 		// 								experienceMonth = '08';
+													// 		//
+													// 		// 							} else if (experienceMonth === 'sep.') {
+													// 		//
+													// 		// 								experienceMonth = '09';
+													// 		//
+													// 		// 							} else if (experienceMonth === 'okt.') {
+													// 		//
+													// 		// 								experienceMonth = '10';
+													// 		//
+													// 		// 							} else if (experienceMonth === 'nov.') {
+													// 		//
+													// 		// 								experienceMonth = '11';
+													// 		//
+													// 		// 							} else if (experienceMonth === 'des.') {
+													// 		//
+													// 		// 								experienceMonth = '12';
+													// 		//
+													// 		// 							}
+													// 		//
+													// 		// 							if (index === 0) {
+													// 		//
+													// 		// 								experienceStartDate = '01.' + experienceMonth + '.' + experienceYear;
+													// 		//
+													// 		// 							} else if (index === 1) {
+													// 		//
+													// 		// 								experienceEndDate = '01.' + experienceMonth + '.' + experienceYear;
+													// 		//
+													// 		// 							}
+													// 		//
+													// 		// 						});
+													// 		//
+													// 		// 						// console.log(experienceDateLength);
+													// 		//
+													// 		// 						if (experienceDateLength === 1) {
+													// 		//
+													// 		// 							current = 1;
+													// 		//
+													// 		//
+													// 		// 						} else if (experienceDateLength === 2) {
+													// 		//
+													// 		// 							current = 0;
+													// 		//
+													// 		// 						}
+													// 		//
+													// 		// 					});
+													// 		//
+													// 		// 				}
+													// 		//
+													// 		// 				experience.push({
+													// 		// 					title: experienceTitle,
+													// 		// 					companyName: experienceCompanyName,
+													// 		// 					// location: location,
+													// 		// 					startDate: experienceStartDate,
+													// 		// 					endDate: experienceEndDate,
+													// 		// 					description: experienceDescription,
+													// 		// 					current: current,
+													// 		// 				});
+													// 		//
+													// 		// 				// console.log(experience);
+													// 		//
+													// 		// 			}, 500);
+													// 		//
+													// 		// 		}
+													// 		//
+													// 		// 	});
+													//
+													// 	} else {
+													//
+													// 		console.warn('Sorry, no Education to scrape...');
+													//
+													// 	}
+													//
+													// }
 
 													if (json.content.Education && json.content.Education.educationsMpr) {
 
@@ -2629,20 +3367,284 @@ console.log('RAMP loaded');
 
 												})
 												.fail(function (jqxhr, textStatus, error) {
-													console.error('ERROR: LinkedIn profile data could not be loaded: ' + error);
+													console.warn('ERROR: LinkedIn profile data could not be loaded: ' + error);
 
-													swal({
-														type: 'error',
-														title: 'Oops!',
-														text: 'RAMP could not fetch the candidates data from LinkedIn!',
-														allowOutsideClick: false,
-														allowEscapeKey: false,
-														showCancelButton: true,
-														reverseButtons: true,
-														confirmButtonText: callback.dialog__button_confirm__dialog_button_try_again.message,
-													}).then(function () {
-														location.reload();
-													})
+													// swal({
+													// 	type: 'error',
+													// 	title: 'Oops!',
+													// 	text: 'RAMP could not fetch the candidates data from LinkedIn!',
+													// 	allowOutsideClick: false,
+													// 	allowEscapeKey: false,
+													// 	showCancelButton: true,
+													// 	reverseButtons: true,
+													// 	confirmButtonText: callback.dialog__button_confirm__dialog_button_try_again.message,
+													// }).then(function () {
+													// 	location.reload();
+													// })
+
+													RAMP.scrapeExperiences();
+													RAMP.scrapeEducations();
+													RAMP.scrapeSkills();
+													RAMP.scrapeSummary();
+													RAMP.scrapeContactInfo();
+													RAMP.scrapeProfilePicture();
+
+													setTimeout(function () {
+
+														toDataUrl(imageUrl, function (base64Img) {
+
+															// console.log(base64Img);
+
+															var base64ImgSplit = base64Img.split(',');
+															base64Img = base64ImgSplit[1];
+
+															var profilePicture = {
+																'extension': profileImageExtension,
+																'base64': base64Img
+															};
+
+															console.log(profilePicture);
+															// console.log(profilePicture.extension);
+															// console.log(profilePicture.base64);
+
+															// $('#send_to_rm').prop('disabled', false);
+
+
+															setTimeout(function () {
+
+																candidateData = {
+																	'key': storrageResult.apiKey,
+																	'scope': 'candidate',
+																	'operation': 'insert',
+																	'data': {
+																		'corporationId': storrageResult.corporation_id,
+																		'connectDepartment': [storrageResult.department_id],
+																		'connectUser': [storrageResult.intercom_employeee_id],
+																		'firstName': candidateFirstName,
+																		'lastName': candidateLastName,
+																		'title': inMemberObject.occupation,
+																		'mobilePhone': mobilePhone,
+																		'email': email,
+																		'twitter': twitter,
+																		'facebook': facebook,
+																		'web': web,
+																		'dob': dob,
+																		'description': summary[0],
+																		'linkedin': linkedin,
+																		'experience': experience,
+																		'education': education,
+																		'skills': skills,
+																		'profilePicture': profilePicture,
+																		'certifications': certifications,
+																		'languages': languages,
+																		// 'notes': notes,
+																	}
+																};
+
+																$('#send_to_rm').prop('disabled', false);
+
+																console.log('candidateData', candidateData);
+
+															}, 500);
+
+															$('#send_to_rm').on('click', function (e) {
+
+																// candidateData = {
+																// 	'key': storrageResult.apiKey,
+																// 	'scope': 'candidate',
+																// 	'operation': 'insert',
+																// 	'data': {
+																// 		'corporationId': storrageResult.corporation_id,
+																// 		'connectDepartment': [storrageResult.department_id],
+																// 		'connectUser': [storrageResult.intercom_employeee_id],
+																// 		'firstName': candidateFirstName,
+																// 		'lastName': candidateLastName,
+																// 		'title': inMemberObject.occupation,
+																// 		'mobilePhone': mobilePhone,
+																// 		'email': email,
+																// 		'twitter': twitter,
+																// 		'facebook': facebook,
+																// 		'web': web,
+																// 		'dob': dob,
+																// 		'description': summary[0],
+																// 		'linkedin': window.location.href,
+																// 		'experience': experience,
+																// 		'education': education,
+																// 		'skills': skills,
+																// 		'profilePicture': profilePicture,
+																// 		'certifications': certifications,
+																// 		'languages': languages,
+																// 		// 'notes': notes,
+																// 	}
+																// };
+
+																console.info('candidateData', candidateData);
+
+																candidateData = JSON.stringify(candidateData);
+																// var  candidateData = candidateData;
+
+																console.log('API Key: ' + storrageResult.apiKey);
+																console.log('Corporation ID: ' + storrageResult.corporation_id);
+																console.log('Department ID: ' + storrageResult.department_id);
+																console.log('User ID: ' + storrageResult.intercom_employeee_id);
+
+																swal({
+																	title: callback.dialog__text_plain__request_process_title_generic.message,
+																	text: callback.dialog__text_plain__request_process_message_generic.message,
+																	type: "info",
+																	showLoaderOnConfirm: true,
+																	onOpen: function () {
+																		swal.clickConfirm();
+																	},
+																	preConfirm: function () {
+																		return new Promise(function (resolve) {
+
+																			var xhr = new XMLHttpRequest();
+																			// xhr.withCredentials = true;
+
+																			xhr.addEventListener('readystatechange', function () {
+
+
+																				if (this.readyState === 4) {
+
+																					var response = $.parseJSON(this.response);
+
+																					// var response = this.response;
+																					console.log(response);
+
+																					if (response.success === true) {
+
+																						console.group('CANDIDATE EXPORT INITIATED');
+																						console.info(this.response);
+																						// console.info(this.responseText);
+
+																						var totalExportedLinkedInRef = firebase.database().ref('statistics/candidates/exported/LinkedIn');
+
+																						totalExportedLinkedInRef.transaction(function (currentExported) {
+
+																							return currentExported + 1;
+
+																						}, function (error, committed, snapshot) {
+
+																							if (error) {
+
+																								console.log('Transaction failed abnormally!', error);
+
+																							} else if (!committed) {
+
+																								console.log('We aborted the transaction (because ada already exists).');
+
+																							} else {
+
+																								var totalExportedRef = firebase.database().ref('statistics/candidates/exported/total');
+
+																								totalExportedRef.transaction(function (currentExported) {
+
+																									return currentExported + 1;
+
+																								}, function (error, committed, snapshot) {
+
+																									if (error) {
+
+																										console.log('Transaction failed abnormally!', error);
+
+																									} else if (!committed) {
+
+																										console.log('We aborted the transaction (because ada already exists).');
+
+																									} else {
+																										// setTimeout(function() {
+																										swal({
+																											type: 'success',
+																											title: callback.dialog__text_plain__dialog_success_title_generic.message,
+																											text: candidateFirstName + ' ' + candidateLastName + ' ' + callback.dialog__text_plain__request_success_message.message + ' ' + callback.didialog__text_service__service_name_recruitmentmanager.message,
+																											timer: 3000
+																										}).catch(swal.noop)
+																										// }, 2000)
+																										// console.log(candidateData);
+																										console.log('Total number of candidates added: ', snapshot.val());
+																									}
+
+																								});
+
+																								console.log('Total number of candidates added from LinkedIn: ', snapshot.val());
+
+																							}
+
+																						});
+
+																						console.groupEnd();
+
+																					} else if (response.success === false) {
+
+																						console.log(response);
+
+																						setTimeout(function () {
+																							swal({
+																								type: 'error',
+																								title: callback.dialog__text_plain__dialog_error_title_generic.message,
+																								text: callback.dialog__text_plain__request_error_message.message,
+																								allowOutsideClick: false,
+																								allowEscapeKey: false,
+																								showCancelButton: true,
+																								reverseButtons: true,
+																								cancelButtonText: callback.dialog__button_cancel__dialog_button_cancel.message,
+																								confirmButtonText: callback.dialog__button_confirm__dialog_button_try_again.message,
+																							}).then(function () {
+
+																								$('#send_to_rm').click();
+
+																							})
+
+																						}, 2000)
+
+																					} else {
+
+																						console.log(response);
+
+																						setTimeout(function () {
+
+																							swal({
+																								type: 'error',
+																								title: callback.dialog__text_plain__dialog_error_title_generic.message,
+																								text: callback.dialog__text_plain__request_error_message.message,
+																								allowOutsideClick: false,
+																								allowEscapeKey: false,
+																								showCancelButton: true,
+																								reverseButtons: true,
+																								cancelButtonText: callback.dialog__button_cancel__dialog_button_cancel.message,
+																								confirmButtonText: callback.dialog__button_confirm__dialog_button_try_again.message,
+																							}).then(function () {
+
+																								$('#send_to_rm').click();
+
+																							})
+
+																						}, 2000)
+
+																					}
+
+																				}
+
+																			});
+
+																			xhr.open('POST', 'https://api.recman.no/post/');
+																			// xhr.open('POST', 'https://api.recman.no/dgfhfgh/');
+																			xhr.setRequestHeader('content-type', 'application/json');
+																			xhr.setRequestHeader('cache-control', 'no-cache');
+
+																			xhr.send(candidateData);
+																			// xhr.send(tagData);
+																		});
+																	},
+																	allowOutsideClick: false
+																});
+
+															});
+
+														});
+
+													}, 500);
 
 												});
 
@@ -3091,41 +4093,64 @@ console.log('RAMP loaded');
 							}
 							console.groupEnd();
 
-							// Define the string
-							var candidateProfilePicture = $('.profile-picture img').attr('src');
+							// function decodeHtml(html) {
+							// 	var txt = document.createElement("textarea");
+							// 	txt.innerHTML = html;
+							// 	return txt.value;
+							// }
+							//
+							// function toDataUrl(url, callback, outputFormat) {
+							// 	var img = new Image();
+							// 	img.crossOrigin = 'Anonymous';
+							// 	img.onload = function () {
+							// 		var canvas = document.createElement('CANVAS');
+							// 		var ctx = canvas.getContext('2d');
+							// 		var dataURL;
+							// 		canvas.height = this.height;
+							// 		canvas.width = this.width;
+							// 		ctx.drawImage(this, 0, 0);
+							// 		dataURL = canvas.toDataURL(outputFormat);
+							// 		callback(dataURL);
+							// 		canvas = null;
+							// 	};
+							// 	img.src = url;
+							// }
 
-							function toDataUrl(url, callback) {
-								var xhr = new XMLHttpRequest();
-								xhr.responseType = 'blob';
-								xhr.onload = function () {
-									var reader = new FileReader();
-									reader.onloadend = function () {
-										callback(reader.result);
-									}
-									reader.readAsDataURL(xhr.response);
-								};
-								xhr.open('GET', url);
-								xhr.send();
-							}
-
-							var profilePicture;
-
-							toDataUrl(candidateProfilePicture, function (base64Img) {
-								// console.log(base64Img);
-								var base64ImgSplit = base64Img.split(',');
-
-								base64Img = base64ImgSplit[1];
-								// console.log(base64Img);
-								profilePicture = {
-									'extension': 'jpg',
-									'base64': base64Img
-								};
-
-								console.groupCollapsed('PROFILE PICTURE');
-								console.log(candidateProfilePicture);
-								console.log(profilePicture);
-								console.groupEnd();
-							});
+							// // Define the string
+							// var candidateProfilePicture = $('.profile-picture img').attr('src');
+							//
+							// function toDataUrl(url, callback) {
+							// 	var xhr = new XMLHttpRequest();
+							// 	xhr.responseType = 'blob';
+							// 	xhr.onload = function () {
+							// 		var reader = new FileReader();
+							// 		reader.onloadend = function () {
+							// 			callback(reader.result);
+							// 		}
+							// 		reader.readAsDataURL(xhr.response);
+							// 	};
+							// 	xhr.open('GET', url);
+							// 	xhr.send();
+							// }
+							//
+							// var profilePicture;
+							//
+							// toDataUrl(candidateProfilePicture, function (base64Img) {
+							// 	// console.log(base64Img);
+							// 	var base64ImgSplit = base64Img.split(',');
+							//
+							// 	base64Img = base64ImgSplit[1];
+							// 	// console.log(base64Img);
+							// 	profilePicture = {
+							// 		'extension': 'jpg',
+							// 		'base64': base64Img
+							// 	};
+							//
+							// 	console.groupCollapsed('PROFILE PICTURE');
+							// 	console.log(candidateProfilePicture);
+							// 	console.log(profilePicture);
+							// 	console.groupEnd();
+							// });
 
 
 							function hideCustomAlert() {
