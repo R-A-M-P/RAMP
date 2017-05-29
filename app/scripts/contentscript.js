@@ -3,6 +3,35 @@ import swal from 'sweetalert2';
 import * as firebase from 'firebase/app';
 import 'firebase/database';
 import * as toastr from 'toastr';
+import moment from 'moment';
+import numeral from 'numeral';
+
+let now = moment().format('LLLL');
+
+// load a locale
+numeral.register('locale', 'no', {
+	delimiters: {
+		thousands: ' ',
+		decimal: ','
+	},
+	abbreviations: {
+		thousand: 'k',
+		million: 'm',
+		billion: 'b',
+		trillion: 't'
+	},
+	ordinal: function (number) {
+		return '.';
+	},
+	currency: {
+		symbol: 'NOK'
+	}
+});
+
+// switch between locales
+numeral.locale('no');
+
+
 
 console.log('RAMP loaded');
 
@@ -11,6 +40,14 @@ console.log('RAMP loaded');
 	'use strict';
 
 	window.RAMP = {};
+	var department_id;
+	var department_name;
+	var user_id;
+	var account_manager_id;
+	var is_account_closed = false;
+	var reactivation_fee = 1995;
+	var initiate_scrape = false;
+	var outstanding_balance = 0;
 
 	var candidateFirstName;
 	var candidateLastName;
@@ -416,6 +453,8 @@ console.log('RAMP loaded');
 	var imageUrl;
 	var profileImageExtension;
 
+
+
 	RAMP.init = function () {
 
 		// developers can access this
@@ -597,16 +636,233 @@ console.log('RAMP loaded');
 				console.log('API Key: ' + storrageResult.apiKey);
 				console.log('Corporation ID: ' + storrageResult.corporation_id);
 				console.log('Department ID: ' + storrageResult.department_id);
+				console.log('Department Name: ' + storrageResult.department_name);
 				console.log('User ID: ' + storrageResult.intercom_employeee_id);
 				console.log('Full name: ' + storrageResult.intercom_employeee_name);
 				console.log('Email address: ' + storrageResult.intercom_employeee_email);
 				console.log('Signup date: ' + storrageResult.intercom_employeee_created_at);
+				console.log('Account Manager ID: ' + storrageResult.intercom_company_account_manager_id);
 
 				// Save data to sessionStorage
 				sessionStorage.setItem('sessionStorage_intercom_employeee_id', storrageResult.intercom_employeee_id);
 				sessionStorage.setItem('sessionStorage_intercom_employeee_name', storrageResult.intercom_employeee_name);
 				sessionStorage.setItem('sessionStorage_intercom_employeee_email', storrageResult.intercom_employeee_email);
 				sessionStorage.setItem('sessionStorage_intercom_employeee_created_at', storrageResult.intercom_employeee_created_at);
+				sessionStorage.setItem('sessionStorage_intercom_company_account_manager_id', storrageResult.intercom_company_account_manager_id);
+
+				user_id = storrageResult.intercom_employeee_id;
+				account_manager_id = storrageResult.intercom_company_account_manager_id;
+				department_id = storrageResult.department_id;
+				department_name = storrageResult.department_name;
+
+				$('<div id="ramp_notification_bar"><div class="content"></div></div>').insertBefore('#extended-nav');
+
+				RAMP.ramp_notificationbar_show = function () {
+
+					if (!$('body').hasClass('ramp_notificationbar_active')) {
+
+						$('body').addClass('ramp_notificationbar_active');
+						$('#ramp_notification_bar').show();
+
+					}
+
+				}
+
+				$('#ramp_notification_bar').on('click', '#btn_show_outstanding_balance_swal', function (e) {
+
+					e.preventDefault();
+					console.log('Show Notificationbar');
+					RAMP.showSwalOutstandingBalance();
+
+				});
+
+				$('#ramp_notification_bar').on('click', '#btn_dismiss_notificationbar', function (e) {
+
+					e.preventDefault();
+					console.log('Dismiss Notificationbar');
+
+					chrome.storage.sync.set({
+
+						dismissNotification: 'account_closed',
+
+					}, function () {
+
+						console.log('Account Closed Notifiction dismissed.');
+
+						$('body').removeClass('ramp_notificationbar_active');
+						$('#ramp_notification_bar').hide().removeClass('account_closed').find('.content').html('');
+
+					});
+
+				});
+
+				$.ajax({
+					"async": true,
+					"crossDomain": true,
+					"url": "https://fiken.no/api/v1/companies/recman-apps-modules-og-plugins-da/contacts",
+					"method": "GET",
+					"headers": {
+						"authorization": "Basic aGVsbG9AcmVjbWFucGx1Z2lucy5ubzolUXR8Yk0tO1NBcy0pTj05cnc4Ml4pY110VnI9",
+					}
+				}).done(function (fikenResponse) {
+					console.log('Fiken Contacts', fikenResponse);
+					$.each(fikenResponse._embedded['https://fiken.no/api/v1/rel/contacts'], function (i, v) {
+						if (v.hasOwnProperty('memberNumber')) {
+							if (v.memberNumber == department_id) {
+								// console.info('Department ID ' + v.memberNumber + ' is an active Fiken memberNumber.', v._links.self.href);
+								var fikenCustomerLink = v._links.self.href;
+								fikenCustomerLink = fikenCustomerLink.split('https://fiken.no/api/v1/companies/recman-apps-modules-og-plugins-da/contacts/');
+								var fikenCustomerNumber = fikenCustomerLink[1];
+								console.info('Department ID ' + v.memberNumber + ' is an active Fiken memberNumber:', fikenCustomerNumber);
+
+								$.ajax({
+									"async": true,
+									"crossDomain": true,
+									"url": "https://fiken.no/api/v1/companies/recman-apps-modules-og-plugins-da/sales/",
+									"method": "GET",
+									"headers": {
+										"authorization": "Basic aGVsbG9AcmVjbWFucGx1Z2lucy5ubzolUXR8Yk0tO1NBcy0pTj05cnc4Ml4pY110VnI9",
+									}
+								}).done(function (fikenSaleResponse) {
+									console.log('Fiken Sales', fikenSaleResponse);
+									$.each(fikenSaleResponse._embedded["https://fiken.no/api/v1/rel/sales"], function (i, v) {
+
+										if (v.customer == 'https://fiken.no/api/v1/companies/recman-apps-modules-og-plugins-da/contacts/' + fikenCustomerNumber) {
+
+											if (!v.paid) {
+
+												console.log('Invoise is NOT paid');
+
+												console.log('Customer Invoice details: ', v);
+
+												var currentDate = moment();
+												var invoiceDate = moment(v.date, "YYYY-MM-DD");
+												var dueDate = moment(invoiceDate, "YYYY-MM-DD").add(7, 'days');
+												var reminderDate = moment(dueDate, "YYYY-MM-DD").add(7, 'days');
+												var closeDate = moment(reminderDate, "YYYY-MM-DD").add(7, 'days');
+
+												console.log('Invoice date: ', invoiceDate.toString());
+												console.log('Due date: ', dueDate.toString());
+												console.log('Reminder date: ', reminderDate.toString());
+												console.log('Close date: ', closeDate.toString());
+
+												var outstandingSwalType;
+												var outstandingSwalTitle;
+												var outstandingSwalContent;
+
+												RAMP.showSwalOutstandingBalance = function () {
+
+													swal({
+														type: outstandingSwalType,
+														title: outstandingSwalTitle,
+														html: outstandingSwalContent,
+														allowOutsideClick: false,
+														allowEscapeKey: false,
+														showCancelButton: false,
+														confirmButtonText: 'Dismiss',
+													}).then(function () {
+
+														// window.open(v._embedded['https://fiken.no/api/v1/rel/attachments'][0].downloadUrl, '_blank');
+														RAMP.ramp_notificationbar_show();
+
+													});
+
+												}
+
+												if (moment(currentDate).isSameOrBefore(dueDate)) {
+
+													if (user_id === account_manager_id) {
+
+														console.info('Current user is Account Manager.');
+														console.log('Your RAMP account payment is due', currentDate.to(dueDate));
+
+													}
+
+												} else if (moment(currentDate).isAfter(dueDate) && moment(currentDate).isBefore(reminderDate)) {
+
+													if (user_id === account_manager_id) {
+
+														console.info('Current user is Account Manager.');
+														console.log('Your RAMP account payment was due', dueDate.from(currentDate));
+
+													}
+
+												} else if (moment(currentDate).isSameOrAfter(reminderDate) && moment(currentDate).isBefore(closeDate)) {
+
+													console.warn('Your RAMP account payment was due', dueDate.from(currentDate), 'and your account will be closed', currentDate.to(closeDate));
+
+												} else if (moment(currentDate).isSameOrAfter(closeDate)) {
+
+													// console.warn('We have not received payment for your RAMP account, and your account is now closed!');
+
+													is_account_closed = true;
+													reactivation_fee = numeral(reactivation_fee).multiply(1.25);
+													reactivation_fee = numeral(reactivation_fee).format('$ 0,0[.]00');
+													console.log('Reactivation fee is ', reactivation_fee);
+
+													outstanding_balance += v.lines[0].netPrice + v.lines[0].vat;
+													console.log('Outstanding balance is ', outstanding_balance);
+
+													outstanding_balance = numeral(outstanding_balance).divide(100);
+													console.log('Outstanding balance is ', outstanding_balance);
+
+													outstanding_balance = numeral(outstanding_balance).format('$ 0,0[.]00');
+													console.log('Outstanding balance is ', outstanding_balance);
+
+												}
+
+												if (is_account_closed) {
+
+													console.warn('We have not received payment for your RAMP account, and your account is now closed!');
+
+													var notification_dismissed_account_closed = storrageResult.dismissNotification;
+													// console.log('notification_dismissed_account_closed', notification_dismissed_account_closed);
+
+													$('#ramp_notification_bar').addClass('account_closed').find('.content').html('<h2 class="Sans-19px-black-85%">Attention! Your RAMP subscription has been canceled! <button class="truncate-multiline--button" id="btn_show_outstanding_balance_swal">Read more</button> or <button class="truncate-multiline--button" id="btn_dismiss_notificationbar">hide this notification</button>.</h2>');
+
+													outstandingSwalType = 'error';
+													outstandingSwalTitle = 'ATTENTION!';
+
+													// chrome.storage.sync.remove('dismissNotification');
+
+													if (notification_dismissed_account_closed !== 'account_closed') {
+
+														if (user_id === account_manager_id) {
+
+															outstandingSwalContent = '<div class="SwalOutstandingBalanceContent"><h3>Your RAMP subscription has been canceled!</h3><br>The final deadline for paying your otstanding balance of<br><br><h1 style="color: #F27474;">' + outstanding_balance + '</h1><br> was <strong>' + reminderDate.from(currentDate) + '</strong>, on <strong>' + moment(reminderDate).format('dddd, MMMM Do YYYY') + '</strong>.<br><br>Your RAMP subscription will remain canceled until we\'ve received payment for the entire amount owed.</div>';
+
+															RAMP.showSwalOutstandingBalance();
+
+														} else {
+
+															outstandingSwalContent = '<div class="SwalOutstandingBalanceContent"><h3>Your access to RAMP has been revoked!</h3><br>The RAMP subscription for <strong>' + department_name + '</strong> has been canceled due to an overdue outstanding balance with us.<br><br>Final payment deadline for the overdue outstanding balance<br>was <strong>' + reminderDate.from(currentDate) + '</strong>, on <strong>' + moment(reminderDate).format('dddd, MMMM Do YYYY') + '</strong>.<br><br>Your access to RAMP for LinkedIn will remain revoked until we\'ve received payment for the entire amount owed.</div>';
+
+															RAMP.ramp_notificationbar_show();
+
+														}
+
+													}
+
+												}
+
+											} else {
+
+												// console.log('Invoise is paid');
+
+											}
+
+										}
+
+									});
+								});
+
+
+							} else {
+								console.warn('Can not find Department ID ' + department_id + ' as a Fiken memberNumber.');
+							}
+						}
+					});
+				});
 
 				// var extension_state = 'activated';
 				// var apiKey = result.apiKey;
@@ -809,1220 +1065,1177 @@ console.log('RAMP loaded');
 												addRampBanner();
 											}
 
-											$('<button id="send_to_rm" class="connect primary top-card-action ember-view ramp" disabled><span class="default-text">' + callback.btnSendToRM.message + '</span></button>').appendTo('.pv-top-card-section__actions');
+											if (initiate_scrape) {
+												$('<button id="send_to_rm" class="connect primary top-card-action ember-view ramp" disabled><span class="default-text">' + callback.btnSendToRM.message + '</span></button>').appendTo('.pv-top-card-section__actions');
 
-											var linkedInProfileId = inMemberId;
-											// // console.log(linkedInProfileId);
-											//
-											var top_card = '%2C' + 'top_card';
-											// var profile_v2_summary_upsell = '%2C' + 'profile_v2_summary_upsell';
-											// var profile_v2_megaphone_marquee = '%2C' + 'profile_v2_megaphone_marquee';
+												var linkedInProfileId = inMemberId;
+												// // console.log(linkedInProfileId);
+												//
+												var top_card = '%2C' + 'top_card';
+												// var profile_v2_summary_upsell = '%2C' + 'profile_v2_summary_upsell';
+												// var profile_v2_megaphone_marquee = '%2C' + 'profile_v2_megaphone_marquee';
 
-											var profile_v2_summary = '%2C' + 'profile_v2_summary';
-											var profile_v2_educations = '%2C' + 'profile_v2_educations';
-											var profile_v2_positions = '%2C' + 'profile_v2_positions';
-											var profile_v2_volunteering = '%2C' + 'profile_v2_volunteering';
-											var profile_v2_languages = '%2C' + 'profile_v2_languages';
-											var profile_v2_skills = '%2C' + 'profile_v2_skills';
-											var profile_v2_certifications = '%2C' + 'profile_v2_certifications';
-											var profile_v2_patents = '%2C' + 'profile_v2_patents';
-											var profile_v2_publications = '%2C' + 'profile_v2_publications';
-											var profile_v2_honors = '%2C' + 'profile_v2_honors';
-											var profile_v2_test_scores = '%2C' + 'profile_v2_test_scores';
-											var profile_v2_organizations = '%2C' + 'profile_v2_organizations';
-											var profile_v2_courses = '%2C' + 'profile_v2_courses';
-											var profile_v2_projects = '%2C' + 'profile_v2_projects';
-											var profile_v2_endorsements = '%2C' + 'profile_v2_endorsements';
+												var profile_v2_summary = '%2C' + 'profile_v2_summary';
+												var profile_v2_educations = '%2C' + 'profile_v2_educations';
+												var profile_v2_positions = '%2C' + 'profile_v2_positions';
+												var profile_v2_volunteering = '%2C' + 'profile_v2_volunteering';
+												var profile_v2_languages = '%2C' + 'profile_v2_languages';
+												var profile_v2_skills = '%2C' + 'profile_v2_skills';
+												var profile_v2_certifications = '%2C' + 'profile_v2_certifications';
+												var profile_v2_patents = '%2C' + 'profile_v2_patents';
+												var profile_v2_publications = '%2C' + 'profile_v2_publications';
+												var profile_v2_honors = '%2C' + 'profile_v2_honors';
+												var profile_v2_test_scores = '%2C' + 'profile_v2_test_scores';
+												var profile_v2_organizations = '%2C' + 'profile_v2_organizations';
+												var profile_v2_courses = '%2C' + 'profile_v2_courses';
+												var profile_v2_projects = '%2C' + 'profile_v2_projects';
+												var profile_v2_endorsements = '%2C' + 'profile_v2_endorsements';
 
-											var linkedInProfileData = top_card + profile_v2_summary + profile_v2_educations + profile_v2_positions + profile_v2_volunteering + profile_v2_languages + profile_v2_skills + profile_v2_certifications + profile_v2_patents + profile_v2_publications + profile_v2_honors + profile_v2_test_scores + profile_v2_organizations + profile_v2_courses + profile_v2_projects + profile_v2_endorsements;
+												var linkedInProfileData = top_card + profile_v2_summary + profile_v2_educations + profile_v2_positions + profile_v2_volunteering + profile_v2_languages + profile_v2_skills + profile_v2_certifications + profile_v2_patents + profile_v2_publications + profile_v2_honors + profile_v2_test_scores + profile_v2_organizations + profile_v2_courses + profile_v2_projects + profile_v2_endorsements;
 
-											// console.log(linkedInProfileData);
+												// console.log(linkedInProfileData);
 
-											var linkedInProfileDataUrl = '//www.linkedin.com/profile/mappers?id=' + linkedInProfileId + '&promoId=&snapshotID=&primaryAction=&authToken=vCzw&locale=en_US&x-a=' + linkedInProfileData;
+												var linkedInProfileDataUrl = '//www.linkedin.com/profile/mappers?id=' + linkedInProfileId + '&promoId=&snapshotID=&primaryAction=&authToken=vCzw&locale=en_US&x-a=' + linkedInProfileData;
 
-											function decodeHtml(html) {
-												var txt = document.createElement("textarea");
-												txt.innerHTML = html;
-												return txt.value;
-											}
+												function decodeHtml(html) {
+													var txt = document.createElement("textarea");
+													txt.innerHTML = html;
+													return txt.value;
+												}
 
-											function toDataUrl(url, callback, outputFormat) {
-												var img = new Image();
-												img.crossOrigin = 'Anonymous';
-												img.onload = function () {
-													var canvas = document.createElement('CANVAS');
-													var ctx = canvas.getContext('2d');
-													var dataURL;
-													canvas.height = this.height;
-													canvas.width = this.width;
-													ctx.drawImage(this, 0, 0);
-													dataURL = canvas.toDataURL(outputFormat);
-													callback(dataURL);
-													canvas = null;
-												};
-												img.src = url;
-											}
+												function toDataUrl(url, callback, outputFormat) {
+													var img = new Image();
+													img.crossOrigin = 'Anonymous';
+													img.onload = function () {
+														var canvas = document.createElement('CANVAS');
+														var ctx = canvas.getContext('2d');
+														var dataURL;
+														canvas.height = this.height;
+														canvas.width = this.width;
+														ctx.drawImage(this, 0, 0);
+														dataURL = canvas.toDataURL(outputFormat);
+														callback(dataURL);
+														canvas = null;
+													};
+													img.src = url;
+												}
 
-											RAMP.scrapeExperiences = function () {
+												RAMP.scrapeExperiences = function () {
 
-												function fetchExperiences() {
+													function fetchExperiences() {
 
-													if ('li.pv-position-entity') {
+														if ('li.pv-position-entity') {
 
-														console.warn('Could not fetch Experience data automaticly. Initiating manuall scraping...');
+															console.warn('Could not fetch Experience data automaticly. Initiating manuall scraping...');
 
-														$('li.pv-position-entity').each(function (index) {
+															$('li.pv-position-entity').each(function (index) {
 
-															var $entry = $(this);
+																var $entry = $(this);
 
-															// $(this).find('button.pv-profile-section__show-more-detail').click();
+																// $(this).find('button.pv-profile-section__show-more-detail').click();
 
-															var experienceTitle;
-															var experienceCompanyName;
-															var experienceDescription;
-															var experienceLocation
-															var experienceStartDate;
-															var experienceEndDate;
+																var experienceTitle;
+																var experienceCompanyName;
+																var experienceDescription;
+																var experienceLocation
+																var experienceStartDate;
+																var experienceEndDate;
 
-															var $showMoreButton = $(this).find('button.pv-profile-section__show-more-detail');
+																var $showMoreButton = $(this).find('button.pv-profile-section__show-more-detail');
 
-															if ($showMoreButton) {
+																if ($showMoreButton) {
 
-																$showMoreButton.click();
+																	$showMoreButton.click();
+
+																	setTimeout(function () {
+
+																		var $experienceDescription = $entry.find('.pv-entity__description');
+
+																		if ($experienceDescription) {
+
+																			experienceDescription = $experienceDescription
+																				.clone() //clone the element
+																				.children() //select all the children
+																				.remove() //remove all the children
+																				.end() //again go back to selected element
+																				.text();
+
+																			function myTrim(x) {
+																				return x.replace(/^\s+|\s+$/gm, '');
+																			}
+
+																			experienceDescription = myTrim(experienceDescription);
+																			experienceDescription = decodeHtml(experienceDescription);
+																			experienceDescription = experienceDescription.replace(/(<br>)+/g, '\n ');
+
+																			if (experienceDescription.trim()) {
+
+																				// console.log(experienceDescription);
+
+																			}
+
+																		} else {
+
+																			console.log('No Experience description...');
+
+																		}
+
+																	}, 400);
+
+																}
 
 																setTimeout(function () {
 
-																	var $experienceDescription = $entry.find('.pv-entity__description');
+																	var $experienceTitle = $entry.find('.pv-entity__summary-info > h3');
+																	var $experienceCompanyName = $entry.find('.pv-entity__summary-info > h4 > .pv-entity__secondary-title');
+																	var $experienceLocation = $entry.find('.pv-entity__summary-info > h4.pv-entity__location > span:not(.visually-hidden)');
+																	var $experienceDateRange = $entry.find('.pv-entity__summary-info > h4.pv-entity__date-range > span:not(.visually-hidden)');
 
-																	if ($experienceDescription) {
+																	if ($experienceTitle) {
 
-																		experienceDescription = $experienceDescription
-																			.clone() //clone the element
-																			.children() //select all the children
-																			.remove() //remove all the children
-																			.end() //again go back to selected element
-																			.text();
-
-																		function myTrim(x) {
-																			return x.replace(/^\s+|\s+$/gm, '');
-																		}
-
-																		experienceDescription = myTrim(experienceDescription);
-																		experienceDescription = decodeHtml(experienceDescription);
-																		experienceDescription = experienceDescription.replace(/(<br>)+/g, '\n ');
-
-																		if (experienceDescription.trim()) {
-
-																			// console.log(experienceDescription);
-
-																		}
-
-																	} else {
-
-																		console.log('No Experience description...');
+																		experienceTitle = $experienceTitle.text();
 
 																	}
 
-																}, 400);
+																	if ($experienceCompanyName) {
 
-															}
+																		experienceCompanyName = $experienceCompanyName.text();
 
-															setTimeout(function () {
+																	}
 
-																var $experienceTitle = $entry.find('.pv-entity__summary-info > h3');
-																var $experienceCompanyName = $entry.find('.pv-entity__summary-info > h4 > .pv-entity__secondary-title');
-																var $experienceLocation = $entry.find('.pv-entity__summary-info > h4.pv-entity__location > span:not(.visually-hidden)');
-																var $experienceDateRange = $entry.find('.pv-entity__summary-info > h4.pv-entity__date-range > span:not(.visually-hidden)');
+																	if ($experienceLocation) {
 
-																if ($experienceTitle) {
+																		experienceLocation = $experienceLocation.text();
 
-																	experienceTitle = $experienceTitle.text();
+																	}
 
-																}
+																	if ($experienceDateRange) {
 
-																if ($experienceCompanyName) {
+																		var experienceDateRange = $experienceDateRange.text();
 
-																	experienceCompanyName = $experienceCompanyName.text();
+																		// console.log(experienceDateRange);
 
-																}
+																		$experienceDateRange.each(function (index) {
 
-																if ($experienceLocation) {
+																			if (experienceDateRange.indexOf(' – ') > -1) {
 
-																	experienceLocation = $experienceLocation.text();
+																				var experienceDatesSplit = experienceDateRange.split(' – ');
 
-																}
+																			} else if (experienceDateRange.indexOf(' - ') > -1) {
 
-																if ($experienceDateRange) {
-
-																	var experienceDateRange = $experienceDateRange.text();
-
-																	// console.log(experienceDateRange);
-
-																	$experienceDateRange.each(function (index) {
-
-																		if (experienceDateRange.indexOf(' – ') > -1) {
-
-																			var experienceDatesSplit = experienceDateRange.split(' – ');
-
-																		} else if (experienceDateRange.indexOf(' - ') > -1) {
-
-																			var experienceDatesSplit = experienceDateRange.split(' - ');
-
-																		}
-
-																		var experienceDateStart = experienceDatesSplit[0];
-																		var experienceDateEnd = experienceDatesSplit[1];
-
-																		// console.log(experienceDateStart);
-																		// console.log(experienceDateEnd);
-
-																		var experienceDates = [];
-
-																		experienceDates.push(experienceDateStart);
-																		experienceDates.push(experienceDateEnd);
-
-																		// console.log(experienceDates);
-
-																		// var experienceDateLength = 0;
-
-																		var current = 0;
-
-																		$.each(experienceDates, function (index, value) {
-
-																			// experienceDateLength++
-
-																			// console.log(index + ": " + $(this).text());
-																			// console.log('index, value', index, value);
-
-																			// var experienceDate = $(this).text();
-
-																			var experienceDateSplit = value.split(' ');
-																			var experienceMonth = experienceDateSplit[0];
-																			var experienceYear = experienceDateSplit[1];
-
-																			function setExperienceMonth() {
-
-																				if (experienceMonth === 'Jan') {
-
-																					experienceMonth = '01';
-
-																				} else if (experienceMonth === 'Feb') {
-
-																					experienceMonth = '02';
-
-																				} else if (experienceMonth === 'Mar') {
-
-																					experienceMonth = '03';
-
-																				} else if (experienceMonth === 'Apr') {
-
-																					experienceMonth = '04';
-
-																				} else if (experienceMonth === 'May') {
-
-																					experienceMonth = '05';
-
-																				} else if (experienceMonth === 'Jun') {
-
-																					experienceMonth = '06';
-
-																				} else if (experienceMonth === 'Jul') {
-
-																					experienceMonth = '07';
-
-																				} else if (experienceMonth === 'Aug') {
-
-																					experienceMonth = '08';
-
-																				} else if (experienceMonth === 'Sep') {
-
-																					experienceMonth = '09';
-
-																				} else if (experienceMonth === 'Oct') {
-
-																					experienceMonth = '10';
-
-																				} else if (experienceMonth === 'Nov') {
-
-																					experienceMonth = '11';
-
-																				} else if (experienceMonth === 'Dec') {
-
-																					experienceMonth = '12';
-
-																				} else if (experienceMonth === 'jan.') {
-
-																					experienceMonth = '01';
-
-																				} else if (experienceMonth === 'feb.') {
-
-																					experienceMonth = '02';
-
-																				} else if (experienceMonth === 'mar.') {
-
-																					experienceMonth = '03';
-
-																				} else if (experienceMonth === 'apr.') {
-
-																					experienceMonth = '04';
-
-																				} else if (experienceMonth === 'mai.') {
-
-																					experienceMonth = '05';
-
-																				} else if (experienceMonth === 'jun.') {
-
-																					experienceMonth = '06';
-
-																				} else if (experienceMonth === 'jul.') {
-
-																					experienceMonth = '07';
-
-																				} else if (experienceMonth === 'aug.') {
-
-																					experienceMonth = '08';
-
-																				} else if (experienceMonth === 'sep.') {
-
-																					experienceMonth = '09';
-
-																				} else if (experienceMonth === 'okt.') {
-
-																					experienceMonth = '10';
-
-																				} else if (experienceMonth === 'nov.') {
-
-																					experienceMonth = '11';
-
-																				} else if (experienceMonth === 'des.') {
-
-																					experienceMonth = '12';
-
-																				}
-
-																				if (index === 0) {
-
-																					experienceStartDate = '01.' + experienceMonth + '.' + experienceYear;
-
-																				} else if (index === 1) {
-
-																					experienceEndDate = '01.' + experienceMonth + '.' + experienceYear;
-
-																				}
+																				var experienceDatesSplit = experienceDateRange.split(' - ');
 
 																			}
 
-																			if (experienceMonth == 'Present' || value == 'nå') {
+																			var experienceDateStart = experienceDatesSplit[0];
+																			var experienceDateEnd = experienceDatesSplit[1];
 
-																				current = 1;
+																			// console.log(experienceDateStart);
+																			// console.log(experienceDateEnd);
 
-																				experienceEndDate = null;
+																			var experienceDates = [];
 
-																			} else {
+																			experienceDates.push(experienceDateStart);
+																			experienceDates.push(experienceDateEnd);
 
-																				setExperienceMonth();
+																			// console.log(experienceDates);
 
-																			}
+																			// var experienceDateLength = 0;
 
-																			// console.log(experienceDateLength);
+																			var current = 0;
 
-																			// if (experienceDateLength === 1) {
-																			//
-																			// 	current = 1;
-																			//
-																			// } else if (experienceDateLength === 2) {
-																			//
-																			// 	current = 0;
-																			//
-																			// }
+																			$.each(experienceDates, function (index, value) {
+
+																				// experienceDateLength++
+
+																				// console.log(index + ": " + $(this).text());
+																				// console.log('index, value', index, value);
+
+																				// var experienceDate = $(this).text();
+
+																				var experienceDateSplit = value.split(' ');
+																				var experienceMonth = experienceDateSplit[0];
+																				var experienceYear = experienceDateSplit[1];
+
+																				function setExperienceMonth() {
+
+																					if (experienceMonth === 'Jan') {
+
+																						experienceMonth = '01';
+
+																					} else if (experienceMonth === 'Feb') {
+
+																						experienceMonth = '02';
+
+																					} else if (experienceMonth === 'Mar') {
+
+																						experienceMonth = '03';
+
+																					} else if (experienceMonth === 'Apr') {
+
+																						experienceMonth = '04';
+
+																					} else if (experienceMonth === 'May') {
+
+																						experienceMonth = '05';
+
+																					} else if (experienceMonth === 'Jun') {
+
+																						experienceMonth = '06';
+
+																					} else if (experienceMonth === 'Jul') {
+
+																						experienceMonth = '07';
+
+																					} else if (experienceMonth === 'Aug') {
+
+																						experienceMonth = '08';
+
+																					} else if (experienceMonth === 'Sep') {
+
+																						experienceMonth = '09';
+
+																					} else if (experienceMonth === 'Oct') {
+
+																						experienceMonth = '10';
+
+																					} else if (experienceMonth === 'Nov') {
+
+																						experienceMonth = '11';
+
+																					} else if (experienceMonth === 'Dec') {
+
+																						experienceMonth = '12';
+
+																					} else if (experienceMonth === 'jan.') {
+
+																						experienceMonth = '01';
+
+																					} else if (experienceMonth === 'feb.') {
+
+																						experienceMonth = '02';
+
+																					} else if (experienceMonth === 'mar.') {
+
+																						experienceMonth = '03';
+
+																					} else if (experienceMonth === 'apr.') {
+
+																						experienceMonth = '04';
+
+																					} else if (experienceMonth === 'mai.') {
+
+																						experienceMonth = '05';
+
+																					} else if (experienceMonth === 'jun.') {
+
+																						experienceMonth = '06';
+
+																					} else if (experienceMonth === 'jul.') {
+
+																						experienceMonth = '07';
+
+																					} else if (experienceMonth === 'aug.') {
+
+																						experienceMonth = '08';
+
+																					} else if (experienceMonth === 'sep.') {
+
+																						experienceMonth = '09';
+
+																					} else if (experienceMonth === 'okt.') {
+
+																						experienceMonth = '10';
+
+																					} else if (experienceMonth === 'nov.') {
+
+																						experienceMonth = '11';
+
+																					} else if (experienceMonth === 'des.') {
+
+																						experienceMonth = '12';
+
+																					}
+
+																					if (index === 0) {
+
+																						experienceStartDate = '01.' + experienceMonth + '.' + experienceYear;
+
+																					} else if (index === 1) {
+
+																						experienceEndDate = '01.' + experienceMonth + '.' + experienceYear;
+
+																					}
+
+																				}
+
+																				if (experienceMonth == 'Present' || value == 'nå') {
+
+																					current = 1;
+
+																					experienceEndDate = null;
+
+																				} else {
+
+																					setExperienceMonth();
+
+																				}
+
+																				// console.log(experienceDateLength);
+
+																				// if (experienceDateLength === 1) {
+																				//
+																				// 	current = 1;
+																				//
+																				// } else if (experienceDateLength === 2) {
+																				//
+																				// 	current = 0;
+																				//
+																				// }
+
+																			});
+
+																			experience.push({
+																				title: experienceTitle,
+																				companyName: experienceCompanyName,
+																				location: experienceLocation,
+																				startDate: experienceStartDate,
+																				endDate: experienceEndDate,
+																				description: experienceDescription,
+																				current: current,
+																			});
+
+																			// console.log(experience);
 
 																		});
 
-																		experience.push({
-																			title: experienceTitle,
-																			companyName: experienceCompanyName,
-																			location: experienceLocation,
-																			startDate: experienceStartDate,
-																			endDate: experienceEndDate,
-																			description: experienceDescription,
-																			current: current,
-																		});
+																	}
 
-																		// console.log(experience);
+																	// experience.push({
+																	// 	title: experienceTitle,
+																	// 	companyName: experienceCompanyName,
+																	// 	// location: location,
+																	// 	startDate: experienceStartDate,
+																	// 	endDate: experienceEndDate,
+																	// 	description: experienceDescription,
+																	// 	current: current,
+																	// });
 
-																	});
+																	// console.log(experience);
 
-																}
+																}, 500);
 
-																// experience.push({
-																// 	title: experienceTitle,
-																// 	companyName: experienceCompanyName,
-																// 	// location: location,
-																// 	startDate: experienceStartDate,
-																// 	endDate: experienceEndDate,
-																// 	description: experienceDescription,
-																// 	current: current,
-																// });
+															});
 
-																// console.log(experience);
+															// console.log(experience);
 
-															}, 500);
+														} else {
 
-														});
+															console.warn('Sorry, no Experience to scrape...');
 
-														// console.log(experience);
+														}
+
+													}
+
+													if ('button.pv-profile-section__see-more-inline') {
+
+														var $seeMorePositionsButton = $('button.pv-profile-section__see-more-inline');
+
+														console.log('click seeMorePositionsButton');
+
+														$seeMorePositionsButton.click();
+
+														setTimeout(function () {
+
+															fetchExperiences();
+
+														}, 500);
 
 													} else {
 
-														console.warn('Sorry, no Experience to scrape...');
+														fetchExperiences()
 
 													}
 
 												}
 
-												if ('button.pv-profile-section__see-more-inline') {
+												RAMP.scrapeEducations = function () {
 
-													var $seeMorePositionsButton = $('button.pv-profile-section__see-more-inline');
+													if ('li.pv-education-entity') {
 
-													console.log('click seeMorePositionsButton');
+														console.warn('Could not fetch Education data automaticly. Initiating manuall scraping...');
 
-													$seeMorePositionsButton.click();
+														// 	$('li.position-entity').each(function (index) {
+														//
+														// 		var $entry = $(this);
+														//
+														// 		// $(this).find('button.pv-profile-section__show-more-detail').click();
+														//
+														// 		var $showMoreButton = $(this).find('button.pv-profile-section__show-more-detail');
+														//
+														// 		if ($showMoreButton) {
+														//
+														// 			$showMoreButton.click();
+														//
+														// 			setTimeout(function () {
+														//
+														// 				var experienceTitle;
+														// 				var experienceCompanyName;
+														// 				var experienceDescription;
+														// 				var experienceStartDate;
+														// 				var experienceEndDate;
+														//
+														// 				var $experienceTitle = $entry.find('.pv-entity__summary-info > h3');
+														// 				var $experienceCompanyName = $entry.find('.pv-entity__summary-info > h4 > .pv-entity__secondary-title');
+														// 				var $experienceDescription = $entry.find('.pv-entity__description');
+														// 				var $experienceDateRange = $entry.find('.pv-entity__date-range');
+														//
+														// 				var current = 0;
+														//
+														// 				if ($experienceTitle) {
+														//
+														// 					experienceTitle = $experienceTitle.text();
+														//
+														// 				}
+														//
+														// 				if ($experienceCompanyName) {
+														//
+														// 					experienceCompanyName = $experienceCompanyName.text();
+														//
+														// 				}
+														//
+														// 				if ($experienceDescription) {
+														//
+														// 					experienceDescription = $experienceDescription
+														// 						.clone() //clone the element
+														// 						.children() //select all the children
+														// 						.remove() //remove all the children
+														// 						.end() //again go back to selected element
+														// 						.text();
+														//
+														// 					function myTrim(x) {
+														// 						return x.replace(/^\s+|\s+$/gm, '');
+														// 					}
+														//
+														// 					experienceDescription = myTrim(experienceDescription);
+														// 					experienceDescription = decodeHtml(experienceDescription);
+														// 					experienceDescription = experienceDescription.replace(/(<br>)+/g, '\n ');
+														//
+														// 					// console.log(experienceDescription);
+														//
+														// 				}
+														//
+														// 				if ($experienceDateRange) {
+														//
+														// 					$experienceDateRange.each(function (index) {
+														//
+														// 						var $experienceDates = $experienceDateRange.find('time');
+														//
+														// 						var experienceDateLength = 0;
+														//
+														// 						$experienceDates.each(function (index) {
+														//
+														// 							experienceDateLength++
+														//
+														// 							// console.log(index + ": " + $(this).text());
+														//
+														// 							var experienceDate = $(this).text();
+														//
+														// 							var experienceDateSplit = experienceDate.split(' ');
+														// 							var experienceMonth = experienceDateSplit[0];
+														// 							var experienceYear = experienceDateSplit[1];
+														//
+														// 							if (experienceMonth === 'Jan') {
+														//
+														// 								experienceMonth = '01';
+														//
+														// 							} else if (experienceMonth === 'Feb') {
+														//
+														// 								experienceMonth = '02';
+														//
+														// 							} else if (experienceMonth === 'Mar') {
+														//
+														// 								experienceMonth = '03';
+														//
+														// 							} else if (experienceMonth === 'Apr') {
+														//
+														// 								experienceMonth = '04';
+														//
+														// 							} else if (experienceMonth === 'May') {
+														//
+														// 								experienceMonth = '05';
+														//
+														// 							} else if (experienceMonth === 'Jun') {
+														//
+														// 								experienceMonth = '06';
+														//
+														// 							} else if (experienceMonth === 'Jul') {
+														//
+														// 								experienceMonth = '07';
+														//
+														// 							} else if (experienceMonth === 'Aug') {
+														//
+														// 								experienceMonth = '08';
+														//
+														// 							} else if (experienceMonth === 'Sep') {
+														//
+														// 								experienceMonth = '09';
+														//
+														// 							} else if (experienceMonth === 'Oct') {
+														//
+														// 								experienceMonth = '10';
+														//
+														// 							} else if (experienceMonth === 'Nov') {
+														//
+														// 								experienceMonth = '11';
+														//
+														// 							} else if (experienceMonth === 'Dec') {
+														//
+														// 								experienceMonth = '12';
+														//
+														// 							} else if (experienceMonth === 'jan.') {
+														//
+														// 								experienceMonth = '01';
+														//
+														// 							} else if (experienceMonth === 'feb.') {
+														//
+														// 								experienceMonth = '02';
+														//
+														// 							} else if (experienceMonth === 'mar.') {
+														//
+														// 								experienceMonth = '03';
+														//
+														// 							} else if (experienceMonth === 'apr.') {
+														//
+														// 								experienceMonth = '04';
+														//
+														// 							} else if (experienceMonth === 'mai.') {
+														//
+														// 								experienceMonth = '05';
+														//
+														// 							} else if (experienceMonth === 'jun.') {
+														//
+														// 								experienceMonth = '06';
+														//
+														// 							} else if (experienceMonth === 'jul.') {
+														//
+														// 								experienceMonth = '07';
+														//
+														// 							} else if (experienceMonth === 'aug.') {
+														//
+														// 								experienceMonth = '08';
+														//
+														// 							} else if (experienceMonth === 'sep.') {
+														//
+														// 								experienceMonth = '09';
+														//
+														// 							} else if (experienceMonth === 'okt.') {
+														//
+														// 								experienceMonth = '10';
+														//
+														// 							} else if (experienceMonth === 'nov.') {
+														//
+														// 								experienceMonth = '11';
+														//
+														// 							} else if (experienceMonth === 'des.') {
+														//
+														// 								experienceMonth = '12';
+														//
+														// 							}
+														//
+														// 							if (index === 0) {
+														//
+														// 								experienceStartDate = '01.' + experienceMonth + '.' + experienceYear;
+														//
+														// 							} else if (index === 1) {
+														//
+														// 								experienceEndDate = '01.' + experienceMonth + '.' + experienceYear;
+														//
+														// 							}
+														//
+														// 						});
+														//
+														// 						// console.log(experienceDateLength);
+														//
+														// 						if (experienceDateLength === 1) {
+														//
+														// 							current = 1;
+														//
+														//
+														// 						} else if (experienceDateLength === 2) {
+														//
+														// 							current = 0;
+														//
+														// 						}
+														//
+														// 					});
+														//
+														// 				}
+														//
+														// 				experience.push({
+														// 					title: experienceTitle,
+														// 					companyName: experienceCompanyName,
+														// 					// location: location,
+														// 					startDate: experienceStartDate,
+														// 					endDate: experienceEndDate,
+														// 					description: experienceDescription,
+														// 					current: current,
+														// 				});
+														//
+														// 				// console.log(experience);
+														//
+														// 			}, 500);
+														//
+														// 		}
+														//
+														// 	});
 
-													setTimeout(function () {
+													} else {
 
-														fetchExperiences();
+														console.warn('Sorry, no Education to scrape...');
 
-													}, 500);
-
-												} else {
-
-													fetchExperiences()
-
-												}
-
-											}
-
-											RAMP.scrapeEducations = function () {
-
-												if ('li.pv-education-entity') {
-
-													console.warn('Could not fetch Education data automaticly. Initiating manuall scraping...');
-
-													// 	$('li.position-entity').each(function (index) {
-													//
-													// 		var $entry = $(this);
-													//
-													// 		// $(this).find('button.pv-profile-section__show-more-detail').click();
-													//
-													// 		var $showMoreButton = $(this).find('button.pv-profile-section__show-more-detail');
-													//
-													// 		if ($showMoreButton) {
-													//
-													// 			$showMoreButton.click();
-													//
-													// 			setTimeout(function () {
-													//
-													// 				var experienceTitle;
-													// 				var experienceCompanyName;
-													// 				var experienceDescription;
-													// 				var experienceStartDate;
-													// 				var experienceEndDate;
-													//
-													// 				var $experienceTitle = $entry.find('.pv-entity__summary-info > h3');
-													// 				var $experienceCompanyName = $entry.find('.pv-entity__summary-info > h4 > .pv-entity__secondary-title');
-													// 				var $experienceDescription = $entry.find('.pv-entity__description');
-													// 				var $experienceDateRange = $entry.find('.pv-entity__date-range');
-													//
-													// 				var current = 0;
-													//
-													// 				if ($experienceTitle) {
-													//
-													// 					experienceTitle = $experienceTitle.text();
-													//
-													// 				}
-													//
-													// 				if ($experienceCompanyName) {
-													//
-													// 					experienceCompanyName = $experienceCompanyName.text();
-													//
-													// 				}
-													//
-													// 				if ($experienceDescription) {
-													//
-													// 					experienceDescription = $experienceDescription
-													// 						.clone() //clone the element
-													// 						.children() //select all the children
-													// 						.remove() //remove all the children
-													// 						.end() //again go back to selected element
-													// 						.text();
-													//
-													// 					function myTrim(x) {
-													// 						return x.replace(/^\s+|\s+$/gm, '');
-													// 					}
-													//
-													// 					experienceDescription = myTrim(experienceDescription);
-													// 					experienceDescription = decodeHtml(experienceDescription);
-													// 					experienceDescription = experienceDescription.replace(/(<br>)+/g, '\n ');
-													//
-													// 					// console.log(experienceDescription);
-													//
-													// 				}
-													//
-													// 				if ($experienceDateRange) {
-													//
-													// 					$experienceDateRange.each(function (index) {
-													//
-													// 						var $experienceDates = $experienceDateRange.find('time');
-													//
-													// 						var experienceDateLength = 0;
-													//
-													// 						$experienceDates.each(function (index) {
-													//
-													// 							experienceDateLength++
-													//
-													// 							// console.log(index + ": " + $(this).text());
-													//
-													// 							var experienceDate = $(this).text();
-													//
-													// 							var experienceDateSplit = experienceDate.split(' ');
-													// 							var experienceMonth = experienceDateSplit[0];
-													// 							var experienceYear = experienceDateSplit[1];
-													//
-													// 							if (experienceMonth === 'Jan') {
-													//
-													// 								experienceMonth = '01';
-													//
-													// 							} else if (experienceMonth === 'Feb') {
-													//
-													// 								experienceMonth = '02';
-													//
-													// 							} else if (experienceMonth === 'Mar') {
-													//
-													// 								experienceMonth = '03';
-													//
-													// 							} else if (experienceMonth === 'Apr') {
-													//
-													// 								experienceMonth = '04';
-													//
-													// 							} else if (experienceMonth === 'May') {
-													//
-													// 								experienceMonth = '05';
-													//
-													// 							} else if (experienceMonth === 'Jun') {
-													//
-													// 								experienceMonth = '06';
-													//
-													// 							} else if (experienceMonth === 'Jul') {
-													//
-													// 								experienceMonth = '07';
-													//
-													// 							} else if (experienceMonth === 'Aug') {
-													//
-													// 								experienceMonth = '08';
-													//
-													// 							} else if (experienceMonth === 'Sep') {
-													//
-													// 								experienceMonth = '09';
-													//
-													// 							} else if (experienceMonth === 'Oct') {
-													//
-													// 								experienceMonth = '10';
-													//
-													// 							} else if (experienceMonth === 'Nov') {
-													//
-													// 								experienceMonth = '11';
-													//
-													// 							} else if (experienceMonth === 'Dec') {
-													//
-													// 								experienceMonth = '12';
-													//
-													// 							} else if (experienceMonth === 'jan.') {
-													//
-													// 								experienceMonth = '01';
-													//
-													// 							} else if (experienceMonth === 'feb.') {
-													//
-													// 								experienceMonth = '02';
-													//
-													// 							} else if (experienceMonth === 'mar.') {
-													//
-													// 								experienceMonth = '03';
-													//
-													// 							} else if (experienceMonth === 'apr.') {
-													//
-													// 								experienceMonth = '04';
-													//
-													// 							} else if (experienceMonth === 'mai.') {
-													//
-													// 								experienceMonth = '05';
-													//
-													// 							} else if (experienceMonth === 'jun.') {
-													//
-													// 								experienceMonth = '06';
-													//
-													// 							} else if (experienceMonth === 'jul.') {
-													//
-													// 								experienceMonth = '07';
-													//
-													// 							} else if (experienceMonth === 'aug.') {
-													//
-													// 								experienceMonth = '08';
-													//
-													// 							} else if (experienceMonth === 'sep.') {
-													//
-													// 								experienceMonth = '09';
-													//
-													// 							} else if (experienceMonth === 'okt.') {
-													//
-													// 								experienceMonth = '10';
-													//
-													// 							} else if (experienceMonth === 'nov.') {
-													//
-													// 								experienceMonth = '11';
-													//
-													// 							} else if (experienceMonth === 'des.') {
-													//
-													// 								experienceMonth = '12';
-													//
-													// 							}
-													//
-													// 							if (index === 0) {
-													//
-													// 								experienceStartDate = '01.' + experienceMonth + '.' + experienceYear;
-													//
-													// 							} else if (index === 1) {
-													//
-													// 								experienceEndDate = '01.' + experienceMonth + '.' + experienceYear;
-													//
-													// 							}
-													//
-													// 						});
-													//
-													// 						// console.log(experienceDateLength);
-													//
-													// 						if (experienceDateLength === 1) {
-													//
-													// 							current = 1;
-													//
-													//
-													// 						} else if (experienceDateLength === 2) {
-													//
-													// 							current = 0;
-													//
-													// 						}
-													//
-													// 					});
-													//
-													// 				}
-													//
-													// 				experience.push({
-													// 					title: experienceTitle,
-													// 					companyName: experienceCompanyName,
-													// 					// location: location,
-													// 					startDate: experienceStartDate,
-													// 					endDate: experienceEndDate,
-													// 					description: experienceDescription,
-													// 					current: current,
-													// 				});
-													//
-													// 				// console.log(experience);
-													//
-													// 			}, 500);
-													//
-													// 		}
-													//
-													// 	});
-
-												} else {
-
-													console.warn('Sorry, no Education to scrape...');
+													}
 
 												}
 
-											}
+												RAMP.scrapeSkills = function () {
 
-											RAMP.scrapeSkills = function () {
+													if ('.pv-featured-skills-section') {
 
-												if ('.pv-featured-skills-section') {
+														console.warn('Could not fetch Skills data automaticly. Initiating manuall scraping...');
 
-													console.warn('Could not fetch Skills data automaticly. Initiating manuall scraping...');
+														$('.pv-featured-skills-section').find('button[data-control-name="skill_details"]').click();
 
-													$('.pv-featured-skills-section').find('button[data-control-name="skill_details"]').click();
+														setTimeout(function () {
 
-													setTimeout(function () {
+															$('li.pv-skill-entity').each(function (index) {
 
-														$('li.pv-skill-entity').each(function (index) {
+																var $entry = $(this);
 
-															var $entry = $(this);
+																var skillName = $entry.find('.pv-skill-entity__skill-name').text();
 
-															var skillName = $entry.find('.pv-skill-entity__skill-name').text();
+																// console.log(skillName);
 
-															// console.log(skillName);
-
-															skills.push({
-																'name': skillName,
-																'rating': 0
-															})
-
-														});
-
-													}, 500);
-
-												}
-
-											}
-
-											RAMP.scrapeSummary = function () {
-
-												// swal({
-												// 	type: 'info',
-												// 	title: 'Notice!',
-												// 	html: 'This profile might be missing some relevant information like <b>Periods on Experience and Education</b> objects when sendt to Recruitment Manager.'
-												// });
-
-												if ('.pv-top-card-section__summary') {
-
-													console.warn('Could not fetch Summary data automaticly. Initiating manuall scraping...');
-
-													$('.pv-top-card-section__summary').find('button.truncate-multiline--button').click();
-
-													setTimeout(function () {
-
-														var summaryText = $('p.pv-top-card-section__summary')
-															.clone() //clone the element
-															.children() //select all the children
-															.remove() //remove all the children
-															.end() //again go back to selected element
-															.text();
-
-														function myTrim(x) {
-															return x.replace(/^\s+|\s+$/gm, '');
-														}
-
-														summaryText = myTrim(summaryText);
-
-														summaryText = decodeHtml(summaryText);
-														summaryText = summaryText.replace(/(<br>)+/g, '\n');
-
-														summary.push(summaryText);
-
-														// console.log(summary);
-
-													}, 500);
-
-												}
-
-											}
-
-											RAMP.scrapeProfilePicture = function () {
-
-												imageUrl = $('.pv-top-card-section__image').attr('src');
-												profileImageExtension = 'jpg';
-
-												console.log(imageUrl);
-											}
-
-											RAMP.scrapeContactInfo = function () {
-
-												$('button[data-control-name="contact_see_more"]').click();
-
-												if($('.pv-contact-info__contact-type.ci-vanity-url')) {
-
-													var linkedinUrl = $('.pv-contact-info__contact-type.ci-vanity-url .pv-contact-info__ci-container .pv-contact-info__contact-item').text();
-
-													// console.log(linkedinUrl);
-
-													linkedinUrl = linkedinUrl.replace(/(\r\n|\n|\r)/gm,"");
-
-													// console.log(linkedinUrl);
-
-													linkedinUrl = $.trim(linkedinUrl);
-
-													// console.log(linkedinUrl);
-
-													linkedin = 'https://' + linkedinUrl;
-
-													// console.log(linkedin);
-
-												}
-
-											}
-
-											// console.log('https:' + linkedInProfileDataUrl);
-											//
-											// var codeElements = []
-											// $('code').each(function (index) {
-											//
-											// 	// var currentCodeElement = $.parseJSON($(this).html());
-											// 	// codeElements.push($(this).text());
-											// 	console.log(index + ": " + $(this).html());
-											// });
-
-											// console.log(codeElements);
-
-											// var fuckFuck = $.parseJSON('{"request":"/voyager/api/identity/profiles/iamchriswick/treasuryMediaItems?q=backgroundMedia&section=POSITION","status":200,"body":"bpr-guid-1002971"}');
-											//
-											// console.log('fuckFuck', fuckFuck);
-											//
-											// $.getJSON(' https://www.linkedin.com/voyager/api/identity/profiles/iamchriswick/', function () {
-											// 		console.log('SUCCESS: Voyager data loaded...');
-											// 	}).done(function (json) {
-											//
-											// console.log(json);
-											//
-											// 	})
-											// 	.fail(function (jqxhr, textStatus, error) {
-											//
-											// 		console.log('FAIL: Could not load Voyager data...');
-											//
-											// 	});
-
-											// $.getJSON('//www.linkedin.com/profile/mappers?id=' + linkedInProfileId + '&promoId=&snapshotID=&primaryAction=&authToken=vCzw&locale=en_US&x-a=' + linkedInProfileData, function () {
-											$.getJSON(linkedInProfileDataUrl, function () {
-													console.log('SUCCESS: LinkedIn profile data loaded');
-												}).done(function (json) {
-
-													// var descriptionRegex = '/<br\s*[\/]?>/gi';
-													// var htmlEntetiesRegex = '/&#([0-9]{1,3});/gi';
-
-													// function parseHtmlEnteties(str) {
-													// 	return str.replace(htmlEntetiesRegex, function (match, numStr) {
-													// 		var num = parseInt(numStr, 10); // read num as normal number
-													// 		return String.fromCharCode(num);
-													// 	});
-													// }
-
-													// function decodeHtml(html) {
-													// 	var txt = document.createElement("textarea");
-													// 	txt.innerHTML = html;
-													// 	return txt.value;
-													// }
-
-													console.log(json);
-
-													/**
-													 * Get and push Experiences.
-													 */
-
-													// var experience = [];
-
-													// RAMP.scrapeExperiences = function () {
-													//
-													// 	function fetchExperiences() {
-													//
-													// 		if ('li.pv-position-entity') {
-													//
-													// 			console.warn('Could not fetch Experience data automaticly. Initiating manuall scraping...');
-													//
-													// 			$('li.pv-position-entity').each(function (index) {
-													//
-													// 				var $entry = $(this);
-													//
-													// 				// $(this).find('button.pv-profile-section__show-more-detail').click();
-													//
-													// 				var experienceTitle;
-													// 				var experienceCompanyName;
-													// 				var experienceDescription;
-													// 				var experienceLocation
-													// 				var experienceStartDate;
-													// 				var experienceEndDate;
-													//
-													// 				var $showMoreButton = $(this).find('button.pv-profile-section__show-more-detail');
-													//
-													// 				if ($showMoreButton) {
-													//
-													// 					$showMoreButton.click();
-													//
-													// 					setTimeout(function () {
-													//
-													// 						var $experienceDescription = $entry.find('.pv-entity__description');
-													//
-													// 						if ($experienceDescription) {
-													//
-													// 							experienceDescription = $experienceDescription
-													// 								.clone() //clone the element
-													// 								.children() //select all the children
-													// 								.remove() //remove all the children
-													// 								.end() //again go back to selected element
-													// 								.text();
-													//
-													// 							function myTrim(x) {
-													// 								return x.replace(/^\s+|\s+$/gm, '');
-													// 							}
-													//
-													// 							experienceDescription = myTrim(experienceDescription);
-													// 							experienceDescription = decodeHtml(experienceDescription);
-													// 							experienceDescription = experienceDescription.replace(/(<br>)+/g, '\n ');
-													//
-													// 							if (experienceDescription.trim()) {
-													//
-													// 								// console.log(experienceDescription);
-													//
-													// 							}
-													//
-													// 						} else {
-													//
-													// 							console.log('No Experience description...');
-													//
-													// 						}
-													//
-													// 					}, 400);
-													//
-													// 				}
-													//
-													// 				setTimeout(function () {
-													//
-													// 					var $experienceTitle = $entry.find('.pv-entity__summary-info > h3');
-													// 					var $experienceCompanyName = $entry.find('.pv-entity__summary-info > h4 > .pv-entity__secondary-title');
-													// 					var $experienceLocation = $entry.find('.pv-entity__summary-info > h4.pv-entity__location > span:not(.visually-hidden)');
-													// 					var $experienceDateRange = $entry.find('.pv-entity__summary-info > h4.pv-entity__date-range > span:not(.visually-hidden)');
-													//
-													// 					if ($experienceTitle) {
-													//
-													// 						experienceTitle = $experienceTitle.text();
-													//
-													// 					}
-													//
-													// 					if ($experienceCompanyName) {
-													//
-													// 						experienceCompanyName = $experienceCompanyName.text();
-													//
-													// 					}
-													//
-													// 					if ($experienceLocation) {
-													//
-													// 						experienceLocation = $experienceLocation.text();
-													//
-													// 					}
-													//
-													// 					if ($experienceDateRange) {
-													//
-													// 						var experienceDateRange = $experienceDateRange.text();
-													//
-													// 						// console.log(experienceDateRange);
-													//
-													// 						$experienceDateRange.each(function (index) {
-													//
-													// 							if (experienceDateRange.indexOf(' – ') > -1) {
-													//
-													// 								var experienceDatesSplit = experienceDateRange.split(' – ');
-													//
-													// 							} else if (experienceDateRange.indexOf(' - ') > -1) {
-													//
-													// 								var experienceDatesSplit = experienceDateRange.split(' - ');
-													//
-													// 							}
-													//
-													// 							var experienceDateStart = experienceDatesSplit[0];
-													// 							var experienceDateEnd = experienceDatesSplit[1];
-													//
-													// 							// console.log(experienceDateStart);
-													// 							// console.log(experienceDateEnd);
-													//
-													// 							var experienceDates = [];
-													//
-													// 							experienceDates.push(experienceDateStart);
-													// 							experienceDates.push(experienceDateEnd);
-													//
-													// 							// console.log(experienceDates);
-													//
-													// 							// var experienceDateLength = 0;
-													//
-													// 							var current = 0;
-													//
-													// 							$.each(experienceDates, function (index, value) {
-													//
-													// 								// experienceDateLength++
-													//
-													// 								// console.log(index + ": " + $(this).text());
-													// 								// console.log('index, value', index, value);
-													//
-													// 								// var experienceDate = $(this).text();
-													//
-													// 								var experienceDateSplit = value.split(' ');
-													// 								var experienceMonth = experienceDateSplit[0];
-													// 								var experienceYear = experienceDateSplit[1];
-													//
-													// 								function setExperienceMonth() {
-													//
-													// 									if (experienceMonth === 'Jan') {
-													//
-													// 										experienceMonth = '01';
-													//
-													// 									} else if (experienceMonth === 'Feb') {
-													//
-													// 										experienceMonth = '02';
-													//
-													// 									} else if (experienceMonth === 'Mar') {
-													//
-													// 										experienceMonth = '03';
-													//
-													// 									} else if (experienceMonth === 'Apr') {
-													//
-													// 										experienceMonth = '04';
-													//
-													// 									} else if (experienceMonth === 'May') {
-													//
-													// 										experienceMonth = '05';
-													//
-													// 									} else if (experienceMonth === 'Jun') {
-													//
-													// 										experienceMonth = '06';
-													//
-													// 									} else if (experienceMonth === 'Jul') {
-													//
-													// 										experienceMonth = '07';
-													//
-													// 									} else if (experienceMonth === 'Aug') {
-													//
-													// 										experienceMonth = '08';
-													//
-													// 									} else if (experienceMonth === 'Sep') {
-													//
-													// 										experienceMonth = '09';
-													//
-													// 									} else if (experienceMonth === 'Oct') {
-													//
-													// 										experienceMonth = '10';
-													//
-													// 									} else if (experienceMonth === 'Nov') {
-													//
-													// 										experienceMonth = '11';
-													//
-													// 									} else if (experienceMonth === 'Dec') {
-													//
-													// 										experienceMonth = '12';
-													//
-													// 									} else if (experienceMonth === 'jan.') {
-													//
-													// 										experienceMonth = '01';
-													//
-													// 									} else if (experienceMonth === 'feb.') {
-													//
-													// 										experienceMonth = '02';
-													//
-													// 									} else if (experienceMonth === 'mar.') {
-													//
-													// 										experienceMonth = '03';
-													//
-													// 									} else if (experienceMonth === 'apr.') {
-													//
-													// 										experienceMonth = '04';
-													//
-													// 									} else if (experienceMonth === 'mai.') {
-													//
-													// 										experienceMonth = '05';
-													//
-													// 									} else if (experienceMonth === 'jun.') {
-													//
-													// 										experienceMonth = '06';
-													//
-													// 									} else if (experienceMonth === 'jul.') {
-													//
-													// 										experienceMonth = '07';
-													//
-													// 									} else if (experienceMonth === 'aug.') {
-													//
-													// 										experienceMonth = '08';
-													//
-													// 									} else if (experienceMonth === 'sep.') {
-													//
-													// 										experienceMonth = '09';
-													//
-													// 									} else if (experienceMonth === 'okt.') {
-													//
-													// 										experienceMonth = '10';
-													//
-													// 									} else if (experienceMonth === 'nov.') {
-													//
-													// 										experienceMonth = '11';
-													//
-													// 									} else if (experienceMonth === 'des.') {
-													//
-													// 										experienceMonth = '12';
-													//
-													// 									}
-													//
-													// 									if (index === 0) {
-													//
-													// 										experienceStartDate = '01.' + experienceMonth + '.' + experienceYear;
-													//
-													// 									} else if (index === 1) {
-													//
-													// 										experienceEndDate = '01.' + experienceMonth + '.' + experienceYear;
-													//
-													// 									}
-													//
-													// 								}
-													//
-													// 								if (experienceMonth == 'Present' || value == 'nå') {
-													//
-													// 									current = 1;
-													//
-													// 									experienceEndDate = null;
-													//
-													// 								} else {
-													//
-													// 									setExperienceMonth();
-													//
-													// 								}
-													//
-													// 								// console.log(experienceDateLength);
-													//
-													// 								// if (experienceDateLength === 1) {
-													// 								//
-													// 								// 	current = 1;
-													// 								//
-													// 								// } else if (experienceDateLength === 2) {
-													// 								//
-													// 								// 	current = 0;
-													// 								//
-													// 								// }
-													//
-													// 							});
-													//
-													// 							experience.push({
-													// 								title: experienceTitle,
-													// 								companyName: experienceCompanyName,
-													// 								location: experienceLocation,
-													// 								startDate: experienceStartDate,
-													// 								endDate: experienceEndDate,
-													// 								description: experienceDescription,
-													// 								current: current,
-													// 							});
-													//
-													// 							// console.log(experience);
-													//
-													// 						});
-													//
-													// 					}
-													//
-													// 					// experience.push({
-													// 					// 	title: experienceTitle,
-													// 					// 	companyName: experienceCompanyName,
-													// 					// 	// location: location,
-													// 					// 	startDate: experienceStartDate,
-													// 					// 	endDate: experienceEndDate,
-													// 					// 	description: experienceDescription,
-													// 					// 	current: current,
-													// 					// });
-													//
-													// 					// console.log(experience);
-													//
-													// 				}, 500);
-													//
-													// 			});
-													//
-													// 			// console.log(experience);
-													//
-													// 		} else {
-													//
-													// 			console.warn('Sorry, no Experience to scrape...');
-													//
-													// 		}
-													//
-													// 	}
-													//
-													// 	if ('button.pv-profile-section__see-more-inline') {
-													//
-													// 		var $seeMorePositionsButton = $('button.pv-profile-section__see-more-inline');
-													//
-													// 		console.log('click seeMorePositionsButton');
-													//
-													// 		$seeMorePositionsButton.click();
-													//
-													// 		setTimeout(function () {
-													//
-													// 			fetchExperiences();
-													//
-													// 		}, 500);
-													//
-													// 	} else {
-													//
-													// 		fetchExperiences()
-													//
-													// 	}
-													//
-													// }
-
-													if (json.content.Experience) {
-
-														if (json.content.Experience.positionsMpr && json.content.Experience.positionsMpr.positions) {
-
-															$.each(json.content.Experience.positionsMpr.positions, function (key, value) {
-
-																var companyName = value.companyName;
-																var title = value.title;
-																var location = value.fmt_location;
-																var description = value.summary_lb;
-																var current = 1;
-
-																if (value.hasOwnProperty('summary_lb')) {
-																	description = decodeHtml(description);
-																	description = description.replace(/(<br>)+/g, '\n');
-																}
-
-																if (value.startDate) {
-																	if (value.startDate.isMonthDefined === true) {
-																		var startdate_iso = value.startdate_iso.split('-');
-																		var startDate = startdate_iso[2] + '.' + startdate_iso[1] + '.' + startdate_iso[0];
-																	} else {
-																		var startDate = '01.01.' + value.startDate.year;
-																	}
-																}
-
-																if (value.endDate) {
-																	if (value.enddate_iso === undefined) {
-																		current = 1;
-																	} else {
-																		current = 0;
-																		if (value.endDate.isMonthDefined === true) {
-																			var enddate_iso = value.enddate_iso.split('-');
-																			var endDate = enddate_iso[2] + '.' + enddate_iso[1] + '.' + enddate_iso[0];
-																		} else {
-																			var endDate = '01.01.' + value.endDate.year;
-																		}
-																	}
-																}
-
-																experience.push({
-																	companyName: companyName,
-																	title: title,
-																	location: location,
-																	startDate: startDate,
-																	endDate: endDate,
-																	description: description,
-																	current: current,
+																skills.push({
+																	'name': skillName,
+																	'rating': 0
 																})
 
 															});
 
-														} else if (json.content.TopCard && json.content.TopCard.positionsMpr) {
+														}, 500);
 
-															if (json.content.TopCard.positionsMpr.positions) {
+													}
 
-																$.each(json.content.TopCard.positionsMpr.positions, function (key, value) {
+												}
+
+												RAMP.scrapeSummary = function () {
+
+													// swal({
+													// 	type: 'info',
+													// 	title: 'Notice!',
+													// 	html: 'This profile might be missing some relevant information like <b>Periods on Experience and Education</b> objects when sendt to Recruitment Manager.'
+													// });
+
+													if ('.pv-top-card-section__summary') {
+
+														console.warn('Could not fetch Summary data automaticly. Initiating manuall scraping...');
+
+														$('.pv-top-card-section__summary').find('button.truncate-multiline--button').click();
+
+														setTimeout(function () {
+
+															var summaryText = $('p.pv-top-card-section__summary')
+																.clone() //clone the element
+																.children() //select all the children
+																.remove() //remove all the children
+																.end() //again go back to selected element
+																.text();
+
+															function myTrim(x) {
+																return x.replace(/^\s+|\s+$/gm, '');
+															}
+
+															summaryText = myTrim(summaryText);
+
+															summaryText = decodeHtml(summaryText);
+															summaryText = summaryText.replace(/(<br>)+/g, '\n');
+
+															summary.push(summaryText);
+
+															// console.log(summary);
+
+														}, 500);
+
+													}
+
+												}
+
+												RAMP.scrapeProfilePicture = function () {
+
+													imageUrl = $('.pv-top-card-section__image').attr('src');
+													profileImageExtension = 'jpg';
+
+													console.log(imageUrl);
+												}
+
+												RAMP.scrapeContactInfo = function () {
+
+													$('button[data-control-name="contact_see_more"]').click();
+
+													if ($('.pv-contact-info__contact-type.ci-vanity-url')) {
+
+														var linkedinUrl = $('.pv-contact-info__contact-type.ci-vanity-url .pv-contact-info__ci-container .pv-contact-info__contact-item').text();
+
+														// console.log(linkedinUrl);
+
+														linkedinUrl = linkedinUrl.replace(/(\r\n|\n|\r)/gm, "");
+
+														// console.log(linkedinUrl);
+
+														linkedinUrl = $.trim(linkedinUrl);
+
+														// console.log(linkedinUrl);
+
+														linkedin = 'https://' + linkedinUrl;
+
+														// console.log(linkedin);
+
+													}
+
+												}
+
+												// console.log('https:' + linkedInProfileDataUrl);
+												//
+												// var codeElements = []
+												// $('code').each(function (index) {
+												//
+												// 	// var currentCodeElement = $.parseJSON($(this).html());
+												// 	// codeElements.push($(this).text());
+												// 	console.log(index + ": " + $(this).html());
+												// });
+
+												// console.log(codeElements);
+
+												// var fuckFuck = $.parseJSON('{"request":"/voyager/api/identity/profiles/iamchriswick/treasuryMediaItems?q=backgroundMedia&section=POSITION","status":200,"body":"bpr-guid-1002971"}');
+												//
+												// console.log('fuckFuck', fuckFuck);
+												//
+												// $.getJSON(' https://www.linkedin.com/voyager/api/identity/profiles/iamchriswick/', function () {
+												// 		console.log('SUCCESS: Voyager data loaded...');
+												// 	}).done(function (json) {
+												//
+												// console.log(json);
+												//
+												// 	})
+												// 	.fail(function (jqxhr, textStatus, error) {
+												//
+												// 		console.log('FAIL: Could not load Voyager data...');
+												//
+												// 	});
+
+												// $.getJSON('//www.linkedin.com/profile/mappers?id=' + linkedInProfileId + '&promoId=&snapshotID=&primaryAction=&authToken=vCzw&locale=en_US&x-a=' + linkedInProfileData, function () {
+												$.getJSON(linkedInProfileDataUrl, function () {
+														console.log('SUCCESS: LinkedIn profile data loaded');
+													}).done(function (json) {
+
+														// var descriptionRegex = '/<br\s*[\/]?>/gi';
+														// var htmlEntetiesRegex = '/&#([0-9]{1,3});/gi';
+
+														// function parseHtmlEnteties(str) {
+														// 	return str.replace(htmlEntetiesRegex, function (match, numStr) {
+														// 		var num = parseInt(numStr, 10); // read num as normal number
+														// 		return String.fromCharCode(num);
+														// 	});
+														// }
+
+														// function decodeHtml(html) {
+														// 	var txt = document.createElement("textarea");
+														// 	txt.innerHTML = html;
+														// 	return txt.value;
+														// }
+
+														console.log(json);
+
+														/**
+														 * Get and push Experiences.
+														 */
+
+														// var experience = [];
+
+														// RAMP.scrapeExperiences = function () {
+														//
+														// 	function fetchExperiences() {
+														//
+														// 		if ('li.pv-position-entity') {
+														//
+														// 			console.warn('Could not fetch Experience data automaticly. Initiating manuall scraping...');
+														//
+														// 			$('li.pv-position-entity').each(function (index) {
+														//
+														// 				var $entry = $(this);
+														//
+														// 				// $(this).find('button.pv-profile-section__show-more-detail').click();
+														//
+														// 				var experienceTitle;
+														// 				var experienceCompanyName;
+														// 				var experienceDescription;
+														// 				var experienceLocation
+														// 				var experienceStartDate;
+														// 				var experienceEndDate;
+														//
+														// 				var $showMoreButton = $(this).find('button.pv-profile-section__show-more-detail');
+														//
+														// 				if ($showMoreButton) {
+														//
+														// 					$showMoreButton.click();
+														//
+														// 					setTimeout(function () {
+														//
+														// 						var $experienceDescription = $entry.find('.pv-entity__description');
+														//
+														// 						if ($experienceDescription) {
+														//
+														// 							experienceDescription = $experienceDescription
+														// 								.clone() //clone the element
+														// 								.children() //select all the children
+														// 								.remove() //remove all the children
+														// 								.end() //again go back to selected element
+														// 								.text();
+														//
+														// 							function myTrim(x) {
+														// 								return x.replace(/^\s+|\s+$/gm, '');
+														// 							}
+														//
+														// 							experienceDescription = myTrim(experienceDescription);
+														// 							experienceDescription = decodeHtml(experienceDescription);
+														// 							experienceDescription = experienceDescription.replace(/(<br>)+/g, '\n ');
+														//
+														// 							if (experienceDescription.trim()) {
+														//
+														// 								// console.log(experienceDescription);
+														//
+														// 							}
+														//
+														// 						} else {
+														//
+														// 							console.log('No Experience description...');
+														//
+														// 						}
+														//
+														// 					}, 400);
+														//
+														// 				}
+														//
+														// 				setTimeout(function () {
+														//
+														// 					var $experienceTitle = $entry.find('.pv-entity__summary-info > h3');
+														// 					var $experienceCompanyName = $entry.find('.pv-entity__summary-info > h4 > .pv-entity__secondary-title');
+														// 					var $experienceLocation = $entry.find('.pv-entity__summary-info > h4.pv-entity__location > span:not(.visually-hidden)');
+														// 					var $experienceDateRange = $entry.find('.pv-entity__summary-info > h4.pv-entity__date-range > span:not(.visually-hidden)');
+														//
+														// 					if ($experienceTitle) {
+														//
+														// 						experienceTitle = $experienceTitle.text();
+														//
+														// 					}
+														//
+														// 					if ($experienceCompanyName) {
+														//
+														// 						experienceCompanyName = $experienceCompanyName.text();
+														//
+														// 					}
+														//
+														// 					if ($experienceLocation) {
+														//
+														// 						experienceLocation = $experienceLocation.text();
+														//
+														// 					}
+														//
+														// 					if ($experienceDateRange) {
+														//
+														// 						var experienceDateRange = $experienceDateRange.text();
+														//
+														// 						// console.log(experienceDateRange);
+														//
+														// 						$experienceDateRange.each(function (index) {
+														//
+														// 							if (experienceDateRange.indexOf(' – ') > -1) {
+														//
+														// 								var experienceDatesSplit = experienceDateRange.split(' – ');
+														//
+														// 							} else if (experienceDateRange.indexOf(' - ') > -1) {
+														//
+														// 								var experienceDatesSplit = experienceDateRange.split(' - ');
+														//
+														// 							}
+														//
+														// 							var experienceDateStart = experienceDatesSplit[0];
+														// 							var experienceDateEnd = experienceDatesSplit[1];
+														//
+														// 							// console.log(experienceDateStart);
+														// 							// console.log(experienceDateEnd);
+														//
+														// 							var experienceDates = [];
+														//
+														// 							experienceDates.push(experienceDateStart);
+														// 							experienceDates.push(experienceDateEnd);
+														//
+														// 							// console.log(experienceDates);
+														//
+														// 							// var experienceDateLength = 0;
+														//
+														// 							var current = 0;
+														//
+														// 							$.each(experienceDates, function (index, value) {
+														//
+														// 								// experienceDateLength++
+														//
+														// 								// console.log(index + ": " + $(this).text());
+														// 								// console.log('index, value', index, value);
+														//
+														// 								// var experienceDate = $(this).text();
+														//
+														// 								var experienceDateSplit = value.split(' ');
+														// 								var experienceMonth = experienceDateSplit[0];
+														// 								var experienceYear = experienceDateSplit[1];
+														//
+														// 								function setExperienceMonth() {
+														//
+														// 									if (experienceMonth === 'Jan') {
+														//
+														// 										experienceMonth = '01';
+														//
+														// 									} else if (experienceMonth === 'Feb') {
+														//
+														// 										experienceMonth = '02';
+														//
+														// 									} else if (experienceMonth === 'Mar') {
+														//
+														// 										experienceMonth = '03';
+														//
+														// 									} else if (experienceMonth === 'Apr') {
+														//
+														// 										experienceMonth = '04';
+														//
+														// 									} else if (experienceMonth === 'May') {
+														//
+														// 										experienceMonth = '05';
+														//
+														// 									} else if (experienceMonth === 'Jun') {
+														//
+														// 										experienceMonth = '06';
+														//
+														// 									} else if (experienceMonth === 'Jul') {
+														//
+														// 										experienceMonth = '07';
+														//
+														// 									} else if (experienceMonth === 'Aug') {
+														//
+														// 										experienceMonth = '08';
+														//
+														// 									} else if (experienceMonth === 'Sep') {
+														//
+														// 										experienceMonth = '09';
+														//
+														// 									} else if (experienceMonth === 'Oct') {
+														//
+														// 										experienceMonth = '10';
+														//
+														// 									} else if (experienceMonth === 'Nov') {
+														//
+														// 										experienceMonth = '11';
+														//
+														// 									} else if (experienceMonth === 'Dec') {
+														//
+														// 										experienceMonth = '12';
+														//
+														// 									} else if (experienceMonth === 'jan.') {
+														//
+														// 										experienceMonth = '01';
+														//
+														// 									} else if (experienceMonth === 'feb.') {
+														//
+														// 										experienceMonth = '02';
+														//
+														// 									} else if (experienceMonth === 'mar.') {
+														//
+														// 										experienceMonth = '03';
+														//
+														// 									} else if (experienceMonth === 'apr.') {
+														//
+														// 										experienceMonth = '04';
+														//
+														// 									} else if (experienceMonth === 'mai.') {
+														//
+														// 										experienceMonth = '05';
+														//
+														// 									} else if (experienceMonth === 'jun.') {
+														//
+														// 										experienceMonth = '06';
+														//
+														// 									} else if (experienceMonth === 'jul.') {
+														//
+														// 										experienceMonth = '07';
+														//
+														// 									} else if (experienceMonth === 'aug.') {
+														//
+														// 										experienceMonth = '08';
+														//
+														// 									} else if (experienceMonth === 'sep.') {
+														//
+														// 										experienceMonth = '09';
+														//
+														// 									} else if (experienceMonth === 'okt.') {
+														//
+														// 										experienceMonth = '10';
+														//
+														// 									} else if (experienceMonth === 'nov.') {
+														//
+														// 										experienceMonth = '11';
+														//
+														// 									} else if (experienceMonth === 'des.') {
+														//
+														// 										experienceMonth = '12';
+														//
+														// 									}
+														//
+														// 									if (index === 0) {
+														//
+														// 										experienceStartDate = '01.' + experienceMonth + '.' + experienceYear;
+														//
+														// 									} else if (index === 1) {
+														//
+														// 										experienceEndDate = '01.' + experienceMonth + '.' + experienceYear;
+														//
+														// 									}
+														//
+														// 								}
+														//
+														// 								if (experienceMonth == 'Present' || value == 'nå') {
+														//
+														// 									current = 1;
+														//
+														// 									experienceEndDate = null;
+														//
+														// 								} else {
+														//
+														// 									setExperienceMonth();
+														//
+														// 								}
+														//
+														// 								// console.log(experienceDateLength);
+														//
+														// 								// if (experienceDateLength === 1) {
+														// 								//
+														// 								// 	current = 1;
+														// 								//
+														// 								// } else if (experienceDateLength === 2) {
+														// 								//
+														// 								// 	current = 0;
+														// 								//
+														// 								// }
+														//
+														// 							});
+														//
+														// 							experience.push({
+														// 								title: experienceTitle,
+														// 								companyName: experienceCompanyName,
+														// 								location: experienceLocation,
+														// 								startDate: experienceStartDate,
+														// 								endDate: experienceEndDate,
+														// 								description: experienceDescription,
+														// 								current: current,
+														// 							});
+														//
+														// 							// console.log(experience);
+														//
+														// 						});
+														//
+														// 					}
+														//
+														// 					// experience.push({
+														// 					// 	title: experienceTitle,
+														// 					// 	companyName: experienceCompanyName,
+														// 					// 	// location: location,
+														// 					// 	startDate: experienceStartDate,
+														// 					// 	endDate: experienceEndDate,
+														// 					// 	description: experienceDescription,
+														// 					// 	current: current,
+														// 					// });
+														//
+														// 					// console.log(experience);
+														//
+														// 				}, 500);
+														//
+														// 			});
+														//
+														// 			// console.log(experience);
+														//
+														// 		} else {
+														//
+														// 			console.warn('Sorry, no Experience to scrape...');
+														//
+														// 		}
+														//
+														// 	}
+														//
+														// 	if ('button.pv-profile-section__see-more-inline') {
+														//
+														// 		var $seeMorePositionsButton = $('button.pv-profile-section__see-more-inline');
+														//
+														// 		console.log('click seeMorePositionsButton');
+														//
+														// 		$seeMorePositionsButton.click();
+														//
+														// 		setTimeout(function () {
+														//
+														// 			fetchExperiences();
+														//
+														// 		}, 500);
+														//
+														// 	} else {
+														//
+														// 		fetchExperiences()
+														//
+														// 	}
+														//
+														// }
+
+														if (json.content.Experience) {
+
+															if (json.content.Experience.positionsMpr && json.content.Experience.positionsMpr.positions) {
+
+																$.each(json.content.Experience.positionsMpr.positions, function (key, value) {
 
 																	var companyName = value.companyName;
 																	var title = value.title;
-																	var location = value.locationName;
+																	var location = value.fmt_location;
+																	var description = value.summary_lb;
 																	var current = 1;
+
+																	if (value.hasOwnProperty('summary_lb')) {
+																		description = decodeHtml(description);
+																		description = description.replace(/(<br>)+/g, '\n');
+																	}
 
 																	if (value.startDate) {
 																		if (value.startDate.isMonthDefined === true) {
-																			var startDate = '01' + '.' + value.startDate.month + '.' + value.startDate.year;
+																			var startdate_iso = value.startdate_iso.split('-');
+																			var startDate = startdate_iso[2] + '.' + startdate_iso[1] + '.' + startdate_iso[0];
 																		} else {
 																			var startDate = '01.01.' + value.startDate.year;
 																		}
 																	}
 
 																	if (value.endDate) {
-																		if (value.endDate.year === undefined) {
+																		if (value.enddate_iso === undefined) {
 																			current = 1;
 																		} else {
 																			current = 0;
 																			if (value.endDate.isMonthDefined === true) {
-																				var endDate = '01' + '.' + value.endDate.month + '.' + value.endDate.year;
+																				var enddate_iso = value.enddate_iso.split('-');
+																				var endDate = enddate_iso[2] + '.' + enddate_iso[1] + '.' + enddate_iso[0];
 																			} else {
 																				var endDate = '01.01.' + value.endDate.year;
 																			}
@@ -2035,11 +2248,61 @@ console.log('RAMP loaded');
 																		location: location,
 																		startDate: startDate,
 																		endDate: endDate,
+																		description: description,
 																		current: current,
 																	})
 
 																});
 
+															} else if (json.content.TopCard && json.content.TopCard.positionsMpr) {
+
+																if (json.content.TopCard.positionsMpr.positions) {
+
+																	$.each(json.content.TopCard.positionsMpr.positions, function (key, value) {
+
+																		var companyName = value.companyName;
+																		var title = value.title;
+																		var location = value.locationName;
+																		var current = 1;
+
+																		if (value.startDate) {
+																			if (value.startDate.isMonthDefined === true) {
+																				var startDate = '01' + '.' + value.startDate.month + '.' + value.startDate.year;
+																			} else {
+																				var startDate = '01.01.' + value.startDate.year;
+																			}
+																		}
+
+																		if (value.endDate) {
+																			if (value.endDate.year === undefined) {
+																				current = 1;
+																			} else {
+																				current = 0;
+																				if (value.endDate.isMonthDefined === true) {
+																					var endDate = '01' + '.' + value.endDate.month + '.' + value.endDate.year;
+																				} else {
+																					var endDate = '01.01.' + value.endDate.year;
+																				}
+																			}
+																		}
+
+																		experience.push({
+																			companyName: companyName,
+																			title: title,
+																			location: location,
+																			startDate: startDate,
+																			endDate: endDate,
+																			current: current,
+																		})
+
+																	});
+
+
+																} else {
+
+																	RAMP.scrapeExperiences();
+
+																}
 
 															} else {
 
@@ -2053,339 +2316,293 @@ console.log('RAMP loaded');
 
 														}
 
-													} else {
+														/**
+														 * Get and push Educations.
+														 */
 
-														RAMP.scrapeExperiences();
+														// RAMP.scrapeEducations = function () {
+														//
+														// 	if ('li.pv-education-entity') {
+														//
+														// 		console.warn('Could not fetch Education data automaticly. Initiating manuall scraping...');
+														//
+														// 		// 	$('li.position-entity').each(function (index) {
+														// 		//
+														// 		// 		var $entry = $(this);
+														// 		//
+														// 		// 		// $(this).find('button.pv-profile-section__show-more-detail').click();
+														// 		//
+														// 		// 		var $showMoreButton = $(this).find('button.pv-profile-section__show-more-detail');
+														// 		//
+														// 		// 		if ($showMoreButton) {
+														// 		//
+														// 		// 			$showMoreButton.click();
+														// 		//
+														// 		// 			setTimeout(function () {
+														// 		//
+														// 		// 				var experienceTitle;
+														// 		// 				var experienceCompanyName;
+														// 		// 				var experienceDescription;
+														// 		// 				var experienceStartDate;
+														// 		// 				var experienceEndDate;
+														// 		//
+														// 		// 				var $experienceTitle = $entry.find('.pv-entity__summary-info > h3');
+														// 		// 				var $experienceCompanyName = $entry.find('.pv-entity__summary-info > h4 > .pv-entity__secondary-title');
+														// 		// 				var $experienceDescription = $entry.find('.pv-entity__description');
+														// 		// 				var $experienceDateRange = $entry.find('.pv-entity__date-range');
+														// 		//
+														// 		// 				var current = 0;
+														// 		//
+														// 		// 				if ($experienceTitle) {
+														// 		//
+														// 		// 					experienceTitle = $experienceTitle.text();
+														// 		//
+														// 		// 				}
+														// 		//
+														// 		// 				if ($experienceCompanyName) {
+														// 		//
+														// 		// 					experienceCompanyName = $experienceCompanyName.text();
+														// 		//
+														// 		// 				}
+														// 		//
+														// 		// 				if ($experienceDescription) {
+														// 		//
+														// 		// 					experienceDescription = $experienceDescription
+														// 		// 						.clone() //clone the element
+														// 		// 						.children() //select all the children
+														// 		// 						.remove() //remove all the children
+														// 		// 						.end() //again go back to selected element
+														// 		// 						.text();
+														// 		//
+														// 		// 					function myTrim(x) {
+														// 		// 						return x.replace(/^\s+|\s+$/gm, '');
+														// 		// 					}
+														// 		//
+														// 		// 					experienceDescription = myTrim(experienceDescription);
+														// 		// 					experienceDescription = decodeHtml(experienceDescription);
+														// 		// 					experienceDescription = experienceDescription.replace(/(<br>)+/g, '\n ');
+														// 		//
+														// 		// 					// console.log(experienceDescription);
+														// 		//
+														// 		// 				}
+														// 		//
+														// 		// 				if ($experienceDateRange) {
+														// 		//
+														// 		// 					$experienceDateRange.each(function (index) {
+														// 		//
+														// 		// 						var $experienceDates = $experienceDateRange.find('time');
+														// 		//
+														// 		// 						var experienceDateLength = 0;
+														// 		//
+														// 		// 						$experienceDates.each(function (index) {
+														// 		//
+														// 		// 							experienceDateLength++
+														// 		//
+														// 		// 							// console.log(index + ": " + $(this).text());
+														// 		//
+														// 		// 							var experienceDate = $(this).text();
+														// 		//
+														// 		// 							var experienceDateSplit = experienceDate.split(' ');
+														// 		// 							var experienceMonth = experienceDateSplit[0];
+														// 		// 							var experienceYear = experienceDateSplit[1];
+														// 		//
+														// 		// 							if (experienceMonth === 'Jan') {
+														// 		//
+														// 		// 								experienceMonth = '01';
+														// 		//
+														// 		// 							} else if (experienceMonth === 'Feb') {
+														// 		//
+														// 		// 								experienceMonth = '02';
+														// 		//
+														// 		// 							} else if (experienceMonth === 'Mar') {
+														// 		//
+														// 		// 								experienceMonth = '03';
+														// 		//
+														// 		// 							} else if (experienceMonth === 'Apr') {
+														// 		//
+														// 		// 								experienceMonth = '04';
+														// 		//
+														// 		// 							} else if (experienceMonth === 'May') {
+														// 		//
+														// 		// 								experienceMonth = '05';
+														// 		//
+														// 		// 							} else if (experienceMonth === 'Jun') {
+														// 		//
+														// 		// 								experienceMonth = '06';
+														// 		//
+														// 		// 							} else if (experienceMonth === 'Jul') {
+														// 		//
+														// 		// 								experienceMonth = '07';
+														// 		//
+														// 		// 							} else if (experienceMonth === 'Aug') {
+														// 		//
+														// 		// 								experienceMonth = '08';
+														// 		//
+														// 		// 							} else if (experienceMonth === 'Sep') {
+														// 		//
+														// 		// 								experienceMonth = '09';
+														// 		//
+														// 		// 							} else if (experienceMonth === 'Oct') {
+														// 		//
+														// 		// 								experienceMonth = '10';
+														// 		//
+														// 		// 							} else if (experienceMonth === 'Nov') {
+														// 		//
+														// 		// 								experienceMonth = '11';
+														// 		//
+														// 		// 							} else if (experienceMonth === 'Dec') {
+														// 		//
+														// 		// 								experienceMonth = '12';
+														// 		//
+														// 		// 							} else if (experienceMonth === 'jan.') {
+														// 		//
+														// 		// 								experienceMonth = '01';
+														// 		//
+														// 		// 							} else if (experienceMonth === 'feb.') {
+														// 		//
+														// 		// 								experienceMonth = '02';
+														// 		//
+														// 		// 							} else if (experienceMonth === 'mar.') {
+														// 		//
+														// 		// 								experienceMonth = '03';
+														// 		//
+														// 		// 							} else if (experienceMonth === 'apr.') {
+														// 		//
+														// 		// 								experienceMonth = '04';
+														// 		//
+														// 		// 							} else if (experienceMonth === 'mai.') {
+														// 		//
+														// 		// 								experienceMonth = '05';
+														// 		//
+														// 		// 							} else if (experienceMonth === 'jun.') {
+														// 		//
+														// 		// 								experienceMonth = '06';
+														// 		//
+														// 		// 							} else if (experienceMonth === 'jul.') {
+														// 		//
+														// 		// 								experienceMonth = '07';
+														// 		//
+														// 		// 							} else if (experienceMonth === 'aug.') {
+														// 		//
+														// 		// 								experienceMonth = '08';
+														// 		//
+														// 		// 							} else if (experienceMonth === 'sep.') {
+														// 		//
+														// 		// 								experienceMonth = '09';
+														// 		//
+														// 		// 							} else if (experienceMonth === 'okt.') {
+														// 		//
+														// 		// 								experienceMonth = '10';
+														// 		//
+														// 		// 							} else if (experienceMonth === 'nov.') {
+														// 		//
+														// 		// 								experienceMonth = '11';
+														// 		//
+														// 		// 							} else if (experienceMonth === 'des.') {
+														// 		//
+														// 		// 								experienceMonth = '12';
+														// 		//
+														// 		// 							}
+														// 		//
+														// 		// 							if (index === 0) {
+														// 		//
+														// 		// 								experienceStartDate = '01.' + experienceMonth + '.' + experienceYear;
+														// 		//
+														// 		// 							} else if (index === 1) {
+														// 		//
+														// 		// 								experienceEndDate = '01.' + experienceMonth + '.' + experienceYear;
+														// 		//
+														// 		// 							}
+														// 		//
+														// 		// 						});
+														// 		//
+														// 		// 						// console.log(experienceDateLength);
+														// 		//
+														// 		// 						if (experienceDateLength === 1) {
+														// 		//
+														// 		// 							current = 1;
+														// 		//
+														// 		//
+														// 		// 						} else if (experienceDateLength === 2) {
+														// 		//
+														// 		// 							current = 0;
+														// 		//
+														// 		// 						}
+														// 		//
+														// 		// 					});
+														// 		//
+														// 		// 				}
+														// 		//
+														// 		// 				experience.push({
+														// 		// 					title: experienceTitle,
+														// 		// 					companyName: experienceCompanyName,
+														// 		// 					// location: location,
+														// 		// 					startDate: experienceStartDate,
+														// 		// 					endDate: experienceEndDate,
+														// 		// 					description: experienceDescription,
+														// 		// 					current: current,
+														// 		// 				});
+														// 		//
+														// 		// 				// console.log(experience);
+														// 		//
+														// 		// 			}, 500);
+														// 		//
+														// 		// 		}
+														// 		//
+														// 		// 	});
+														//
+														// 	} else {
+														//
+														// 		console.warn('Sorry, no Education to scrape...');
+														//
+														// 	}
+														//
+														// }
 
-													}
+														if (json.content.Education && json.content.Education.educationsMpr) {
 
-													/**
-													 * Get and push Educations.
-													 */
+															if (json.content.Education.educationsMpr.educations) {
 
-													// RAMP.scrapeEducations = function () {
-													//
-													// 	if ('li.pv-education-entity') {
-													//
-													// 		console.warn('Could not fetch Education data automaticly. Initiating manuall scraping...');
-													//
-													// 		// 	$('li.position-entity').each(function (index) {
-													// 		//
-													// 		// 		var $entry = $(this);
-													// 		//
-													// 		// 		// $(this).find('button.pv-profile-section__show-more-detail').click();
-													// 		//
-													// 		// 		var $showMoreButton = $(this).find('button.pv-profile-section__show-more-detail');
-													// 		//
-													// 		// 		if ($showMoreButton) {
-													// 		//
-													// 		// 			$showMoreButton.click();
-													// 		//
-													// 		// 			setTimeout(function () {
-													// 		//
-													// 		// 				var experienceTitle;
-													// 		// 				var experienceCompanyName;
-													// 		// 				var experienceDescription;
-													// 		// 				var experienceStartDate;
-													// 		// 				var experienceEndDate;
-													// 		//
-													// 		// 				var $experienceTitle = $entry.find('.pv-entity__summary-info > h3');
-													// 		// 				var $experienceCompanyName = $entry.find('.pv-entity__summary-info > h4 > .pv-entity__secondary-title');
-													// 		// 				var $experienceDescription = $entry.find('.pv-entity__description');
-													// 		// 				var $experienceDateRange = $entry.find('.pv-entity__date-range');
-													// 		//
-													// 		// 				var current = 0;
-													// 		//
-													// 		// 				if ($experienceTitle) {
-													// 		//
-													// 		// 					experienceTitle = $experienceTitle.text();
-													// 		//
-													// 		// 				}
-													// 		//
-													// 		// 				if ($experienceCompanyName) {
-													// 		//
-													// 		// 					experienceCompanyName = $experienceCompanyName.text();
-													// 		//
-													// 		// 				}
-													// 		//
-													// 		// 				if ($experienceDescription) {
-													// 		//
-													// 		// 					experienceDescription = $experienceDescription
-													// 		// 						.clone() //clone the element
-													// 		// 						.children() //select all the children
-													// 		// 						.remove() //remove all the children
-													// 		// 						.end() //again go back to selected element
-													// 		// 						.text();
-													// 		//
-													// 		// 					function myTrim(x) {
-													// 		// 						return x.replace(/^\s+|\s+$/gm, '');
-													// 		// 					}
-													// 		//
-													// 		// 					experienceDescription = myTrim(experienceDescription);
-													// 		// 					experienceDescription = decodeHtml(experienceDescription);
-													// 		// 					experienceDescription = experienceDescription.replace(/(<br>)+/g, '\n ');
-													// 		//
-													// 		// 					// console.log(experienceDescription);
-													// 		//
-													// 		// 				}
-													// 		//
-													// 		// 				if ($experienceDateRange) {
-													// 		//
-													// 		// 					$experienceDateRange.each(function (index) {
-													// 		//
-													// 		// 						var $experienceDates = $experienceDateRange.find('time');
-													// 		//
-													// 		// 						var experienceDateLength = 0;
-													// 		//
-													// 		// 						$experienceDates.each(function (index) {
-													// 		//
-													// 		// 							experienceDateLength++
-													// 		//
-													// 		// 							// console.log(index + ": " + $(this).text());
-													// 		//
-													// 		// 							var experienceDate = $(this).text();
-													// 		//
-													// 		// 							var experienceDateSplit = experienceDate.split(' ');
-													// 		// 							var experienceMonth = experienceDateSplit[0];
-													// 		// 							var experienceYear = experienceDateSplit[1];
-													// 		//
-													// 		// 							if (experienceMonth === 'Jan') {
-													// 		//
-													// 		// 								experienceMonth = '01';
-													// 		//
-													// 		// 							} else if (experienceMonth === 'Feb') {
-													// 		//
-													// 		// 								experienceMonth = '02';
-													// 		//
-													// 		// 							} else if (experienceMonth === 'Mar') {
-													// 		//
-													// 		// 								experienceMonth = '03';
-													// 		//
-													// 		// 							} else if (experienceMonth === 'Apr') {
-													// 		//
-													// 		// 								experienceMonth = '04';
-													// 		//
-													// 		// 							} else if (experienceMonth === 'May') {
-													// 		//
-													// 		// 								experienceMonth = '05';
-													// 		//
-													// 		// 							} else if (experienceMonth === 'Jun') {
-													// 		//
-													// 		// 								experienceMonth = '06';
-													// 		//
-													// 		// 							} else if (experienceMonth === 'Jul') {
-													// 		//
-													// 		// 								experienceMonth = '07';
-													// 		//
-													// 		// 							} else if (experienceMonth === 'Aug') {
-													// 		//
-													// 		// 								experienceMonth = '08';
-													// 		//
-													// 		// 							} else if (experienceMonth === 'Sep') {
-													// 		//
-													// 		// 								experienceMonth = '09';
-													// 		//
-													// 		// 							} else if (experienceMonth === 'Oct') {
-													// 		//
-													// 		// 								experienceMonth = '10';
-													// 		//
-													// 		// 							} else if (experienceMonth === 'Nov') {
-													// 		//
-													// 		// 								experienceMonth = '11';
-													// 		//
-													// 		// 							} else if (experienceMonth === 'Dec') {
-													// 		//
-													// 		// 								experienceMonth = '12';
-													// 		//
-													// 		// 							} else if (experienceMonth === 'jan.') {
-													// 		//
-													// 		// 								experienceMonth = '01';
-													// 		//
-													// 		// 							} else if (experienceMonth === 'feb.') {
-													// 		//
-													// 		// 								experienceMonth = '02';
-													// 		//
-													// 		// 							} else if (experienceMonth === 'mar.') {
-													// 		//
-													// 		// 								experienceMonth = '03';
-													// 		//
-													// 		// 							} else if (experienceMonth === 'apr.') {
-													// 		//
-													// 		// 								experienceMonth = '04';
-													// 		//
-													// 		// 							} else if (experienceMonth === 'mai.') {
-													// 		//
-													// 		// 								experienceMonth = '05';
-													// 		//
-													// 		// 							} else if (experienceMonth === 'jun.') {
-													// 		//
-													// 		// 								experienceMonth = '06';
-													// 		//
-													// 		// 							} else if (experienceMonth === 'jul.') {
-													// 		//
-													// 		// 								experienceMonth = '07';
-													// 		//
-													// 		// 							} else if (experienceMonth === 'aug.') {
-													// 		//
-													// 		// 								experienceMonth = '08';
-													// 		//
-													// 		// 							} else if (experienceMonth === 'sep.') {
-													// 		//
-													// 		// 								experienceMonth = '09';
-													// 		//
-													// 		// 							} else if (experienceMonth === 'okt.') {
-													// 		//
-													// 		// 								experienceMonth = '10';
-													// 		//
-													// 		// 							} else if (experienceMonth === 'nov.') {
-													// 		//
-													// 		// 								experienceMonth = '11';
-													// 		//
-													// 		// 							} else if (experienceMonth === 'des.') {
-													// 		//
-													// 		// 								experienceMonth = '12';
-													// 		//
-													// 		// 							}
-													// 		//
-													// 		// 							if (index === 0) {
-													// 		//
-													// 		// 								experienceStartDate = '01.' + experienceMonth + '.' + experienceYear;
-													// 		//
-													// 		// 							} else if (index === 1) {
-													// 		//
-													// 		// 								experienceEndDate = '01.' + experienceMonth + '.' + experienceYear;
-													// 		//
-													// 		// 							}
-													// 		//
-													// 		// 						});
-													// 		//
-													// 		// 						// console.log(experienceDateLength);
-													// 		//
-													// 		// 						if (experienceDateLength === 1) {
-													// 		//
-													// 		// 							current = 1;
-													// 		//
-													// 		//
-													// 		// 						} else if (experienceDateLength === 2) {
-													// 		//
-													// 		// 							current = 0;
-													// 		//
-													// 		// 						}
-													// 		//
-													// 		// 					});
-													// 		//
-													// 		// 				}
-													// 		//
-													// 		// 				experience.push({
-													// 		// 					title: experienceTitle,
-													// 		// 					companyName: experienceCompanyName,
-													// 		// 					// location: location,
-													// 		// 					startDate: experienceStartDate,
-													// 		// 					endDate: experienceEndDate,
-													// 		// 					description: experienceDescription,
-													// 		// 					current: current,
-													// 		// 				});
-													// 		//
-													// 		// 				// console.log(experience);
-													// 		//
-													// 		// 			}, 500);
-													// 		//
-													// 		// 		}
-													// 		//
-													// 		// 	});
-													//
-													// 	} else {
-													//
-													// 		console.warn('Sorry, no Education to scrape...');
-													//
-													// 	}
-													//
-													// }
+																$.each(json.content.Education.educationsMpr.educations, function (key, value) {
 
-													if (json.content.Education && json.content.Education.educationsMpr) {
+																	var schoolName = value.schoolName;
+																	var eudcationType = value.fieldOfStudy;
+																	var degree = value.degree;
+																	var description = value.summary_lb;
 
-														if (json.content.Education.educationsMpr.educations) {
+																	// console.log(eudcationType);
 
-															$.each(json.content.Education.educationsMpr.educations, function (key, value) {
+																	if (value.hasOwnProperty('summary_lb')) {
+																		description = decodeHtml(description);
+																		description = description.replace(/(<br>)+/g, '\n');
+																	}
 
-																var schoolName = value.schoolName;
-																var eudcationType = value.fieldOfStudy;
-																var degree = value.degree;
-																var description = value.summary_lb;
-
-																// console.log(eudcationType);
-
-																if (value.hasOwnProperty('summary_lb')) {
-																	description = decodeHtml(description);
-																	description = description.replace(/(<br>)+/g, '\n');
-																}
-
-																if (value.hasOwnProperty('startDate') && value.startDate.isMonthDefined === true) {
-																	var startDate = '15.' + value.startDate.month + '.' + value.startDate.year;
-																} else if (value.hasOwnProperty('startDate')) {
-																	var startDate = '15.08.' + value.startDate.year;
-																}
-
-																if (value.hasOwnProperty('endDate') && value.endDate.isMonthDefined === true) {
-																	var endDate = '15.' + value.endDate.month + '.' + value.endDate.year;
-																} else if (value.hasOwnProperty('endDate')) {
-																	var endDate = '15.06.' + value.endDate.year;
-																}
-
-																education.push({
-																	schoolName: schoolName,
-																	eudcationType: eudcationType,
-																	degree: degree,
-																	startDate: startDate,
-																	endDate: endDate,
-																	description: description,
-																})
-
-															});
-
-														} else if (json.content.Education.educationsMpr.topEducations) {
-
-															$.each(json.content.Education.educationsMpr.topEducations, function (key, value) {
-
-																var schoolName = value.schoolName;
-																var eudcationType = value.fieldOfStudy;
-																var degree = value.degree;
-																var current = 1;
-
-																if (value.startDate) {
-																	if (value.startDate.isMonthDefined === true) {
-																		var startDate = '15' + '.' + value.startDate.month + '.' + value.startDate.year;
-																	} else {
+																	if (value.hasOwnProperty('startDate') && value.startDate.isMonthDefined === true) {
+																		var startDate = '15.' + value.startDate.month + '.' + value.startDate.year;
+																	} else if (value.hasOwnProperty('startDate')) {
 																		var startDate = '15.08.' + value.startDate.year;
 																	}
-																}
 
-																if (value.endDate) {
-																	if (value.endDate.year === undefined) {
-																		current = 1;
-																	} else {
-																		current = 0;
-																		if (value.endDate.isMonthDefined === true) {
-																			var endDate = '15' + '.' + value.endDate.month + '.' + value.endDate.year;
-																		} else {
-																			var endDate = '15.06.' + value.endDate.year;
-																		}
+																	if (value.hasOwnProperty('endDate') && value.endDate.isMonthDefined === true) {
+																		var endDate = '15.' + value.endDate.month + '.' + value.endDate.year;
+																	} else if (value.hasOwnProperty('endDate')) {
+																		var endDate = '15.06.' + value.endDate.year;
 																	}
-																}
 
-																education.push({
-																	schoolName: schoolName,
-																	eudcationType: eudcationType,
-																	degree: degree,
-																	startDate: startDate,
-																	endDate: endDate,
-																})
+																	education.push({
+																		schoolName: schoolName,
+																		eudcationType: eudcationType,
+																		degree: degree,
+																		startDate: startDate,
+																		endDate: endDate,
+																		description: description,
+																	})
 
-															});
+																});
 
-															if (json.content.Education.educationsMpr.moreEducations) {
+															} else if (json.content.Education.educationsMpr.topEducations) {
 
-																$.each(json.content.Education.educationsMpr.moreEducations, function (key, value) {
+																$.each(json.content.Education.educationsMpr.topEducations, function (key, value) {
 
 																	var schoolName = value.schoolName;
 																	var eudcationType = value.fieldOfStudy;
@@ -2423,94 +2640,9 @@ console.log('RAMP loaded');
 
 																});
 
-															}
+																if (json.content.Education.educationsMpr.moreEducations) {
 
-														} else if (json.content.TopCard && json.content.TopCard.educationsMpr) {
-
-															if (json.content.TopCard.educationsMpr.educations) {
-
-																$.each(json.content.TopCard.educationsMpr.educations, function (key, value) {
-
-																	var schoolName = value.schoolName;
-																	var eudcationType = value.fieldOfStudy;
-																	var degree = value.degree;
-																	var current = 1;
-
-																	if (value.startDate) {
-																		if (value.startDate.isMonthDefined === true) {
-																			var startDate = '15' + '.' + value.startDate.month + '.' + value.startDate.year;
-																		} else {
-																			var startDate = '15.08.' + value.startDate.year;
-																		}
-																	}
-
-																	if (value.endDate) {
-																		if (value.endDate.year === undefined) {
-																			current = 1;
-																		} else {
-																			current = 0;
-																			if (value.endDate.isMonthDefined === true) {
-																				var endDate = '15' + '.' + value.endDate.month + '.' + value.endDate.year;
-																			} else {
-																				var endDate = '15.06.' + value.endDate.year;
-																			}
-																		}
-																	}
-
-																	education.push({
-																		schoolName: schoolName,
-																		eudcationType: eudcationType,
-																		degree: degree,
-																		startDate: startDate,
-																		endDate: endDate,
-																	})
-
-																});
-
-
-															} else if (json.content.TopCard.educationsMpr.topEducations) {
-
-																$.each(json.content.TopCard.educationsMpr.topEducations, function (key, value) {
-
-																	var schoolName = value.schoolName;
-																	var eudcationType = value.fieldOfStudy;
-																	var degree = value.degree;
-																	var current = 1;
-
-																	if (value.startDate) {
-																		if (value.startDate.isMonthDefined === true) {
-																			var startDate = '15' + '.' + value.startDate.month + '.' + value.startDate.year;
-																		} else {
-																			var startDate = '15.08.' + value.startDate.year;
-																		}
-																	}
-
-																	if (value.endDate) {
-																		if (value.endDate.year === undefined) {
-																			current = 1;
-																		} else {
-																			current = 0;
-																			if (value.endDate.isMonthDefined === true) {
-																				var endDate = '15' + '.' + value.endDate.month + '.' + value.endDate.year;
-																			} else {
-																				var endDate = '15.06.' + value.endDate.year;
-																			}
-																		}
-																	}
-
-																	education.push({
-																		schoolName: schoolName,
-																		eudcationType: eudcationType,
-																		degree: degree,
-																		startDate: startDate,
-																		endDate: endDate,
-																	})
-
-																});
-
-																if (json.content.TopCard.educationsMpr.moreEducations) {
-
-																	$.each(json.content.TopCard.educationsMpr.moreEducations, function (key, value) {
+																	$.each(json.content.Education.educationsMpr.moreEducations, function (key, value) {
 
 																		var schoolName = value.schoolName;
 																		var eudcationType = value.fieldOfStudy;
@@ -2540,13 +2672,144 @@ console.log('RAMP loaded');
 
 																		education.push({
 																			schoolName: schoolName,
-																			educationType: educationType,
+																			eudcationType: eudcationType,
 																			degree: degree,
 																			startDate: startDate,
 																			endDate: endDate,
 																		})
 
 																	});
+
+																}
+
+															} else if (json.content.TopCard && json.content.TopCard.educationsMpr) {
+
+																if (json.content.TopCard.educationsMpr.educations) {
+
+																	$.each(json.content.TopCard.educationsMpr.educations, function (key, value) {
+
+																		var schoolName = value.schoolName;
+																		var eudcationType = value.fieldOfStudy;
+																		var degree = value.degree;
+																		var current = 1;
+
+																		if (value.startDate) {
+																			if (value.startDate.isMonthDefined === true) {
+																				var startDate = '15' + '.' + value.startDate.month + '.' + value.startDate.year;
+																			} else {
+																				var startDate = '15.08.' + value.startDate.year;
+																			}
+																		}
+
+																		if (value.endDate) {
+																			if (value.endDate.year === undefined) {
+																				current = 1;
+																			} else {
+																				current = 0;
+																				if (value.endDate.isMonthDefined === true) {
+																					var endDate = '15' + '.' + value.endDate.month + '.' + value.endDate.year;
+																				} else {
+																					var endDate = '15.06.' + value.endDate.year;
+																				}
+																			}
+																		}
+
+																		education.push({
+																			schoolName: schoolName,
+																			eudcationType: eudcationType,
+																			degree: degree,
+																			startDate: startDate,
+																			endDate: endDate,
+																		})
+
+																	});
+
+
+																} else if (json.content.TopCard.educationsMpr.topEducations) {
+
+																	$.each(json.content.TopCard.educationsMpr.topEducations, function (key, value) {
+
+																		var schoolName = value.schoolName;
+																		var eudcationType = value.fieldOfStudy;
+																		var degree = value.degree;
+																		var current = 1;
+
+																		if (value.startDate) {
+																			if (value.startDate.isMonthDefined === true) {
+																				var startDate = '15' + '.' + value.startDate.month + '.' + value.startDate.year;
+																			} else {
+																				var startDate = '15.08.' + value.startDate.year;
+																			}
+																		}
+
+																		if (value.endDate) {
+																			if (value.endDate.year === undefined) {
+																				current = 1;
+																			} else {
+																				current = 0;
+																				if (value.endDate.isMonthDefined === true) {
+																					var endDate = '15' + '.' + value.endDate.month + '.' + value.endDate.year;
+																				} else {
+																					var endDate = '15.06.' + value.endDate.year;
+																				}
+																			}
+																		}
+
+																		education.push({
+																			schoolName: schoolName,
+																			eudcationType: eudcationType,
+																			degree: degree,
+																			startDate: startDate,
+																			endDate: endDate,
+																		})
+
+																	});
+
+																	if (json.content.TopCard.educationsMpr.moreEducations) {
+
+																		$.each(json.content.TopCard.educationsMpr.moreEducations, function (key, value) {
+
+																			var schoolName = value.schoolName;
+																			var eudcationType = value.fieldOfStudy;
+																			var degree = value.degree;
+																			var current = 1;
+
+																			if (value.startDate) {
+																				if (value.startDate.isMonthDefined === true) {
+																					var startDate = '15' + '.' + value.startDate.month + '.' + value.startDate.year;
+																				} else {
+																					var startDate = '15.08.' + value.startDate.year;
+																				}
+																			}
+
+																			if (value.endDate) {
+																				if (value.endDate.year === undefined) {
+																					current = 1;
+																				} else {
+																					current = 0;
+																					if (value.endDate.isMonthDefined === true) {
+																						var endDate = '15' + '.' + value.endDate.month + '.' + value.endDate.year;
+																					} else {
+																						var endDate = '15.06.' + value.endDate.year;
+																					}
+																				}
+																			}
+
+																			education.push({
+																				schoolName: schoolName,
+																				educationType: educationType,
+																				degree: degree,
+																				startDate: startDate,
+																				endDate: endDate,
+																			})
+
+																		});
+
+																	}
+
+																} else {
+
+																	RAMP.scrapeEducations();
 
 																}
 
@@ -2562,121 +2825,121 @@ console.log('RAMP loaded');
 
 														}
 
-													} else {
+														// console.log(education);
 
-														RAMP.scrapeEducations();
+														if (json.content.TopCard) {
 
-													}
+															if (json.content.TopCard.contact_info.hasOwnProperty('phones')) {
+																mobilePhone = json.content.TopCard.contact_info.phones[0].number;
+															}
 
-													// console.log(education);
+															if (json.content.TopCard.contact_info.emails) {
 
-													if (json.content.TopCard) {
+																$.each(json.content.TopCard.contact_info.emails, function (i, item) {
 
-														if (json.content.TopCard.contact_info.hasOwnProperty('phones')) {
-															mobilePhone = json.content.TopCard.contact_info.phones[0].number;
+																	if (item.email.indexOf('facebook.com') >= 0) {
+
+																		facebook = item.email;
+
+																		facebook = facebook.split('@');
+
+																		facebook = 'https://www.facebook.com/' + facebook[0];
+
+																	} else {
+
+																		email = item.email;
+
+																	}
+
+																});
+
+															}
+
+															if (json.content.TopCard.contact_info.hasOwnProperty('twitterAccounts')) {
+																twitter = 'https://twitter.com/' + json.content.TopCard.contact_info.twitterAccounts[0].twitterHandle;
+															} else {
+																twitter = null;
+															}
+
+															if (json.content.TopCard.contact_info.hasOwnProperty('websites')) {
+																web = json.content.TopCard.contact_info.websites[0].URL;
+															}
+
+															if (json.content.TopCard.additional_info.hasAdditionalInfo === true) {
+																var additional_info = json.content.TopCard.additional_info;
+																dob = additional_info.birthDay + '.' + additional_info.birthMonth + '.' + additional_info.birthYear;
+															}
 														}
 
-														if (json.content.TopCard.contact_info.emails) {
+														if (window.location.href.indexOf('https://www.linkedin.com/') > -1) {
 
-															$.each(json.content.TopCard.contact_info.emails, function (i, item) {
+															var notes = callback.dialog__text_plain__imported_from_message_generic.message + ' LinkedIn'
 
-																if (item.email.indexOf('facebook.com') >= 0) {
+														} else if (window.location.href.indexOf('https://www.nav.no/') > -1) {
 
-																	facebook = item.email;
+															var notes = callback.dialog__text_plain__imported_from_message_generic.message + ' NAV.no'
 
-																	facebook = facebook.split('@');
+														} else if (window.location.href.indexOf('https://m.finn.no/') > -1) {
 
-																	facebook = 'https://www.facebook.com/' + facebook[0];
+															var notes = callback.dialog__text_plain__imported_from_message_generic.message + ' Finn.no'
+
+														}
+
+														// var skills = [];
+
+														RAMP.scrapeSkills = function () {
+
+															if ('.pv-featured-skills-section') {
+
+																console.warn('Could not fetch Skills data automaticly. Initiating manuall scraping...');
+
+																$('.pv-featured-skills-section').find('button[data-control-name="skill_details"]').click();
+
+																setTimeout(function () {
+
+																	$('li.pv-skill-entity').each(function (index) {
+
+																		var $entry = $(this);
+
+																		var skillName = $entry.find('.pv-skill-entity__skill-name').text();
+
+																		// console.log(skillName);
+
+																		skills.push({
+																			'name': skillName,
+																			'rating': 0
+																		})
+
+																	});
+
+																}, 500);
+
+															}
+
+														}
+
+														if (json.content.Skills) {
+
+															if (json.content.Skills.skillsMpr) {
+
+																if (json.content.Skills.skillsMpr.skills) {
+
+																	$.each(json.content.Skills.skillsMpr.skills, function (key, value) {
+
+																		skills.push({
+																			'name': value.fmt__skill_name,
+																			'rating': 0
+																		})
+
+																	});
+
+																	// console.log(skills);
 
 																} else {
 
-																	email = item.email;
+																	RAMP.scrapeSkills();
 
 																}
-
-															});
-
-														}
-
-														if (json.content.TopCard.contact_info.hasOwnProperty('twitterAccounts')) {
-															twitter = 'https://twitter.com/' + json.content.TopCard.contact_info.twitterAccounts[0].twitterHandle;
-														} else {
-															twitter = null;
-														}
-
-														if (json.content.TopCard.contact_info.hasOwnProperty('websites')) {
-															web = json.content.TopCard.contact_info.websites[0].URL;
-														}
-
-														if (json.content.TopCard.additional_info.hasAdditionalInfo === true) {
-															var additional_info = json.content.TopCard.additional_info;
-															dob = additional_info.birthDay + '.' + additional_info.birthMonth + '.' + additional_info.birthYear;
-														}
-													}
-
-													if (window.location.href.indexOf('https://www.linkedin.com/') > -1) {
-
-														var notes = callback.dialog__text_plain__imported_from_message_generic.message + ' LinkedIn'
-
-													} else if (window.location.href.indexOf('https://www.nav.no/') > -1) {
-
-														var notes = callback.dialog__text_plain__imported_from_message_generic.message + ' NAV.no'
-
-													} else if (window.location.href.indexOf('https://m.finn.no/') > -1) {
-
-														var notes = callback.dialog__text_plain__imported_from_message_generic.message + ' Finn.no'
-
-													}
-
-													// var skills = [];
-
-													RAMP.scrapeSkills = function () {
-
-														if ('.pv-featured-skills-section') {
-
-															console.warn('Could not fetch Skills data automaticly. Initiating manuall scraping...');
-
-															$('.pv-featured-skills-section').find('button[data-control-name="skill_details"]').click();
-
-															setTimeout(function () {
-
-																$('li.pv-skill-entity').each(function (index) {
-
-																	var $entry = $(this);
-
-																	var skillName = $entry.find('.pv-skill-entity__skill-name').text();
-
-																	// console.log(skillName);
-
-																	skills.push({
-																		'name': skillName,
-																		'rating': 0
-																	})
-
-																});
-
-															}, 500);
-
-														}
-
-													}
-
-													if (json.content.Skills) {
-
-														if (json.content.Skills.skillsMpr) {
-
-															if (json.content.Skills.skillsMpr.skills) {
-
-																$.each(json.content.Skills.skillsMpr.skills, function (key, value) {
-
-																	skills.push({
-																		'name': value.fmt__skill_name,
-																		'rating': 0
-																	})
-
-																});
-
-																// console.log(skills);
 
 															} else {
 
@@ -2690,65 +2953,65 @@ console.log('RAMP loaded');
 
 														}
 
-													} else {
+														// var summary;
 
-														RAMP.scrapeSkills();
+														RAMP.scrapeSummary = function () {
 
-													}
+															// swal({
+															// 	type: 'info',
+															// 	title: 'Notice!',
+															// 	html: 'This profile might be missing some relevant information like <b>Periods on Experience and Education</b> objects when sendt to Recruitment Manager.'
+															// });
 
-													// var summary;
+															if ('.pv-top-card-section__summary') {
 
-													RAMP.scrapeSummary = function () {
+																console.warn('Could not fetch Summary data automaticly. Initiating manuall scraping...');
 
-														// swal({
-														// 	type: 'info',
-														// 	title: 'Notice!',
-														// 	html: 'This profile might be missing some relevant information like <b>Periods on Experience and Education</b> objects when sendt to Recruitment Manager.'
-														// });
+																$('.pv-top-card-section__summary').find('button.truncate-multiline--button').click();
 
-														if ('.pv-top-card-section__summary') {
+																setTimeout(function () {
 
-															console.warn('Could not fetch Summary data automaticly. Initiating manuall scraping...');
+																	var summaryText = $('p.pv-top-card-section__summary')
+																		.clone() //clone the element
+																		.children() //select all the children
+																		.remove() //remove all the children
+																		.end() //again go back to selected element
+																		.text();
 
-															$('.pv-top-card-section__summary').find('button.truncate-multiline--button').click();
+																	function myTrim(x) {
+																		return x.replace(/^\s+|\s+$/gm, '');
+																	}
 
-															setTimeout(function () {
+																	summaryText = myTrim(summaryText);
 
-																var summaryText = $('p.pv-top-card-section__summary')
-																	.clone() //clone the element
-																	.children() //select all the children
-																	.remove() //remove all the children
-																	.end() //again go back to selected element
-																	.text();
+																	summaryText = decodeHtml(summaryText);
+																	summaryText = summaryText.replace(/(<br>)+/g, '\n');
 
-																function myTrim(x) {
-																	return x.replace(/^\s+|\s+$/gm, '');
-																}
+																	summary.push(summaryText);
 
-																summaryText = myTrim(summaryText);
+																	// console.log(summary);
 
+																}, 500);
+
+															}
+
+														}
+
+														if (json.content.Summary) {
+
+															if (json.content.Summary.summary.hasOwnProperty('summary_lb')) {
+
+																var summaryText = json.content.Summary.summary.summary_lb;
 																summaryText = decodeHtml(summaryText);
 																summaryText = summaryText.replace(/(<br>)+/g, '\n');
 
 																summary.push(summaryText);
 
-																// console.log(summary);
+															} else {
 
-															}, 500);
+																RAMP.scrapeSummary();
 
-														}
-
-													}
-
-													if (json.content.Summary) {
-
-														if (json.content.Summary.summary.hasOwnProperty('summary_lb')) {
-
-															var summaryText = json.content.Summary.summary.summary_lb;
-															summaryText = decodeHtml(summaryText);
-															summaryText = summaryText.replace(/(<br>)+/g, '\n');
-
-															summary.push(summaryText);
+															}
 
 														} else {
 
@@ -2756,640 +3019,169 @@ console.log('RAMP loaded');
 
 														}
 
-													} else {
+														if (json.content.Languages && json.content.Languages.languages && json.content.Languages.languages.languagesData) {
 
-														RAMP.scrapeSummary();
+															var proficiency;
 
-													}
+															$.each(json.content.Languages.languages.languagesData, function (key, value) {
 
-													if (json.content.Languages && json.content.Languages.languages && json.content.Languages.languages.languagesData) {
+																if (value.proficiencyData && value.proficiencyData === 'elementary') {
 
-														var proficiency;
+																	proficiency = 'elementary';
 
-														$.each(json.content.Languages.languages.languagesData, function (key, value) {
+																} else if (value.proficiencyData && value.proficiencyData === 'limited_working') {
 
-															if (value.proficiencyData && value.proficiencyData === 'elementary') {
+																	proficiency = 'limitedWorking';
 
-																proficiency = 'elementary';
+																} else if (value.proficiencyData && value.proficiencyData === 'professional_working') {
 
-															} else if (value.proficiencyData && value.proficiencyData === 'limited_working') {
+																	proficiency = 'professionalWorking';
 
-																proficiency = 'limitedWorking';
+																} else if (value.proficiencyData && value.proficiencyData === 'full_professional') {
 
-															} else if (value.proficiencyData && value.proficiencyData === 'professional_working') {
+																	proficiency = 'fullProfessional';
 
-																proficiency = 'professionalWorking';
+																} else if (value.proficiencyData && value.proficiencyData === 'native_or_bilingual') {
 
-															} else if (value.proficiencyData && value.proficiencyData === 'full_professional') {
-
-																proficiency = 'fullProfessional';
-
-															} else if (value.proficiencyData && value.proficiencyData === 'native_or_bilingual') {
-
-																proficiency = 'navtiveOrBilingual';
-
-															}
-
-															$.each(rmLanguageList, function (k, v) {
-
-																if (value.proficiencyData && value.lang === v.languageName) {
-
-																	languages.push({
-																		languageId: v.languageId,
-																		proficiency: proficiency
-																	});
-
-																} else if (value.lang === v.languageName) {
-
-																	// console.log(v.languageId);
-																	// console.log(v.languageName);
-
-																	languages.push({
-																		languageId: v.languageId,
-																		proficiency: 'elementary'
-																	});
+																	proficiency = 'navtiveOrBilingual';
 
 																}
 
-															});
+																$.each(rmLanguageList, function (k, v) {
 
-														});
+																	if (value.proficiencyData && value.lang === v.languageName) {
 
-													}
+																		languages.push({
+																			languageId: v.languageId,
+																			proficiency: proficiency
+																		});
 
-													if (json.content.Courses && json.content.Courses.courses_by_occupation && json.content.Courses.courses_by_occupation.occupationsCourses) {
+																	} else if (value.lang === v.languageName) {
 
-														$.each(json.content.Courses.courses_by_occupation.occupationsCourses, function (key, value) {
+																		// console.log(v.languageId);
+																		// console.log(v.languageName);
 
-															if (value.courses) {
+																		languages.push({
+																			languageId: v.languageId,
+																			proficiency: 'elementary'
+																		});
 
-																$.each(value.courses, function (k, v) {
-
-																	certifications.push({
-																		name: v.name
-																	});
+																	}
 
 																});
 
-															}
-
-														});
-
-													}
-
-													if (json.content.Certifications && json.content.Certifications.certsMpr && json.content.Certifications.certsMpr.certifications) {
-
-														$.each(json.content.Certifications.certsMpr.certifications, function (key, value) {
-
-															certifications.push({
-																name: value.certificationName
 															});
 
-														});
-
-
-													}
-
-													if (json.content.TopCard) {
-
-														if (json.content.TopCard.picture.pictureID === undefined) {
-															var imageUrl = json.content.TopCard.img_blank_200;
-															var profileImageExtension = 'png';
-															// console.log(imageUrl);
-														} else {
-															var imageUrl = '//media.licdn.com/mpr/mpr' + json.content.TopCard.picture.pictureID;
-															var profileImageExtension = 'jpg';
-															// console.log(imageUrl);
 														}
 
-														if (json.content.Experience === undefined && json.content.TopCard.positionsMpr.positions === undefined && json.content.Education === undefined && json.content.TopCard.educationsMpr.educations === undefined) {
+														if (json.content.Courses && json.content.Courses.courses_by_occupation && json.content.Courses.courses_by_occupation.occupationsCourses) {
 
-															swal({
-																type: 'info',
-																title: 'Notice!',
-																html: 'This profile might be missing some relevant information like <b>Job Title</b> on Experience objects and <b>Description</b> and <b>Periods on Experience and Education</b> objects when sendt to Recruitment Manager.'
-															})
+															$.each(json.content.Courses.courses_by_occupation.occupationsCourses, function (key, value) {
 
-														} else if (json.content.Experience === undefined && json.content.TopCard.positionsMpr.positions === undefined && json.content.Education !== undefined && json.content.TopCard.educationsMpr.educations !== undefined) {
+																if (value.courses) {
 
-															swal({
-																type: 'info',
-																title: 'Notice!',
-																html: 'This profile might be missing some relevant information like <b>Job Title</b>, <b>Job Description</b> and <b>Job Period</b> on objects when sendt to Recruitment Manager.'
-															})
+																	$.each(value.courses, function (k, v) {
 
-														} else if (json.content.Experience !== undefined && json.content.TopCard.positionsMpr.positions === undefined && json.content.Education !== undefined && json.content.TopCard.educationsMpr.educations !== undefined) {
-
-															swal({
-																type: 'info',
-																title: 'Notice!',
-																html: 'This profile might be missing some relevant information like <b>Education Periods</b> on objects when sendt to Recruitment Manager.'
-															})
-
-														}
-
-													} else {
-
-														swal({
-															type: 'warning',
-															title: 'We\'re sorry!',
-															confirmButtonText: 'Connect',
-															html: 'This profile is missing most of the content that makes sending it to Recrutment Manager worthwhile.<br><br>You could try to connect with <b>' + inMemberObject.firstName + ' ' + inMemberObject.lastName + '</b> to see if they are using a <a href="https://www.linkedin.com/help/linkedin/answer/77" target="_blank">limited public profile</a>, as this could be the reason for the lack of information available.<br><br><i>We are currently in the process of investigating alternative methods to gather information from limited profiles.</i>',
-															showCancelButton: true,
-															reverseButtons: true,
-															cancelButtonText: 'Close'
-														}).then(function () {
-															setTimeout(function () {
-																$('.pv-top-card-section__actions button.connect').click();
-															}, 300);
-
-														})
-
-													}
-
-													function toDataUrl(url, callback, outputFormat) {
-														var img = new Image();
-														img.crossOrigin = 'Anonymous';
-														img.onload = function () {
-															var canvas = document.createElement('CANVAS');
-															var ctx = canvas.getContext('2d');
-															var dataURL;
-															canvas.height = this.height;
-															canvas.width = this.width;
-															ctx.drawImage(this, 0, 0);
-															dataURL = canvas.toDataURL(outputFormat);
-															callback(dataURL);
-															canvas = null;
-														};
-														img.src = url;
-													}
-
-													// console.log(imageUrl);
-
-													toDataUrl(imageUrl, function (base64Img) {
-
-														// console.log(base64Img);
-
-														var base64ImgSplit = base64Img.split(',');
-														base64Img = base64ImgSplit[1];
-
-														var profilePicture = {
-															'extension': profileImageExtension,
-															'base64': base64Img
-														};
-
-														console.log(profilePicture);
-														// console.log(profilePicture.extension);
-														// console.log(profilePicture.base64);
-
-														$('#send_to_rm').prop('disabled', false);
-
-														// console.log('candidateData', candidateData);
-
-														$('#send_to_rm').on('click', function (e) {
-
-															candidateData = {
-																'key': storrageResult.apiKey,
-																'scope': 'candidate',
-																'operation': 'insert',
-																'data': {
-																	'corporationId': storrageResult.corporation_id,
-																	'connectDepartment': [storrageResult.department_id],
-																	'connectUser': [storrageResult.intercom_employeee_id],
-																	'firstName': candidateFirstName,
-																	'lastName': candidateLastName,
-																	'title': json.content.TopCard.basic_info.memberHeadline,
-																	'mobilePhone': mobilePhone,
-																	'email': email,
-																	'twitter': twitter,
-																	'facebook': facebook,
-																	'web': web,
-																	'dob': dob,
-																	'description': summary[0],
-																	'linkedin': json.content.TopCard.public_url.canonicalUrl,
-																	'experience': experience,
-																	'education': education,
-																	'skills': skills,
-																	'profilePicture': profilePicture,
-																	'certifications': certifications,
-																	'languages': languages,
-																	'notes': notes,
-																}
-															};
-
-															console.info('candidateData', candidateData);
-
-															var candidateData = JSON.stringify(candidateData);
-															// var  candidateData = candidateData;
-
-															console.log('API Key: ' + storrageResult.apiKey);
-															console.log('Corporation ID: ' + storrageResult.corporation_id);
-															console.log('Department ID: ' + storrageResult.department_id);
-															console.log('User ID: ' + storrageResult.intercom_employeee_id);
-
-															swal({
-																title: callback.dialog__text_plain__request_process_title_generic.message,
-																text: callback.dialog__text_plain__request_process_message_generic.message,
-																type: "info",
-																showLoaderOnConfirm: true,
-																onOpen: function () {
-																	swal.clickConfirm();
-																},
-																preConfirm: function () {
-																	return new Promise(function (resolve) {
-
-																		var xhr = new XMLHttpRequest();
-																		// xhr.withCredentials = true;
-
-																		xhr.addEventListener('readystatechange', function () {
-
-
-																			if (this.readyState === 4) {
-
-																				var response = $.parseJSON(this.response);
-
-																				// var response = this.response;
-																				console.log(response);
-
-																				if (response.success === true) {
-
-																					console.group('CANDIDATE EXPORT INITIATED');
-																					console.info(this.response);
-																					// console.info(this.responseText);
-
-																					var totalExportedLinkedInRef = firebase.database().ref('statistics/candidates/exported/LinkedIn');
-
-																					totalExportedLinkedInRef.transaction(function (currentExported) {
-
-																						return currentExported + 1;
-
-																					}, function (error, committed, snapshot) {
-
-																						if (error) {
-
-																							console.log('Transaction failed abnormally!', error);
-
-																						} else if (!committed) {
-
-																							console.log('We aborted the transaction (because ada already exists).');
-
-																						} else {
-
-																							var totalExportedRef = firebase.database().ref('statistics/candidates/exported/total');
-
-																							totalExportedRef.transaction(function (currentExported) {
-
-																								return currentExported + 1;
-
-																							}, function (error, committed, snapshot) {
-
-																								if (error) {
-
-																									console.log('Transaction failed abnormally!', error);
-
-																								} else if (!committed) {
-
-																									console.log('We aborted the transaction (because ada already exists).');
-
-																								} else {
-																									// setTimeout(function() {
-																									swal({
-																										type: 'success',
-																										title: callback.dialog__text_plain__dialog_success_title_generic.message,
-																										text: candidateFirstName + ' ' + candidateLastName + ' ' + callback.dialog__text_plain__request_success_message.message + ' ' + callback.didialog__text_service__service_name_recruitmentmanager.message,
-																										timer: 3000
-																									}).catch(swal.noop)
-																									// }, 2000)
-																									// console.log(candidateData);
-																									console.log('Total number of candidates added: ', snapshot.val());
-																								}
-
-																							});
-
-																							console.log('Total number of candidates added from LinkedIn: ', snapshot.val());
-
-																						}
-
-																					});
-
-																					console.groupEnd();
-
-																				} else if (response.success === false) {
-
-																					console.log(response);
-
-																					setTimeout(function () {
-																						swal({
-																							type: 'error',
-																							title: callback.dialog__text_plain__dialog_error_title_generic.message,
-																							text: callback.dialog__text_plain__request_error_message.message,
-																							allowOutsideClick: false,
-																							allowEscapeKey: false,
-																							showCancelButton: true,
-																							reverseButtons: true,
-																							cancelButtonText: callback.dialog__button_cancel__dialog_button_cancel.message,
-																							confirmButtonText: callback.dialog__button_confirm__dialog_button_try_again.message,
-																						}).then(function () {
-
-																							$('#send_to_rm').click();
-
-																						})
-
-																					}, 2000)
-
-																				} else {
-
-																					console.log(response);
-
-																					setTimeout(function () {
-
-																						swal({
-																							type: 'error',
-																							title: callback.dialog__text_plain__dialog_error_title_generic.message,
-																							text: callback.dialog__text_plain__request_error_message.message,
-																							allowOutsideClick: false,
-																							allowEscapeKey: false,
-																							showCancelButton: true,
-																							reverseButtons: true,
-																							cancelButtonText: callback.dialog__button_cancel__dialog_button_cancel.message,
-																							confirmButtonText: callback.dialog__button_confirm__dialog_button_try_again.message,
-																						}).then(function () {
-
-																							$('#send_to_rm').click();
-
-																						})
-
-																					}, 2000)
-
-																				}
-
-																			}
-
+																		certifications.push({
+																			name: v.name
 																		});
 
-																		xhr.open('POST', 'https://api.recman.no/post/');
-																		// xhr.open('POST', 'https://api.recman.no/dgfhfgh/');
-																		xhr.setRequestHeader('content-type', 'application/json');
-																		xhr.setRequestHeader('cache-control', 'no-cache');
-
-																		xhr.send(candidateData);
-																		// xhr.send(tagData);
 																	});
-																},
-																allowOutsideClick: false
+
+																}
+
 															});
 
-														});
+														}
 
-														// chrome.storage.local.set({
-														// 	'base64Img': base64Img
-														// }, function () {
-														// 	// Notify that we saved.
-														//
-														// 	chrome.storage.local.get('base64Img', function (base64ImgResult) {
-														//
-														// 		// console.log(base64ImgResult);
-														//
-														// 		var profilePicture = {
-														// 			'extension': profileImageExtension,
-														// 			'base64': base64ImgResult.base64Img
-														// 		};
-														//
-														// 		console.log(profilePicture);
-														// 		// console.log(profilePicture.extension);
-														// 		// console.log(profilePicture.base64);
-														//
-														// 		$('#send_to_rm').prop('disabled', false);
-														//
-														// 		// console.log('candidateData', candidateData);
-														//
-														// 		$('#send_to_rm').on('click', function (e) {
-														//
-														// 			candidateData = {
-														// 				'key': storrageResult.apiKey,
-														// 				'scope': 'candidate',
-														// 				'operation': 'insert',
-														// 				'data': {
-														// 					'corporationId': storrageResult.corporation_id,
-														// 					'connectDepartment': [storrageResult.department_id],
-														// 					'connectUser': [storrageResult.intercom_employeee_id],
-														// 					'firstName': candidateFirstName,
-														// 					'lastName': candidateLastName,
-														// 					'title': json.content.TopCard.basic_info.memberHeadline,
-														// 					'mobilePhone': mobilePhone,
-														// 					'email': email,
-														// 					'twitter': twitter,
-														// 					'facebook': facebook,
-														// 					'web': web,
-														// 					'dob': dob,
-														// 					'description': summary[0],
-														// 					'linkedin': json.content.TopCard.public_url.canonicalUrl,
-														// 					'experience': experience,
-														// 					'education': education,
-														// 					'skills': skills,
-														// 					// 'profilePicture': profilePicture,
-														// 					'certifications': certifications,
-														// 					'languages': languages,
-														// 					'notes': notes,
-														// 				}
-														// 			};
-														//
-														// 			console.info('candidateData', candidateData);
-														//
-														// 			var candidateData = JSON.stringify(candidateData);
-														// 			// var  candidateData = candidateData;
-														//
-														// 			console.log('API Key: ' + storrageResult.apiKey);
-														// 			console.log('Corporation ID: ' + storrageResult.corporation_id);
-														// 			console.log('Department ID: ' + storrageResult.department_id);
-														// 			console.log('User ID: ' + storrageResult.intercom_employeee_id);
-														//
-														// 			swal({
-														// 				title: callback.dialog__text_plain__request_process_title_generic.message,
-														// 				text: callback.dialog__text_plain__request_process_message_generic.message,
-														// 				type: "info",
-														// 				showLoaderOnConfirm: true,
-														// 				onOpen: function () {
-														// 					swal.clickConfirm();
-														// 				},
-														// 				preConfirm: function () {
-														// 					return new Promise(function (resolve) {
-														//
-														// 						var xhr = new XMLHttpRequest();
-														// 						// xhr.withCredentials = true;
-														//
-														// 						xhr.addEventListener('readystatechange', function () {
-														//
-														// 							// console.log(this);
-														//
-														// 							if (this.readyState === 4) {
-														//
-														// 								var response = $.parseJSON(this.response);
-														//
-														// 								// var response = this.response;
-														// 								console.log(response);
-														//
-														// 								if (response.success === true) {
-														//
-														// 									console.group('CANDIDATE EXPORT INITIATED');
-														// 									console.info(this.response);
-														// 									// console.info(this.responseText);
-														//
-														// 									var totalExportedLinkedInRef = firebase.database().ref('statistics/candidates/exported/LinkedIn');
-														//
-														// 									totalExportedLinkedInRef.transaction(function (currentExported) {
-														//
-														// 										return currentExported + 1;
-														//
-														// 									}, function (error, committed, snapshot) {
-														//
-														// 										if (error) {
-														//
-														// 											console.log('Transaction failed abnormally!', error);
-														//
-														// 										} else if (!committed) {
-														//
-														// 											console.log('We aborted the transaction (because ada already exists).');
-														//
-														// 										} else {
-														//
-														// 											var totalExportedRef = firebase.database().ref('statistics/candidates/exported/total');
-														//
-														// 											totalExportedRef.transaction(function (currentExported) {
-														//
-														// 												return currentExported + 1;
-														//
-														// 											}, function (error, committed, snapshot) {
-														//
-														// 												if (error) {
-														//
-														// 													console.log('Transaction failed abnormally!', error);
-														//
-														// 												} else if (!committed) {
-														//
-														// 													console.log('We aborted the transaction (because ada already exists).');
-														//
-														// 												} else {
-														// 													// setTimeout(function() {
-														// 													swal({
-														// 														type: 'success',
-														// 														title: callback.dialog__text_plain__dialog_success_title_generic.message,
-														// 														text: candidateFirstName + ' ' + candidateLastName + ' ' + callback.dialog__text_plain__request_success_message.message + ' ' + callback.didialog__text_service__service_name_recruitmentmanager.message,
-														// 														timer: 3000
-														// 													}).catch(swal.noop)
-														// 													// }, 2000)
-														// 													// console.log(candidateData);
-														// 													console.log('Total number of candidates added: ', snapshot.val());
-														// 												}
-														//
-														// 											});
-														//
-														// 											console.log('Total number of candidates added from LinkedIn: ', snapshot.val());
-														//
-														// 										}
-														//
-														// 									});
-														//
-														// 									console.groupEnd();
-														//
-														// 								} else if (response.success === false) {
-														//
-														// 									console.log(response);
-														//
-														// 									setTimeout(function () {
-														// 										swal({
-														// 											type: 'error',
-														// 											title: callback.dialog__text_plain__dialog_error_title_generic.message,
-														// 											text: callback.dialog__text_plain__request_error_message.message,
-														// 											allowOutsideClick: false,
-														// 											allowEscapeKey: false,
-														// 											showCancelButton: true,
-														// 											reverseButtons: true,
-														// 											cancelButtonText: callback.dialog__button_cancel__dialog_button_cancel.message,
-														// 											confirmButtonText: callback.dialog__button_confirm__dialog_button_try_again.message,
-														// 										}).then(function () {
-														//
-														// 											$('#send_to_rm').click();
-														//
-														// 										})
-														//
-														// 									}, 2000)
-														//
-														// 								} else {
-														//
-														// 									console.log(response);
-														//
-														// 									setTimeout(function () {
-														//
-														// 										swal({
-														// 											type: 'error',
-														// 											title: callback.dialog__text_plain__dialog_error_title_generic.message,
-														// 											text: callback.dialog__text_plain__request_error_message.message,
-														// 											allowOutsideClick: false,
-														// 											allowEscapeKey: false,
-														// 											showCancelButton: true,
-														// 											reverseButtons: true,
-														// 											cancelButtonText: callback.dialog__button_cancel__dialog_button_cancel.message,
-														// 											confirmButtonText: callback.dialog__button_confirm__dialog_button_try_again.message,
-														// 										}).then(function () {
-														//
-														// 											$('#send_to_rm').click();
-														//
-														// 										})
-														//
-														// 									}, 2000)
-														//
-														// 								}
-														//
-														// 							}
-														//
-														// 						});
-														//
-														// 						xhr.open('POST', 'https://api.recman.no/post/');
-														// 						// xhr.open('POST', 'https://api.recman.no/dgfhfgh/');
-														// 						xhr.setRequestHeader('content-type', 'application/json');
-														// 						xhr.setRequestHeader('cache-control', 'no-cache');
-														//
-														// 						xhr.send(candidateData);
-														// 						// xhr.send(tagData);
-														// 					});
-														// 				},
-														// 				allowOutsideClick: false
-														// 			});
-														//
-														// 		});
-														//
-														// 	});
-														//
-														// });
+														if (json.content.Certifications && json.content.Certifications.certsMpr && json.content.Certifications.certsMpr.certifications) {
 
-													});
+															$.each(json.content.Certifications.certsMpr.certifications, function (key, value) {
 
-												})
-												.fail(function (jqxhr, textStatus, error) {
-													console.warn('ERROR: LinkedIn profile data could not be loaded: ' + error);
+																certifications.push({
+																	name: value.certificationName
+																});
 
-													// swal({
-													// 	type: 'error',
-													// 	title: 'Oops!',
-													// 	text: 'RAMP could not fetch the candidates data from LinkedIn!',
-													// 	allowOutsideClick: false,
-													// 	allowEscapeKey: false,
-													// 	showCancelButton: true,
-													// 	reverseButtons: true,
-													// 	confirmButtonText: callback.dialog__button_confirm__dialog_button_try_again.message,
-													// }).then(function () {
-													// 	location.reload();
-													// })
+															});
 
-													RAMP.scrapeExperiences();
-													RAMP.scrapeEducations();
-													RAMP.scrapeSkills();
-													RAMP.scrapeSummary();
-													RAMP.scrapeContactInfo();
-													RAMP.scrapeProfilePicture();
 
-													setTimeout(function () {
+														}
+
+														if (json.content.TopCard) {
+
+															if (json.content.TopCard.picture.pictureID === undefined) {
+																var imageUrl = json.content.TopCard.img_blank_200;
+																var profileImageExtension = 'png';
+																// console.log(imageUrl);
+															} else {
+																var imageUrl = '//media.licdn.com/mpr/mpr' + json.content.TopCard.picture.pictureID;
+																var profileImageExtension = 'jpg';
+																// console.log(imageUrl);
+															}
+
+															if (json.content.Experience === undefined && json.content.TopCard.positionsMpr.positions === undefined && json.content.Education === undefined && json.content.TopCard.educationsMpr.educations === undefined) {
+
+																swal({
+																	type: 'info',
+																	title: 'Notice!',
+																	html: 'This profile might be missing some relevant information like <b>Job Title</b> on Experience objects and <b>Description</b> and <b>Periods on Experience and Education</b> objects when sendt to Recruitment Manager.'
+																})
+
+															} else if (json.content.Experience === undefined && json.content.TopCard.positionsMpr.positions === undefined && json.content.Education !== undefined && json.content.TopCard.educationsMpr.educations !== undefined) {
+
+																swal({
+																	type: 'info',
+																	title: 'Notice!',
+																	html: 'This profile might be missing some relevant information like <b>Job Title</b>, <b>Job Description</b> and <b>Job Period</b> on objects when sendt to Recruitment Manager.'
+																})
+
+															} else if (json.content.Experience !== undefined && json.content.TopCard.positionsMpr.positions === undefined && json.content.Education !== undefined && json.content.TopCard.educationsMpr.educations !== undefined) {
+
+																swal({
+																	type: 'info',
+																	title: 'Notice!',
+																	html: 'This profile might be missing some relevant information like <b>Education Periods</b> on objects when sendt to Recruitment Manager.'
+																})
+
+															}
+
+														} else {
+
+															swal({
+																type: 'warning',
+																title: 'We\'re sorry!',
+																confirmButtonText: 'Connect',
+																html: 'This profile is missing most of the content that makes sending it to Recrutment Manager worthwhile.<br><br>You could try to connect with <b>' + inMemberObject.firstName + ' ' + inMemberObject.lastName + '</b> to see if they are using a <a href="https://www.linkedin.com/help/linkedin/answer/77" target="_blank">limited public profile</a>, as this could be the reason for the lack of information available.<br><br><i>We are currently in the process of investigating alternative methods to gather information from limited profiles.</i>',
+																showCancelButton: true,
+																reverseButtons: true,
+																cancelButtonText: 'Close'
+															}).then(function () {
+																setTimeout(function () {
+																	$('.pv-top-card-section__actions button.connect').click();
+																}, 300);
+
+															})
+
+														}
+
+														function toDataUrl(url, callback, outputFormat) {
+															var img = new Image();
+															img.crossOrigin = 'Anonymous';
+															img.onload = function () {
+																var canvas = document.createElement('CANVAS');
+																var ctx = canvas.getContext('2d');
+																var dataURL;
+																canvas.height = this.height;
+																canvas.width = this.width;
+																ctx.drawImage(this, 0, 0);
+																dataURL = canvas.toDataURL(outputFormat);
+																callback(dataURL);
+																canvas = null;
+															};
+															img.src = url;
+														}
+
+														// console.log(imageUrl);
 
 														toDataUrl(imageUrl, function (base64Img) {
 
@@ -3407,10 +3199,11 @@ console.log('RAMP loaded');
 															// console.log(profilePicture.extension);
 															// console.log(profilePicture.base64);
 
-															// $('#send_to_rm').prop('disabled', false);
+															$('#send_to_rm').prop('disabled', false);
 
+															// console.log('candidateData', candidateData);
 
-															setTimeout(function () {
+															$('#send_to_rm').on('click', function (e) {
 
 																candidateData = {
 																	'key': storrageResult.apiKey,
@@ -3422,7 +3215,7 @@ console.log('RAMP loaded');
 																		'connectUser': [storrageResult.intercom_employeee_id],
 																		'firstName': candidateFirstName,
 																		'lastName': candidateLastName,
-																		'title': inMemberObject.occupation,
+																		'title': json.content.TopCard.basic_info.memberHeadline,
 																		'mobilePhone': mobilePhone,
 																		'email': email,
 																		'twitter': twitter,
@@ -3430,57 +3223,20 @@ console.log('RAMP loaded');
 																		'web': web,
 																		'dob': dob,
 																		'description': summary[0],
-																		'linkedin': linkedin,
+																		'linkedin': json.content.TopCard.public_url.canonicalUrl,
 																		'experience': experience,
 																		'education': education,
 																		'skills': skills,
 																		'profilePicture': profilePicture,
 																		'certifications': certifications,
 																		'languages': languages,
-																		// 'notes': notes,
+																		'notes': notes,
 																	}
 																};
 
-																$('#send_to_rm').prop('disabled', false);
-
-																console.log('candidateData', candidateData);
-
-															}, 500);
-
-															$('#send_to_rm').on('click', function (e) {
-
-																// candidateData = {
-																// 	'key': storrageResult.apiKey,
-																// 	'scope': 'candidate',
-																// 	'operation': 'insert',
-																// 	'data': {
-																// 		'corporationId': storrageResult.corporation_id,
-																// 		'connectDepartment': [storrageResult.department_id],
-																// 		'connectUser': [storrageResult.intercom_employeee_id],
-																// 		'firstName': candidateFirstName,
-																// 		'lastName': candidateLastName,
-																// 		'title': inMemberObject.occupation,
-																// 		'mobilePhone': mobilePhone,
-																// 		'email': email,
-																// 		'twitter': twitter,
-																// 		'facebook': facebook,
-																// 		'web': web,
-																// 		'dob': dob,
-																// 		'description': summary[0],
-																// 		'linkedin': window.location.href,
-																// 		'experience': experience,
-																// 		'education': education,
-																// 		'skills': skills,
-																// 		'profilePicture': profilePicture,
-																// 		'certifications': certifications,
-																// 		'languages': languages,
-																// 		// 'notes': notes,
-																// 	}
-																// };
-
 																console.info('candidateData', candidateData);
 
-																candidateData = JSON.stringify(candidateData);
+																var candidateData = JSON.stringify(candidateData);
 																// var  candidateData = candidateData;
 
 																console.log('API Key: ' + storrageResult.apiKey);
@@ -3642,11 +3398,513 @@ console.log('RAMP loaded');
 
 															});
 
+															// chrome.storage.local.set({
+															// 	'base64Img': base64Img
+															// }, function () {
+															// 	// Notify that we saved.
+															//
+															// 	chrome.storage.local.get('base64Img', function (base64ImgResult) {
+															//
+															// 		// console.log(base64ImgResult);
+															//
+															// 		var profilePicture = {
+															// 			'extension': profileImageExtension,
+															// 			'base64': base64ImgResult.base64Img
+															// 		};
+															//
+															// 		console.log(profilePicture);
+															// 		// console.log(profilePicture.extension);
+															// 		// console.log(profilePicture.base64);
+															//
+															// 		$('#send_to_rm').prop('disabled', false);
+															//
+															// 		// console.log('candidateData', candidateData);
+															//
+															// 		$('#send_to_rm').on('click', function (e) {
+															//
+															// 			candidateData = {
+															// 				'key': storrageResult.apiKey,
+															// 				'scope': 'candidate',
+															// 				'operation': 'insert',
+															// 				'data': {
+															// 					'corporationId': storrageResult.corporation_id,
+															// 					'connectDepartment': [storrageResult.department_id],
+															// 					'connectUser': [storrageResult.intercom_employeee_id],
+															// 					'firstName': candidateFirstName,
+															// 					'lastName': candidateLastName,
+															// 					'title': json.content.TopCard.basic_info.memberHeadline,
+															// 					'mobilePhone': mobilePhone,
+															// 					'email': email,
+															// 					'twitter': twitter,
+															// 					'facebook': facebook,
+															// 					'web': web,
+															// 					'dob': dob,
+															// 					'description': summary[0],
+															// 					'linkedin': json.content.TopCard.public_url.canonicalUrl,
+															// 					'experience': experience,
+															// 					'education': education,
+															// 					'skills': skills,
+															// 					// 'profilePicture': profilePicture,
+															// 					'certifications': certifications,
+															// 					'languages': languages,
+															// 					'notes': notes,
+															// 				}
+															// 			};
+															//
+															// 			console.info('candidateData', candidateData);
+															//
+															// 			var candidateData = JSON.stringify(candidateData);
+															// 			// var  candidateData = candidateData;
+															//
+															// 			console.log('API Key: ' + storrageResult.apiKey);
+															// 			console.log('Corporation ID: ' + storrageResult.corporation_id);
+															// 			console.log('Department ID: ' + storrageResult.department_id);
+															// 			console.log('User ID: ' + storrageResult.intercom_employeee_id);
+															//
+															// 			swal({
+															// 				title: callback.dialog__text_plain__request_process_title_generic.message,
+															// 				text: callback.dialog__text_plain__request_process_message_generic.message,
+															// 				type: "info",
+															// 				showLoaderOnConfirm: true,
+															// 				onOpen: function () {
+															// 					swal.clickConfirm();
+															// 				},
+															// 				preConfirm: function () {
+															// 					return new Promise(function (resolve) {
+															//
+															// 						var xhr = new XMLHttpRequest();
+															// 						// xhr.withCredentials = true;
+															//
+															// 						xhr.addEventListener('readystatechange', function () {
+															//
+															// 							// console.log(this);
+															//
+															// 							if (this.readyState === 4) {
+															//
+															// 								var response = $.parseJSON(this.response);
+															//
+															// 								// var response = this.response;
+															// 								console.log(response);
+															//
+															// 								if (response.success === true) {
+															//
+															// 									console.group('CANDIDATE EXPORT INITIATED');
+															// 									console.info(this.response);
+															// 									// console.info(this.responseText);
+															//
+															// 									var totalExportedLinkedInRef = firebase.database().ref('statistics/candidates/exported/LinkedIn');
+															//
+															// 									totalExportedLinkedInRef.transaction(function (currentExported) {
+															//
+															// 										return currentExported + 1;
+															//
+															// 									}, function (error, committed, snapshot) {
+															//
+															// 										if (error) {
+															//
+															// 											console.log('Transaction failed abnormally!', error);
+															//
+															// 										} else if (!committed) {
+															//
+															// 											console.log('We aborted the transaction (because ada already exists).');
+															//
+															// 										} else {
+															//
+															// 											var totalExportedRef = firebase.database().ref('statistics/candidates/exported/total');
+															//
+															// 											totalExportedRef.transaction(function (currentExported) {
+															//
+															// 												return currentExported + 1;
+															//
+															// 											}, function (error, committed, snapshot) {
+															//
+															// 												if (error) {
+															//
+															// 													console.log('Transaction failed abnormally!', error);
+															//
+															// 												} else if (!committed) {
+															//
+															// 													console.log('We aborted the transaction (because ada already exists).');
+															//
+															// 												} else {
+															// 													// setTimeout(function() {
+															// 													swal({
+															// 														type: 'success',
+															// 														title: callback.dialog__text_plain__dialog_success_title_generic.message,
+															// 														text: candidateFirstName + ' ' + candidateLastName + ' ' + callback.dialog__text_plain__request_success_message.message + ' ' + callback.didialog__text_service__service_name_recruitmentmanager.message,
+															// 														timer: 3000
+															// 													}).catch(swal.noop)
+															// 													// }, 2000)
+															// 													// console.log(candidateData);
+															// 													console.log('Total number of candidates added: ', snapshot.val());
+															// 												}
+															//
+															// 											});
+															//
+															// 											console.log('Total number of candidates added from LinkedIn: ', snapshot.val());
+															//
+															// 										}
+															//
+															// 									});
+															//
+															// 									console.groupEnd();
+															//
+															// 								} else if (response.success === false) {
+															//
+															// 									console.log(response);
+															//
+															// 									setTimeout(function () {
+															// 										swal({
+															// 											type: 'error',
+															// 											title: callback.dialog__text_plain__dialog_error_title_generic.message,
+															// 											text: callback.dialog__text_plain__request_error_message.message,
+															// 											allowOutsideClick: false,
+															// 											allowEscapeKey: false,
+															// 											showCancelButton: true,
+															// 											reverseButtons: true,
+															// 											cancelButtonText: callback.dialog__button_cancel__dialog_button_cancel.message,
+															// 											confirmButtonText: callback.dialog__button_confirm__dialog_button_try_again.message,
+															// 										}).then(function () {
+															//
+															// 											$('#send_to_rm').click();
+															//
+															// 										})
+															//
+															// 									}, 2000)
+															//
+															// 								} else {
+															//
+															// 									console.log(response);
+															//
+															// 									setTimeout(function () {
+															//
+															// 										swal({
+															// 											type: 'error',
+															// 											title: callback.dialog__text_plain__dialog_error_title_generic.message,
+															// 											text: callback.dialog__text_plain__request_error_message.message,
+															// 											allowOutsideClick: false,
+															// 											allowEscapeKey: false,
+															// 											showCancelButton: true,
+															// 											reverseButtons: true,
+															// 											cancelButtonText: callback.dialog__button_cancel__dialog_button_cancel.message,
+															// 											confirmButtonText: callback.dialog__button_confirm__dialog_button_try_again.message,
+															// 										}).then(function () {
+															//
+															// 											$('#send_to_rm').click();
+															//
+															// 										})
+															//
+															// 									}, 2000)
+															//
+															// 								}
+															//
+															// 							}
+															//
+															// 						});
+															//
+															// 						xhr.open('POST', 'https://api.recman.no/post/');
+															// 						// xhr.open('POST', 'https://api.recman.no/dgfhfgh/');
+															// 						xhr.setRequestHeader('content-type', 'application/json');
+															// 						xhr.setRequestHeader('cache-control', 'no-cache');
+															//
+															// 						xhr.send(candidateData);
+															// 						// xhr.send(tagData);
+															// 					});
+															// 				},
+															// 				allowOutsideClick: false
+															// 			});
+															//
+															// 		});
+															//
+															// 	});
+															//
+															// });
+
 														});
 
-													}, 500);
+													})
+													.fail(function (jqxhr, textStatus, error) {
+														console.warn('ERROR: LinkedIn profile data could not be loaded: ' + error);
 
-												});
+														// swal({
+														// 	type: 'error',
+														// 	title: 'Oops!',
+														// 	text: 'RAMP could not fetch the candidates data from LinkedIn!',
+														// 	allowOutsideClick: false,
+														// 	allowEscapeKey: false,
+														// 	showCancelButton: true,
+														// 	reverseButtons: true,
+														// 	confirmButtonText: callback.dialog__button_confirm__dialog_button_try_again.message,
+														// }).then(function () {
+														// 	location.reload();
+														// })
+
+														RAMP.scrapeExperiences();
+														RAMP.scrapeEducations();
+														RAMP.scrapeSkills();
+														RAMP.scrapeSummary();
+														RAMP.scrapeContactInfo();
+														RAMP.scrapeProfilePicture();
+
+														setTimeout(function () {
+
+															toDataUrl(imageUrl, function (base64Img) {
+
+																// console.log(base64Img);
+
+																var base64ImgSplit = base64Img.split(',');
+																base64Img = base64ImgSplit[1];
+
+																var profilePicture = {
+																	'extension': profileImageExtension,
+																	'base64': base64Img
+																};
+
+																console.log(profilePicture);
+																// console.log(profilePicture.extension);
+																// console.log(profilePicture.base64);
+
+																// $('#send_to_rm').prop('disabled', false);
+
+
+																setTimeout(function () {
+
+																	candidateData = {
+																		'key': storrageResult.apiKey,
+																		'scope': 'candidate',
+																		'operation': 'insert',
+																		'data': {
+																			'corporationId': storrageResult.corporation_id,
+																			'connectDepartment': [storrageResult.department_id],
+																			'connectUser': [storrageResult.intercom_employeee_id],
+																			'firstName': candidateFirstName,
+																			'lastName': candidateLastName,
+																			'title': inMemberObject.occupation,
+																			'mobilePhone': mobilePhone,
+																			'email': email,
+																			'twitter': twitter,
+																			'facebook': facebook,
+																			'web': web,
+																			'dob': dob,
+																			'description': summary[0],
+																			'linkedin': linkedin,
+																			'experience': experience,
+																			'education': education,
+																			'skills': skills,
+																			'profilePicture': profilePicture,
+																			'certifications': certifications,
+																			'languages': languages,
+																			// 'notes': notes,
+																		}
+																	};
+
+																	$('#send_to_rm').prop('disabled', false);
+
+																	console.log('candidateData', candidateData);
+
+																}, 500);
+
+																$('#send_to_rm').on('click', function (e) {
+
+																	// candidateData = {
+																	// 	'key': storrageResult.apiKey,
+																	// 	'scope': 'candidate',
+																	// 	'operation': 'insert',
+																	// 	'data': {
+																	// 		'corporationId': storrageResult.corporation_id,
+																	// 		'connectDepartment': [storrageResult.department_id],
+																	// 		'connectUser': [storrageResult.intercom_employeee_id],
+																	// 		'firstName': candidateFirstName,
+																	// 		'lastName': candidateLastName,
+																	// 		'title': inMemberObject.occupation,
+																	// 		'mobilePhone': mobilePhone,
+																	// 		'email': email,
+																	// 		'twitter': twitter,
+																	// 		'facebook': facebook,
+																	// 		'web': web,
+																	// 		'dob': dob,
+																	// 		'description': summary[0],
+																	// 		'linkedin': window.location.href,
+																	// 		'experience': experience,
+																	// 		'education': education,
+																	// 		'skills': skills,
+																	// 		'profilePicture': profilePicture,
+																	// 		'certifications': certifications,
+																	// 		'languages': languages,
+																	// 		// 'notes': notes,
+																	// 	}
+																	// };
+
+																	console.info('candidateData', candidateData);
+
+																	candidateData = JSON.stringify(candidateData);
+																	// var  candidateData = candidateData;
+
+																	console.log('API Key: ' + storrageResult.apiKey);
+																	console.log('Corporation ID: ' + storrageResult.corporation_id);
+																	console.log('Department ID: ' + storrageResult.department_id);
+																	console.log('User ID: ' + storrageResult.intercom_employeee_id);
+
+																	swal({
+																		title: callback.dialog__text_plain__request_process_title_generic.message,
+																		text: callback.dialog__text_plain__request_process_message_generic.message,
+																		type: "info",
+																		showLoaderOnConfirm: true,
+																		onOpen: function () {
+																			swal.clickConfirm();
+																		},
+																		preConfirm: function () {
+																			return new Promise(function (resolve) {
+
+																				var xhr = new XMLHttpRequest();
+																				// xhr.withCredentials = true;
+
+																				xhr.addEventListener('readystatechange', function () {
+
+
+																					if (this.readyState === 4) {
+
+																						var response = $.parseJSON(this.response);
+
+																						// var response = this.response;
+																						console.log(response);
+
+																						if (response.success === true) {
+
+																							console.group('CANDIDATE EXPORT INITIATED');
+																							console.info(this.response);
+																							// console.info(this.responseText);
+
+																							var totalExportedLinkedInRef = firebase.database().ref('statistics/candidates/exported/LinkedIn');
+
+																							totalExportedLinkedInRef.transaction(function (currentExported) {
+
+																								return currentExported + 1;
+
+																							}, function (error, committed, snapshot) {
+
+																								if (error) {
+
+																									console.log('Transaction failed abnormally!', error);
+
+																								} else if (!committed) {
+
+																									console.log('We aborted the transaction (because ada already exists).');
+
+																								} else {
+
+																									var totalExportedRef = firebase.database().ref('statistics/candidates/exported/total');
+
+																									totalExportedRef.transaction(function (currentExported) {
+
+																										return currentExported + 1;
+
+																									}, function (error, committed, snapshot) {
+
+																										if (error) {
+
+																											console.log('Transaction failed abnormally!', error);
+
+																										} else if (!committed) {
+
+																											console.log('We aborted the transaction (because ada already exists).');
+
+																										} else {
+																											// setTimeout(function() {
+																											swal({
+																												type: 'success',
+																												title: callback.dialog__text_plain__dialog_success_title_generic.message,
+																												text: candidateFirstName + ' ' + candidateLastName + ' ' + callback.dialog__text_plain__request_success_message.message + ' ' + callback.didialog__text_service__service_name_recruitmentmanager.message,
+																												timer: 3000
+																											}).catch(swal.noop)
+																											// }, 2000)
+																											// console.log(candidateData);
+																											console.log('Total number of candidates added: ', snapshot.val());
+																										}
+
+																									});
+
+																									console.log('Total number of candidates added from LinkedIn: ', snapshot.val());
+
+																								}
+
+																							});
+
+																							console.groupEnd();
+
+																						} else if (response.success === false) {
+
+																							console.log(response);
+
+																							setTimeout(function () {
+																								swal({
+																									type: 'error',
+																									title: callback.dialog__text_plain__dialog_error_title_generic.message,
+																									text: callback.dialog__text_plain__request_error_message.message,
+																									allowOutsideClick: false,
+																									allowEscapeKey: false,
+																									showCancelButton: true,
+																									reverseButtons: true,
+																									cancelButtonText: callback.dialog__button_cancel__dialog_button_cancel.message,
+																									confirmButtonText: callback.dialog__button_confirm__dialog_button_try_again.message,
+																								}).then(function () {
+
+																									$('#send_to_rm').click();
+
+																								})
+
+																							}, 2000)
+
+																						} else {
+
+																							console.log(response);
+
+																							setTimeout(function () {
+
+																								swal({
+																									type: 'error',
+																									title: callback.dialog__text_plain__dialog_error_title_generic.message,
+																									text: callback.dialog__text_plain__request_error_message.message,
+																									allowOutsideClick: false,
+																									allowEscapeKey: false,
+																									showCancelButton: true,
+																									reverseButtons: true,
+																									cancelButtonText: callback.dialog__button_cancel__dialog_button_cancel.message,
+																									confirmButtonText: callback.dialog__button_confirm__dialog_button_try_again.message,
+																								}).then(function () {
+
+																									$('#send_to_rm').click();
+
+																								})
+
+																							}, 2000)
+
+																						}
+
+																					}
+
+																				});
+
+																				xhr.open('POST', 'https://api.recman.no/post/');
+																				// xhr.open('POST', 'https://api.recman.no/dgfhfgh/');
+																				xhr.setRequestHeader('content-type', 'application/json');
+																				xhr.setRequestHeader('cache-control', 'no-cache');
+
+																				xhr.send(candidateData);
+																				// xhr.send(tagData);
+																			});
+																		},
+																		allowOutsideClick: false
+																	});
+
+																});
+
+															});
+
+														}, 500);
+
+													});
+											}
 
 										})
 										.fail(function (jqxhr, settings, exception) {

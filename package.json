@@ -58,7 +58,9 @@
     "base64-img": "^1.0.3",
     "file-system": "^2.2.2",
     "firebase": "^3.6.7",
+    "moment": "^2.18.1",
     "node-base64-image": "^1.0.3",
+    "numeral": "^2.0.6",
     "sweetalert2": "^6.3.2",
     "toastr": "^2.1.2"
   }

@@ -73,9 +73,66 @@
 
 body {
   &.swal2-in {
-    .application-outlet {
+    .application-outlet,
+    .extended-nav,
+    #ramp_notification_bar {
       -webkit-filter: blur(2px);
       filter: blur(2px);
+    }
+  }
+}
+
+body {
+  &.ramp_notificationbar_active {
+    #extended-nav {
+      margin-top: 44px;
+    }
+
+    .application-outlet {
+      margin-top: 96px;
+    }
+  }
+
+  #ramp_notification_bar {
+    display: none;
+    padding: 0 30px;
+    border-top: none;
+    box-shadow: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    z-index: 100;
+
+    &.account_closed {
+      background-color: #F27474;
+    }
+
+    .content {
+      max-width: 1128px;
+      margin: auto;
+      text-align: center;
+
+      h2 {
+        color: #FFFFFF;
+        padding: 10px;
+
+        button {
+          color: #FFFFFF;
+          text-decoration: underline;
+          background-color: transparent;
+          border: 0;
+          display: inline-block !important;
+          margin: 0;
+          font-weight: normal;
+          font-size: inherit;
+          cursor: pointer;
+
+          &:hover {
+            color: #FFFFFF;
+          }
+        }
+      }
     }
   }
 }
@@ -180,7 +237,6 @@ body {
 
       &:hover {
         background-color: #2672ae;
-
         background-color: #2672ae; // Old browsers
         box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
       }
