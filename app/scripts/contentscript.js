@@ -46,11 +46,17 @@ console.log('RAMP loaded');
 	var account_manager_id;
 	var is_account_closed = false;
 	var reactivation_fee = 1995;
-	var initiate_scrape = false;
+	var initiate_scrape = true;
 	var outstanding_balance = 0;
+	var notification_dismissal_type;
+	var invoice_url_latest;
+
+	var sectionsToBeScraped = 0;
+	var sectionsScraped = 0;
 
 	var candidateFirstName;
 	var candidateLastName;
+	var candidateFullName;
 	var mobilePhone;
 	var email;
 	var twitter;
@@ -668,6 +674,14 @@ console.log('RAMP loaded');
 
 				}
 
+				$('#ramp_notification_bar').on('click', '#btn_show_latest_invoice', function (e) {
+
+					e.preventDefault();
+					console.info('Getting latest invoice');
+					window.open(invoice_url_latest, '_blank')
+
+				});
+
 				$('#ramp_notification_bar').on('click', '#btn_show_outstanding_balance_swal', function (e) {
 
 					e.preventDefault();
@@ -683,11 +697,11 @@ console.log('RAMP loaded');
 
 					chrome.storage.sync.set({
 
-						dismissNotification: 'account_closed',
+						dismissNotification: notification_dismissal_type,
 
 					}, function () {
 
-						console.log('Account Closed Notifiction dismissed.');
+						console.log(notification_dismissal_type + ' Notifiction dismissed.');
 
 						$('body').removeClass('ramp_notificationbar_active');
 						$('#ramp_notification_bar').hide().removeClass('account_closed').find('.content').html('');
@@ -696,173 +710,255 @@ console.log('RAMP loaded');
 
 				});
 
-				$.ajax({
-					"async": true,
-					"crossDomain": true,
-					"url": "https://fiken.no/api/v1/companies/recman-apps-modules-og-plugins-da/contacts",
-					"method": "GET",
-					"headers": {
-						"authorization": "Basic aGVsbG9AcmVjbWFucGx1Z2lucy5ubzolUXR8Yk0tO1NBcy0pTj05cnc4Ml4pY110VnI9",
-					}
-				}).done(function (fikenResponse) {
-					console.log('Fiken Contacts', fikenResponse);
-					$.each(fikenResponse._embedded['https://fiken.no/api/v1/rel/contacts'], function (i, v) {
-						if (v.hasOwnProperty('memberNumber')) {
-							if (v.memberNumber == department_id) {
-								// console.info('Department ID ' + v.memberNumber + ' is an active Fiken memberNumber.', v._links.self.href);
-								var fikenCustomerLink = v._links.self.href;
-								fikenCustomerLink = fikenCustomerLink.split('https://fiken.no/api/v1/companies/recman-apps-modules-og-plugins-da/contacts/');
-								var fikenCustomerNumber = fikenCustomerLink[1];
-								console.info('Department ID ' + v.memberNumber + ' is an active Fiken memberNumber:', fikenCustomerNumber);
+				RAMP.checkSubscription = function () {
 
-								$.ajax({
-									"async": true,
-									"crossDomain": true,
-									"url": "https://fiken.no/api/v1/companies/recman-apps-modules-og-plugins-da/sales/",
-									"method": "GET",
-									"headers": {
-										"authorization": "Basic aGVsbG9AcmVjbWFucGx1Z2lucy5ubzolUXR8Yk0tO1NBcy0pTj05cnc4Ml4pY110VnI9",
-									}
-								}).done(function (fikenSaleResponse) {
-									console.log('Fiken Sales', fikenSaleResponse);
-									$.each(fikenSaleResponse._embedded["https://fiken.no/api/v1/rel/sales"], function (i, v) {
+					initiate_scrape = false;
 
-										if (v.customer == 'https://fiken.no/api/v1/companies/recman-apps-modules-og-plugins-da/contacts/' + fikenCustomerNumber) {
+					$.ajax({
+						"async": true,
+						"crossDomain": true,
+						"url": "https://fiken.no/api/v1/companies/recman-apps-modules-og-plugins-da/contacts",
+						"method": "GET",
+						"headers": {
+							"authorization": "Basic aGVsbG9AcmVjbWFucGx1Z2lucy5ubzolUXR8Yk0tO1NBcy0pTj05cnc4Ml4pY110VnI9",
+						}
+					}).done(function (fikenResponse) {
+						console.log('Fiken Contacts', fikenResponse);
+						$.each(fikenResponse._embedded['https://fiken.no/api/v1/rel/contacts'], function (i, v) {
+							if (v.hasOwnProperty('memberNumber')) {
+								if (v.memberNumber == department_id) {
+									// console.info('Department ID ' + v.memberNumber + ' is an active Fiken memberNumber.', v._links.self.href);
+									var fikenCustomerLink = v._links.self.href;
+									fikenCustomerLink = fikenCustomerLink.split('https://fiken.no/api/v1/companies/recman-apps-modules-og-plugins-da/contacts/');
+									var fikenCustomerNumber = fikenCustomerLink[1];
+									console.info('Department ID ' + v.memberNumber + ' is an active Fiken memberNumber:', fikenCustomerNumber);
 
-											if (!v.paid) {
+									$.ajax({
+										"async": true,
+										"crossDomain": true,
+										"url": "https://fiken.no/api/v1/companies/recman-apps-modules-og-plugins-da/sales/",
+										"method": "GET",
+										"headers": {
+											"authorization": "Basic aGVsbG9AcmVjbWFucGx1Z2lucy5ubzolUXR8Yk0tO1NBcy0pTj05cnc4Ml4pY110VnI9",
+										}
+									}).done(function (fikenSaleResponse) {
+										console.log('Fiken Sales', fikenSaleResponse);
+										$.each(fikenSaleResponse._embedded["https://fiken.no/api/v1/rel/sales"], function (i, v) {
 
-												console.log('Invoise is NOT paid');
+											if (v.customer == 'https://fiken.no/api/v1/companies/recman-apps-modules-og-plugins-da/contacts/' + fikenCustomerNumber) {
 
-												console.log('Customer Invoice details: ', v);
+												if (!v.paid) {
 
-												var currentDate = moment();
-												var invoiceDate = moment(v.date, "YYYY-MM-DD");
-												var dueDate = moment(invoiceDate, "YYYY-MM-DD").add(7, 'days');
-												var reminderDate = moment(dueDate, "YYYY-MM-DD").add(7, 'days');
-												var closeDate = moment(reminderDate, "YYYY-MM-DD").add(7, 'days');
+													console.log('Invoise is NOT paid');
 
-												console.log('Invoice date: ', invoiceDate.toString());
-												console.log('Due date: ', dueDate.toString());
-												console.log('Reminder date: ', reminderDate.toString());
-												console.log('Close date: ', closeDate.toString());
+													console.log('Customer Invoice details: ', v);
 
-												var outstandingSwalType;
-												var outstandingSwalTitle;
-												var outstandingSwalContent;
+													// var currentDate = moment();
+													var currentDate = moment('2017-05-13');
+													var invoiceDate = moment(v.date, 'YYYY-MM-DD');
+													var almostDue = moment(invoiceDate, 'YYYY-MM-DD').add(5, 'days');
+													var dueDate = moment(invoiceDate, 'YYYY-MM-DD').add(7, 'days');
+													var reminderDate = moment(dueDate, 'YYYY-MM-DD').add(7, 'days');
+													var closeDate = moment(reminderDate, 'YYYY-MM-DD').add(7, 'days');
 
-												RAMP.showSwalOutstandingBalance = function () {
+													console.log('Invoice date: ', invoiceDate.toString());
+													console.log('Due date: ', dueDate.toString());
+													console.log('Reminder date: ', reminderDate.toString());
+													console.log('Close date: ', closeDate.toString());
 
-													swal({
-														type: outstandingSwalType,
-														title: outstandingSwalTitle,
-														html: outstandingSwalContent,
-														allowOutsideClick: false,
-														allowEscapeKey: false,
-														showCancelButton: false,
-														confirmButtonText: 'Dismiss',
-													}).then(function () {
+													var outstandingSwalType;
+													var outstandingSwalTitle;
+													var outstandingSwalContent;
 
-														// window.open(v._embedded['https://fiken.no/api/v1/rel/attachments'][0].downloadUrl, '_blank');
-														RAMP.ramp_notificationbar_show();
+													invoice_url_latest = v._embedded['https://fiken.no/api/v1/rel/attachments'][0].downloadUrl;
 
-													});
+													RAMP.showSwalOutstandingBalance = function () {
 
-												}
+														swal({
+															type: outstandingSwalType,
+															title: outstandingSwalTitle,
+															html: outstandingSwalContent,
+															allowOutsideClick: false,
+															allowEscapeKey: false,
+															showCancelButton: false,
+															confirmButtonText: 'Dismiss',
+														}).then(function () {
 
-												if (moment(currentDate).isSameOrBefore(dueDate)) {
+															// window.open(v._embedded['https://fiken.no/api/v1/rel/attachments'][0].downloadUrl, '_blank');
+															RAMP.ramp_notificationbar_show();
 
-													if (user_id === account_manager_id) {
-
-														console.info('Current user is Account Manager.');
-														console.log('Your RAMP account payment is due', currentDate.to(dueDate));
-
-													}
-
-												} else if (moment(currentDate).isAfter(dueDate) && moment(currentDate).isBefore(reminderDate)) {
-
-													if (user_id === account_manager_id) {
-
-														console.info('Current user is Account Manager.');
-														console.log('Your RAMP account payment was due', dueDate.from(currentDate));
+														});
 
 													}
-
-												} else if (moment(currentDate).isSameOrAfter(reminderDate) && moment(currentDate).isBefore(closeDate)) {
-
-													console.warn('Your RAMP account payment was due', dueDate.from(currentDate), 'and your account will be closed', currentDate.to(closeDate));
-
-												} else if (moment(currentDate).isSameOrAfter(closeDate)) {
-
-													// console.warn('We have not received payment for your RAMP account, and your account is now closed!');
-
-													is_account_closed = true;
-													reactivation_fee = numeral(reactivation_fee).multiply(1.25);
-													reactivation_fee = numeral(reactivation_fee).format('$ 0,0[.]00');
-													console.log('Reactivation fee is ', reactivation_fee);
-
-													outstanding_balance += v.lines[0].netPrice + v.lines[0].vat;
-													console.log('Outstanding balance is ', outstanding_balance);
-
-													outstanding_balance = numeral(outstanding_balance).divide(100);
-													console.log('Outstanding balance is ', outstanding_balance);
-
-													outstanding_balance = numeral(outstanding_balance).format('$ 0,0[.]00');
-													console.log('Outstanding balance is ', outstanding_balance);
-
-												}
-
-												if (is_account_closed) {
-
-													console.warn('We have not received payment for your RAMP account, and your account is now closed!');
-
-													var notification_dismissed_account_closed = storrageResult.dismissNotification;
-													// console.log('notification_dismissed_account_closed', notification_dismissed_account_closed);
-
-													$('#ramp_notification_bar').addClass('account_closed').find('.content').html('<h2 class="Sans-19px-black-85%">Attention! Your RAMP subscription has been canceled! <button class="truncate-multiline--button" id="btn_show_outstanding_balance_swal">Read more</button> or <button class="truncate-multiline--button" id="btn_dismiss_notificationbar">hide this notification</button>.</h2>');
-
-													outstandingSwalType = 'error';
-													outstandingSwalTitle = 'ATTENTION!';
 
 													// chrome.storage.sync.remove('dismissNotification');
 
-													if (notification_dismissed_account_closed !== 'account_closed') {
+													if (moment(currentDate).isSameOrBefore(dueDate)) {
 
 														if (user_id === account_manager_id) {
 
-															outstandingSwalContent = '<div class="SwalOutstandingBalanceContent"><h3>Your RAMP subscription has been canceled!</h3><br>The final deadline for paying your otstanding balance of<br><br><h1 style="color: #F27474;">' + outstanding_balance + '</h1><br> was <strong>' + reminderDate.from(currentDate) + '</strong>, on <strong>' + moment(reminderDate).format('dddd, MMMM Do YYYY') + '</strong>.<br><br>Your RAMP subscription will remain canceled until we\'ve received payment for the entire amount owed.</div>';
+															console.info('Current user is Account Manager.');
+															console.log('Your RAMP account payment is due', currentDate.to(dueDate));
 
-															RAMP.showSwalOutstandingBalance();
+															if (moment(currentDate).isSameOrAfter(almostDue)) {
+
+																notification_dismissal_type = 'payment_almost_due';
+																var notification_dismissed = storrageResult.dismissNotification;
+																// console.log('notification_dismissed', notification_dismissed);
+
+																if (notification_dismissed !== 'payment_almost_due') {
+
+																	var almostDueMoment = moment().calendar(null, {
+																		sameDay: '[today]',
+																		nextDay: '[tomorrow]',
+																		nextWeek: 'dddd',
+																		lastDay: '[yesterday]',
+																		lastWeek: '[last] dddd',
+																		sameElse: 'DD/MM/YYYY'
+																	});
+
+																	$('#ramp_notification_bar').addClass('payment_almost_due').find('.content').html('<h2 class="Sans-19px-black-85%">Info! Payment for your RAMP subscription is due ' + almostDueMoment + '. <button class="truncate-multiline--button" id="btn_show_latest_invoice">Show invoice</button> or <button class="truncate-multiline--button" id="btn_dismiss_notificationbar">hide this notification</button>.</h2>');
+
+																	RAMP.ramp_notificationbar_show();
+
+																} else {
+
+																	console.log(notification_dismissal_type + ' Notifiction dismissed.');
+
+																}
+
+															}
+
+														}
+
+													} else if (moment(currentDate).isAfter(dueDate) && moment(currentDate).isBefore(reminderDate)) {
+
+														if (user_id === account_manager_id) {
+
+															console.info('Current user is Account Manager.');
+															console.log('Your RAMP account payment was due', dueDate.from(currentDate));
+
+															notification_dismissal_type = 'payment_overdue';
+														}
+
+													} else if (moment(currentDate).isSameOrAfter(reminderDate) && moment(currentDate).isBefore(closeDate)) {
+
+														console.warn('Your RAMP account payment was due', dueDate.from(currentDate), 'and your account will be closed', currentDate.to(closeDate));
+
+														notification_dismissal_type = 'account_cancelation_warning';
+														var notification_dismissed = storrageResult.dismissNotification;
+														// console.log('notification_dismissed', notification_dismissed);
+
+														$('#ramp_notification_bar').addClass('account_cancelation_warning').find('.content').html('<h2 class="Sans-19px-black-85%">Warning! Your RAMP subscription has been canceled! <button class="truncate-multiline--button" id="btn_show_outstanding_balance_swal">Read more</button> or <button class="truncate-multiline--button" id="btn_dismiss_notificationbar">hide this notification</button>.</h2>');
+
+														outstandingSwalType = 'warning';
+														outstandingSwalTitle = 'WARNING!';
+
+														if (notification_dismissed !== 'account_cancelation_warning') {
+
+															if (user_id === account_manager_id) {
+
+																outstandingSwalContent = '<div class="SwalOutstandingBalanceContent"><h3>Your RAMP subscription may be canceled!</h3><br>The final deadline for paying your otstanding balance of<br><br><h1 style="color: #F27474;">' + outstanding_balance + '</h1><br> was <strong>' + reminderDate.from(currentDate) + '</strong>, on <strong>' + moment(reminderDate).format('dddd, MMMM Do YYYY') + '</strong>.<br><br>Your RAMP subscription will remain canceled until we\'ve received payment for the entire amount owed.</div>';
+
+																RAMP.showSwalOutstandingBalance();
+
+															} else {
+
+																outstandingSwalContent = '<div class="SwalOutstandingBalanceContent"><h3>Your access to RAMP has been revoked!</h3><br>The RAMP subscription for <strong>' + department_name + '</strong> has been canceled due to an overdue outstanding balance with us.<br><br>Final payment deadline for the overdue outstanding balance<br>was <strong>' + reminderDate.from(currentDate) + '</strong>, on <strong>' + moment(reminderDate).format('dddd, MMMM Do YYYY') + '</strong>.<br><br>Your access to RAMP for LinkedIn will remain revoked until we\'ve received payment for the entire amount owed.</div>';
+
+																RAMP.ramp_notificationbar_show();
+
+															}
 
 														} else {
 
-															outstandingSwalContent = '<div class="SwalOutstandingBalanceContent"><h3>Your access to RAMP has been revoked!</h3><br>The RAMP subscription for <strong>' + department_name + '</strong> has been canceled due to an overdue outstanding balance with us.<br><br>Final payment deadline for the overdue outstanding balance<br>was <strong>' + reminderDate.from(currentDate) + '</strong>, on <strong>' + moment(reminderDate).format('dddd, MMMM Do YYYY') + '</strong>.<br><br>Your access to RAMP for LinkedIn will remain revoked until we\'ve received payment for the entire amount owed.</div>';
+															console.log(notification_dismissal_type + ' Notifiction dismissed.');
 
-															RAMP.ramp_notificationbar_show();
+														}
+
+													} else if (moment(currentDate).isSameOrAfter(closeDate)) {
+
+														// console.warn('We have not received payment for your RAMP account, and your account is now closed!');
+
+														is_account_closed = true;
+														reactivation_fee = numeral(reactivation_fee).multiply(1.25);
+														reactivation_fee = numeral(reactivation_fee).format('$ 0,0[.]00');
+														console.log('Reactivation fee is ', reactivation_fee);
+
+														outstanding_balance += v.lines[0].netPrice + v.lines[0].vat;
+														console.log('Outstanding balance is ', outstanding_balance);
+
+														outstanding_balance = numeral(outstanding_balance).divide(100);
+														console.log('Outstanding balance is ', outstanding_balance);
+
+														outstanding_balance = numeral(outstanding_balance).format('$ 0,0[.]00');
+														console.log('Outstanding balance is ', outstanding_balance);
+
+													}
+
+													if (is_account_closed) {
+
+														console.warn('We have not received payment for your RAMP account, and your account is now closed!');
+
+														var notification_dismissed = storrageResult.dismissNotification;
+														// console.log('notification_dismissed', notification_dismissed);
+
+														$('#ramp_notification_bar').addClass('account_closed').find('.content').html('<h2 class="Sans-19px-black-85%">Attention! Your RAMP subscription has been canceled! <button class="truncate-multiline--button" id="btn_show_outstanding_balance_swal">Read more</button> or <button class="truncate-multiline--button" id="btn_dismiss_notificationbar">hide this notification</button>.</h2>');
+
+														outstandingSwalType = 'error';
+														outstandingSwalTitle = 'ATTENTION!';
+
+														if (notification_dismissed !== 'account_closed') {
+
+															if (user_id === account_manager_id) {
+
+																outstandingSwalContent = '<div class="SwalOutstandingBalanceContent"><h3>Your RAMP subscription has been canceled!</h3><br>The final deadline for paying your otstanding balance of<br><br><h1 style="color: #F27474;">' + outstanding_balance + '</h1><br> was <strong>' + reminderDate.from(currentDate) + '</strong>, on <strong>' + moment(reminderDate).format('dddd, MMMM Do YYYY') + '</strong>.<br><br>Your RAMP subscription will remain canceled until we\'ve received payment for the entire amount owed.</div>';
+
+																RAMP.showSwalOutstandingBalance();
+
+															} else {
+
+																outstandingSwalContent = '<div class="SwalOutstandingBalanceContent"><h3>Your access to RAMP has been revoked!</h3><br>The RAMP subscription for <strong>' + department_name + '</strong> has been canceled due to an overdue outstanding balance with us.<br><br>Final payment deadline for the overdue outstanding balance<br>was <strong>' + reminderDate.from(currentDate) + '</strong>, on <strong>' + moment(reminderDate).format('dddd, MMMM Do YYYY') + '</strong>.<br><br>Your access to RAMP for LinkedIn will remain revoked until we\'ve received payment for the entire amount owed.</div>';
+
+																RAMP.ramp_notificationbar_show();
+
+															}
+
+														} else {
+
+															console.log(notification_dismissal_type + ' Notifiction dismissed.');
 
 														}
 
 													}
 
+												} else {
+
+													// console.log('Invoise is paid');
+
 												}
-
-											} else {
-
-												// console.log('Invoise is paid');
 
 											}
 
-										}
+										});
 
 									});
-								});
 
+								} else {
 
-							} else {
-								console.warn('Can not find Department ID ' + department_id + ' as a Fiken memberNumber.');
+									console.warn('Can not find Department ID ' + department_id + ' as a Fiken memberNumber.');
+
+								}
+
 							}
-						}
+
+						});
+
 					});
-				});
+
+				}
+
+				// RAMP.checkSubscription();
 
 				// var extension_state = 'activated';
 				// var apiKey = result.apiKey;
@@ -1027,8 +1123,9 @@ console.log('RAMP loaded');
 								} else {
 									console.log(inMemberObject);
 
-									var candidateFirstName = inMemberObject.firstName;
-									var candidateLastName = inMemberObject.lastName;
+									candidateFirstName = inMemberObject.firstName;
+									candidateLastName = inMemberObject.lastName;
+									candidateFullName = inMemberObject.firstName + ' ' + inMemberObject.lastName;
 									// console.log(candidateFirstName);
 									// console.log(candidateLastName);
 
@@ -1122,299 +1219,274 @@ console.log('RAMP loaded');
 
 												RAMP.scrapeExperiences = function () {
 
+													console.warn('Could not fetch Experience data automaticly. Initiating manuall scraping...');
+
 													function fetchExperiences() {
 
-														if ('li.pv-position-entity') {
+														// console.warn('Could not fetch Experience data automaticly. Initiating manuall scraping...');
 
-															console.warn('Could not fetch Experience data automaticly. Initiating manuall scraping...');
+														$('.experience-section').find('ul.pv-profile-section__section-info').find('li').each(function (index) {
 
-															$('li.pv-position-entity').each(function (index) {
+															var $entry = $(this);
 
-																var $entry = $(this);
+															// $(this).find('button.pv-profile-section__show-more-detail').click();
 
-																// $(this).find('button.pv-profile-section__show-more-detail').click();
+															var experienceTitle;
+															var experienceCompanyName;
+															var experienceDescription;
+															var experienceLocation
+															var experienceStartDate;
+															var experienceEndDate;
+															var experienceCurrent = 0;
 
-																var experienceTitle;
-																var experienceCompanyName;
-																var experienceDescription;
-																var experienceLocation
-																var experienceStartDate;
-																var experienceEndDate;
+															// setTimeout(function () {
 
-																var $showMoreButton = $(this).find('button.pv-profile-section__show-more-detail');
+															var $experienceDescription = $entry.find('.pv-entity__description');
 
-																if ($showMoreButton) {
+															if ($experienceDescription) {
 
-																	$showMoreButton.click();
+																experienceDescription = $experienceDescription
+																	.clone() //clone the element
+																	.children() //select all the children
+																	.remove() //remove all the children
+																	.end() //again go back to selected element
+																	.text();
 
-																	setTimeout(function () {
+																function myTrim(x) {
+																	return x.replace(/^\s+|\s+$/gm, '');
+																}
 
-																		var $experienceDescription = $entry.find('.pv-entity__description');
+																experienceDescription = myTrim(experienceDescription);
+																experienceDescription = decodeHtml(experienceDescription);
+																experienceDescription = experienceDescription.replace(/(<br>)+/g, '\n ');
 
-																		if ($experienceDescription) {
+																if (experienceDescription.trim()) {
 
-																			experienceDescription = $experienceDescription
-																				.clone() //clone the element
-																				.children() //select all the children
-																				.remove() //remove all the children
-																				.end() //again go back to selected element
-																				.text();
-
-																			function myTrim(x) {
-																				return x.replace(/^\s+|\s+$/gm, '');
-																			}
-
-																			experienceDescription = myTrim(experienceDescription);
-																			experienceDescription = decodeHtml(experienceDescription);
-																			experienceDescription = experienceDescription.replace(/(<br>)+/g, '\n ');
-
-																			if (experienceDescription.trim()) {
-
-																				// console.log(experienceDescription);
-
-																			}
-
-																		} else {
-
-																			console.log('No Experience description...');
-
-																		}
-
-																	}, 400);
+																	// console.log(experienceDescription);
 
 																}
 
-																setTimeout(function () {
+															} else {
 
-																	var $experienceTitle = $entry.find('.pv-entity__summary-info > h3');
-																	var $experienceCompanyName = $entry.find('.pv-entity__summary-info > h4 > .pv-entity__secondary-title');
-																	var $experienceLocation = $entry.find('.pv-entity__summary-info > h4.pv-entity__location > span:not(.visually-hidden)');
-																	var $experienceDateRange = $entry.find('.pv-entity__summary-info > h4.pv-entity__date-range > span:not(.visually-hidden)');
+																console.log('No Experience description...');
 
-																	if ($experienceTitle) {
+															}
 
-																		experienceTitle = $experienceTitle.text();
+															// }, 400);
+
+															// setTimeout(function () {
+
+															var $experienceTitle = $entry.find('.pv-entity__summary-info > h3');
+															var $experienceCompanyName = $entry.find('.pv-entity__summary-info > h4 > .pv-entity__secondary-title');
+															var $experienceLocation = $entry.find('.pv-entity__summary-info > h4.pv-entity__location > span:not(.visually-hidden)');
+															var $experienceDateRange = $entry.find('.pv-entity__summary-info > h4.pv-entity__date-range > span:not(.visually-hidden)');
+
+															if ($experienceTitle) {
+
+																experienceTitle = $experienceTitle.text();
+
+															}
+
+															if ($experienceCompanyName) {
+
+																experienceCompanyName = $experienceCompanyName.text();
+
+															}
+
+															if ($experienceLocation) {
+
+																experienceLocation = $experienceLocation.text();
+
+															}
+
+															if ($experienceDateRange) {
+
+																var experienceDateRange = $experienceDateRange.text();
+
+																// console.log(experienceDateRange);
+
+																$experienceDateRange.each(function (index) {
+
+																	if (experienceDateRange.indexOf(' – ') > -1) {
+
+																		var experienceDatesSplit = experienceDateRange.split(' – ');
+
+																	} else if (experienceDateRange.indexOf(' - ') > -1) {
+
+																		var experienceDatesSplit = experienceDateRange.split(' - ');
 
 																	}
 
-																	if ($experienceCompanyName) {
+																	var experienceDateStart = experienceDatesSplit[0];
+																	var experienceDateEnd = experienceDatesSplit[1];
 
-																		experienceCompanyName = $experienceCompanyName.text();
+																	// console.log(experienceDateStart);
+																	// console.log(experienceDateEnd);
 
-																	}
+																	var experienceDates = [];
 
-																	if ($experienceLocation) {
+																	experienceDates.push(experienceDateStart);
+																	experienceDates.push(experienceDateEnd);
 
-																		experienceLocation = $experienceLocation.text();
+																	// console.log(experienceDates);
 
-																	}
+																	// var experienceDateLength = 0;
 
-																	if ($experienceDateRange) {
+																	$.each(experienceDates, function (index, value) {
 
-																		var experienceDateRange = $experienceDateRange.text();
+																		// experienceDateLength++
 
-																		// console.log(experienceDateRange);
+																		// console.log(index + ": " + $(this).text());
+																		// console.log('index, value', index, value);
 
-																		$experienceDateRange.each(function (index) {
+																		// var experienceDate = $(this).text();
 
-																			if (experienceDateRange.indexOf(' – ') > -1) {
+																		var experienceDateSplit = value.split(' ');
+																		var experienceMonth = experienceDateSplit[0];
+																		var experienceYear = experienceDateSplit[1];
 
-																				var experienceDatesSplit = experienceDateRange.split(' – ');
+																		function setExperienceMonth() {
 
-																			} else if (experienceDateRange.indexOf(' - ') > -1) {
+																			if (experienceMonth === 'Jan') {
 
-																				var experienceDatesSplit = experienceDateRange.split(' - ');
+																				experienceMonth = '01';
+
+																			} else if (experienceMonth === 'Feb') {
+
+																				experienceMonth = '02';
+
+																			} else if (experienceMonth === 'Mar') {
+
+																				experienceMonth = '03';
+
+																			} else if (experienceMonth === 'Apr') {
+
+																				experienceMonth = '04';
+
+																			} else if (experienceMonth === 'May') {
+
+																				experienceMonth = '05';
+
+																			} else if (experienceMonth === 'Jun') {
+
+																				experienceMonth = '06';
+
+																			} else if (experienceMonth === 'Jul') {
+
+																				experienceMonth = '07';
+
+																			} else if (experienceMonth === 'Aug') {
+
+																				experienceMonth = '08';
+
+																			} else if (experienceMonth === 'Sep') {
+
+																				experienceMonth = '09';
+
+																			} else if (experienceMonth === 'Oct') {
+
+																				experienceMonth = '10';
+
+																			} else if (experienceMonth === 'Nov') {
+
+																				experienceMonth = '11';
+
+																			} else if (experienceMonth === 'Dec') {
+
+																				experienceMonth = '12';
+
+																			} else if (experienceMonth === 'jan.') {
+
+																				experienceMonth = '01';
+
+																			} else if (experienceMonth === 'feb.') {
+
+																				experienceMonth = '02';
+
+																			} else if (experienceMonth === 'mar.') {
+
+																				experienceMonth = '03';
+
+																			} else if (experienceMonth === 'apr.') {
+
+																				experienceMonth = '04';
+
+																			} else if (experienceMonth === 'mai.') {
+
+																				experienceMonth = '05';
+
+																			} else if (experienceMonth === 'jun.') {
+
+																				experienceMonth = '06';
+
+																			} else if (experienceMonth === 'jul.') {
+
+																				experienceMonth = '07';
+
+																			} else if (experienceMonth === 'aug.') {
+
+																				experienceMonth = '08';
+
+																			} else if (experienceMonth === 'sep.') {
+
+																				experienceMonth = '09';
+
+																			} else if (experienceMonth === 'okt.') {
+
+																				experienceMonth = '10';
+
+																			} else if (experienceMonth === 'nov.') {
+
+																				experienceMonth = '11';
+
+																			} else if (experienceMonth === 'des.') {
+
+																				experienceMonth = '12';
 
 																			}
 
-																			var experienceDateStart = experienceDatesSplit[0];
-																			var experienceDateEnd = experienceDatesSplit[1];
+																			if (index === 0) {
 
-																			// console.log(experienceDateStart);
-																			// console.log(experienceDateEnd);
+																				experienceStartDate = '01.' + experienceMonth + '.' + experienceYear;
 
-																			var experienceDates = [];
+																			} else if (index === 1) {
 
-																			experienceDates.push(experienceDateStart);
-																			experienceDates.push(experienceDateEnd);
+																				experienceEndDate = '01.' + experienceMonth + '.' + experienceYear;
 
-																			// console.log(experienceDates);
+																			}
 
-																			// var experienceDateLength = 0;
+																		}
 
-																			var current = 0;
+																		if (experienceMonth == 'Present' || value == 'nå') {
 
-																			$.each(experienceDates, function (index, value) {
+																			experienceCurrent = 1;
 
-																				// experienceDateLength++
+																			experienceEndDate = null;
 
-																				// console.log(index + ": " + $(this).text());
-																				// console.log('index, value', index, value);
+																		} else {
 
-																				// var experienceDate = $(this).text();
+																			setExperienceMonth();
 
-																				var experienceDateSplit = value.split(' ');
-																				var experienceMonth = experienceDateSplit[0];
-																				var experienceYear = experienceDateSplit[1];
+																		}
 
-																				function setExperienceMonth() {
+																		// console.log(experienceDateLength);
 
-																					if (experienceMonth === 'Jan') {
+																		// if (experienceDateLength === 1) {
+																		//
+																		// 	current = 1;
+																		//
+																		// } else if (experienceDateLength === 2) {
+																		//
+																		// 	current = 0;
+																		//
+																		// }
 
-																						experienceMonth = '01';
-
-																					} else if (experienceMonth === 'Feb') {
-
-																						experienceMonth = '02';
-
-																					} else if (experienceMonth === 'Mar') {
-
-																						experienceMonth = '03';
-
-																					} else if (experienceMonth === 'Apr') {
-
-																						experienceMonth = '04';
-
-																					} else if (experienceMonth === 'May') {
-
-																						experienceMonth = '05';
-
-																					} else if (experienceMonth === 'Jun') {
-
-																						experienceMonth = '06';
-
-																					} else if (experienceMonth === 'Jul') {
-
-																						experienceMonth = '07';
-
-																					} else if (experienceMonth === 'Aug') {
-
-																						experienceMonth = '08';
-
-																					} else if (experienceMonth === 'Sep') {
-
-																						experienceMonth = '09';
-
-																					} else if (experienceMonth === 'Oct') {
-
-																						experienceMonth = '10';
-
-																					} else if (experienceMonth === 'Nov') {
-
-																						experienceMonth = '11';
-
-																					} else if (experienceMonth === 'Dec') {
-
-																						experienceMonth = '12';
-
-																					} else if (experienceMonth === 'jan.') {
-
-																						experienceMonth = '01';
-
-																					} else if (experienceMonth === 'feb.') {
-
-																						experienceMonth = '02';
-
-																					} else if (experienceMonth === 'mar.') {
-
-																						experienceMonth = '03';
-
-																					} else if (experienceMonth === 'apr.') {
-
-																						experienceMonth = '04';
-
-																					} else if (experienceMonth === 'mai.') {
-
-																						experienceMonth = '05';
-
-																					} else if (experienceMonth === 'jun.') {
-
-																						experienceMonth = '06';
-
-																					} else if (experienceMonth === 'jul.') {
-
-																						experienceMonth = '07';
-
-																					} else if (experienceMonth === 'aug.') {
-
-																						experienceMonth = '08';
-
-																					} else if (experienceMonth === 'sep.') {
-
-																						experienceMonth = '09';
-
-																					} else if (experienceMonth === 'okt.') {
-
-																						experienceMonth = '10';
-
-																					} else if (experienceMonth === 'nov.') {
-
-																						experienceMonth = '11';
-
-																					} else if (experienceMonth === 'des.') {
-
-																						experienceMonth = '12';
-
-																					}
-
-																					if (index === 0) {
-
-																						experienceStartDate = '01.' + experienceMonth + '.' + experienceYear;
-
-																					} else if (index === 1) {
-
-																						experienceEndDate = '01.' + experienceMonth + '.' + experienceYear;
-
-																					}
-
-																				}
-
-																				if (experienceMonth == 'Present' || value == 'nå') {
-
-																					current = 1;
-
-																					experienceEndDate = null;
-
-																				} else {
-
-																					setExperienceMonth();
-
-																				}
-
-																				// console.log(experienceDateLength);
-
-																				// if (experienceDateLength === 1) {
-																				//
-																				// 	current = 1;
-																				//
-																				// } else if (experienceDateLength === 2) {
-																				//
-																				// 	current = 0;
-																				//
-																				// }
-
-																			});
-
-																			experience.push({
-																				title: experienceTitle,
-																				companyName: experienceCompanyName,
-																				location: experienceLocation,
-																				startDate: experienceStartDate,
-																				endDate: experienceEndDate,
-																				description: experienceDescription,
-																				current: current,
-																			});
-
-																			// console.log(experience);
-
-																		});
-
-																	}
+																	});
 
 																	// experience.push({
 																	// 	title: experienceTitle,
 																	// 	companyName: experienceCompanyName,
-																	// 	// location: location,
+																	// 	location: experienceLocation,
 																	// 	startDate: experienceStartDate,
 																	// 	endDate: experienceEndDate,
 																	// 	description: experienceDescription,
@@ -1423,37 +1495,103 @@ console.log('RAMP loaded');
 
 																	// console.log(experience);
 
-																}, 500);
+																});
 
+															}
+
+															experience.push({
+																title: experienceTitle,
+																companyName: experienceCompanyName,
+																location: experienceLocation,
+																startDate: experienceStartDate,
+																endDate: experienceEndDate,
+																description: experienceDescription,
+																current: experienceCurrent,
 															});
 
 															// console.log(experience);
 
-														} else {
+															// }, 500);
 
-															console.warn('Sorry, no Experience to scrape...');
+														}).promise().done(function () {
 
-														}
+															console.log('experience', experience);
+
+														});
 
 													}
 
-													if ('button.pv-profile-section__see-more-inline') {
+													if ('.experience-section') {
 
-														var $seeMorePositionsButton = $('button.pv-profile-section__see-more-inline');
+														if ($('.experience-section').find('.pv-profile-section__actions-inline').find('button.link').length) {
 
-														console.log('click seeMorePositionsButton');
+															sectionsToBeScraped++;
 
-														$seeMorePositionsButton.click();
+															var $seeMoreExperienceButton = $('.experience-section').find('.pv-profile-section__actions-inline').find('button.link');
 
-														setTimeout(function () {
+															var setIntervalValue = 0;
+
+															function startSetInterval() {
+
+																var setIntervalAdd = setInterval(function () {
+
+																	if (setIntervalValue < 50) {
+
+																		setIntervalValue++;
+
+																		if ($('.experience-section .pv-profile-section__actions-inline button').attr('aria-expanded') === 'false') {
+
+																			console.log('seeMoreExperienceButton clicked ' + setIntervalValue + ' times.');
+
+																			$('.experience-section .pv-profile-section__actions-inline button').click();
+
+																			// function clickShowMore() {
+																			//
+																			// 	$('.experience-section .pv-profile-section__actions-inline button').click();
+																			//
+																			// }
+																			//
+																			// $('.experience-section .pv-profile-section__actions-inline button').onclick = clickShowMore;
+
+
+																		} else if ($('.experience-section .pv-profile-section__actions-inline button').attr('aria-expanded') === 'true') {
+
+																			console.log('all positions showing');
+
+																			clearInterval(setIntervalAdd);
+
+																			sectionsScraped++;
+																			console.log('sectionsScraped', sectionsScraped);
+
+																			fetchExperiences();
+
+																		}
+
+																	} else {
+
+																		console.log('setIntervalValue har reached it\'s limit');
+
+																		clearInterval(setIntervalAdd);
+
+																	}
+
+																}, 300);
+
+																setIntervalAdd;
+
+															}
+
+															startSetInterval();
+
+														} else {
 
 															fetchExperiences();
 
-														}, 500);
+														}
 
 													} else {
 
-														fetchExperiences()
+														console.warn('Sorry, no Experience to scrape...');
 
 													}
 
@@ -1461,234 +1599,287 @@ console.log('RAMP loaded');
 
 												RAMP.scrapeEducations = function () {
 
-													if ('li.pv-education-entity') {
+													if ($('.pv-profile-section.education-section .pv-profile-section__section-info-item')) {
 
 														console.warn('Could not fetch Education data automaticly. Initiating manuall scraping...');
 
-														// 	$('li.position-entity').each(function (index) {
-														//
-														// 		var $entry = $(this);
-														//
-														// 		// $(this).find('button.pv-profile-section__show-more-detail').click();
-														//
-														// 		var $showMoreButton = $(this).find('button.pv-profile-section__show-more-detail');
-														//
-														// 		if ($showMoreButton) {
-														//
-														// 			$showMoreButton.click();
-														//
-														// 			setTimeout(function () {
-														//
-														// 				var experienceTitle;
-														// 				var experienceCompanyName;
-														// 				var experienceDescription;
-														// 				var experienceStartDate;
-														// 				var experienceEndDate;
-														//
-														// 				var $experienceTitle = $entry.find('.pv-entity__summary-info > h3');
-														// 				var $experienceCompanyName = $entry.find('.pv-entity__summary-info > h4 > .pv-entity__secondary-title');
-														// 				var $experienceDescription = $entry.find('.pv-entity__description');
-														// 				var $experienceDateRange = $entry.find('.pv-entity__date-range');
-														//
-														// 				var current = 0;
-														//
-														// 				if ($experienceTitle) {
-														//
-														// 					experienceTitle = $experienceTitle.text();
-														//
-														// 				}
-														//
-														// 				if ($experienceCompanyName) {
-														//
-														// 					experienceCompanyName = $experienceCompanyName.text();
-														//
-														// 				}
-														//
-														// 				if ($experienceDescription) {
-														//
-														// 					experienceDescription = $experienceDescription
-														// 						.clone() //clone the element
-														// 						.children() //select all the children
-														// 						.remove() //remove all the children
-														// 						.end() //again go back to selected element
-														// 						.text();
-														//
-														// 					function myTrim(x) {
-														// 						return x.replace(/^\s+|\s+$/gm, '');
-														// 					}
-														//
-														// 					experienceDescription = myTrim(experienceDescription);
-														// 					experienceDescription = decodeHtml(experienceDescription);
-														// 					experienceDescription = experienceDescription.replace(/(<br>)+/g, '\n ');
-														//
-														// 					// console.log(experienceDescription);
-														//
-														// 				}
-														//
-														// 				if ($experienceDateRange) {
-														//
-														// 					$experienceDateRange.each(function (index) {
-														//
-														// 						var $experienceDates = $experienceDateRange.find('time');
-														//
-														// 						var experienceDateLength = 0;
-														//
-														// 						$experienceDates.each(function (index) {
-														//
-														// 							experienceDateLength++
-														//
-														// 							// console.log(index + ": " + $(this).text());
-														//
-														// 							var experienceDate = $(this).text();
-														//
-														// 							var experienceDateSplit = experienceDate.split(' ');
-														// 							var experienceMonth = experienceDateSplit[0];
-														// 							var experienceYear = experienceDateSplit[1];
-														//
-														// 							if (experienceMonth === 'Jan') {
-														//
-														// 								experienceMonth = '01';
-														//
-														// 							} else if (experienceMonth === 'Feb') {
-														//
-														// 								experienceMonth = '02';
-														//
-														// 							} else if (experienceMonth === 'Mar') {
-														//
-														// 								experienceMonth = '03';
-														//
-														// 							} else if (experienceMonth === 'Apr') {
-														//
-														// 								experienceMonth = '04';
-														//
-														// 							} else if (experienceMonth === 'May') {
-														//
-														// 								experienceMonth = '05';
-														//
-														// 							} else if (experienceMonth === 'Jun') {
-														//
-														// 								experienceMonth = '06';
-														//
-														// 							} else if (experienceMonth === 'Jul') {
-														//
-														// 								experienceMonth = '07';
-														//
-														// 							} else if (experienceMonth === 'Aug') {
-														//
-														// 								experienceMonth = '08';
-														//
-														// 							} else if (experienceMonth === 'Sep') {
-														//
-														// 								experienceMonth = '09';
-														//
-														// 							} else if (experienceMonth === 'Oct') {
-														//
-														// 								experienceMonth = '10';
-														//
-														// 							} else if (experienceMonth === 'Nov') {
-														//
-														// 								experienceMonth = '11';
-														//
-														// 							} else if (experienceMonth === 'Dec') {
-														//
-														// 								experienceMonth = '12';
-														//
-														// 							} else if (experienceMonth === 'jan.') {
-														//
-														// 								experienceMonth = '01';
-														//
-														// 							} else if (experienceMonth === 'feb.') {
-														//
-														// 								experienceMonth = '02';
-														//
-														// 							} else if (experienceMonth === 'mar.') {
-														//
-														// 								experienceMonth = '03';
-														//
-														// 							} else if (experienceMonth === 'apr.') {
-														//
-														// 								experienceMonth = '04';
-														//
-														// 							} else if (experienceMonth === 'mai.') {
-														//
-														// 								experienceMonth = '05';
-														//
-														// 							} else if (experienceMonth === 'jun.') {
-														//
-														// 								experienceMonth = '06';
-														//
-														// 							} else if (experienceMonth === 'jul.') {
-														//
-														// 								experienceMonth = '07';
-														//
-														// 							} else if (experienceMonth === 'aug.') {
-														//
-														// 								experienceMonth = '08';
-														//
-														// 							} else if (experienceMonth === 'sep.') {
-														//
-														// 								experienceMonth = '09';
-														//
-														// 							} else if (experienceMonth === 'okt.') {
-														//
-														// 								experienceMonth = '10';
-														//
-														// 							} else if (experienceMonth === 'nov.') {
-														//
-														// 								experienceMonth = '11';
-														//
-														// 							} else if (experienceMonth === 'des.') {
-														//
-														// 								experienceMonth = '12';
-														//
-														// 							}
-														//
-														// 							if (index === 0) {
-														//
-														// 								experienceStartDate = '01.' + experienceMonth + '.' + experienceYear;
-														//
-														// 							} else if (index === 1) {
-														//
-														// 								experienceEndDate = '01.' + experienceMonth + '.' + experienceYear;
-														//
-														// 							}
-														//
-														// 						});
-														//
-														// 						// console.log(experienceDateLength);
-														//
-														// 						if (experienceDateLength === 1) {
-														//
-														// 							current = 1;
-														//
-														//
-														// 						} else if (experienceDateLength === 2) {
-														//
-														// 							current = 0;
-														//
-														// 						}
-														//
-														// 					});
-														//
-														// 				}
-														//
-														// 				experience.push({
-														// 					title: experienceTitle,
-														// 					companyName: experienceCompanyName,
-														// 					// location: location,
-														// 					startDate: experienceStartDate,
-														// 					endDate: experienceEndDate,
-														// 					description: experienceDescription,
-														// 					current: current,
-														// 				});
-														//
-														// 				// console.log(experience);
-														//
-														// 			}, 500);
-														//
-														// 		}
-														//
-														// 	});
+														$('.pv-profile-section.education-section').find('.pv-profile-section__section-info-item').each(function (index) {
+
+															var $showMoreButton = $(this).find('button.pv-profile-section__see-more-inline');
+
+															if ($showMoreButton) {
+
+																$showMoreButton.click();
+
+																console.log(index);
+
+																var $entry = $(this);
+
+																// setTimeout(function () {
+																//
+																// 	var eudcationSchoolName;
+																// 	var eudcationType;
+																// 	var eudcationDegree;
+																// 	var educationStartDate;
+																// 	var eudcationEndDate;
+																// 	var eudcationDescription;
+																// 	var eudcationIsCurrent;
+																//
+																// 	var $eudcationSchoolName;
+																// 	var $eudcationType;
+																// 	var $eudcationDegree;
+																// 	var $educationStartDate;
+																// 	var $eudcationEndDate;
+																// 	var $eudcationDescription;
+																// 	var $eudcationIsCurrent;
+																//
+																// 	var $experienceTitle = $entry.find('.pv-entity__summary-info > h3');
+																// 	var $experienceCompanyName = $entry.find('.pv-entity__summary-info > h4 > .pv-entity__secondary-title');
+																// 	var $experienceDescription = $entry.find('.pv-entity__description');
+																// 	var $experienceDateRange = $entry.find('.pv-entity__date-range');
+																//
+																// 	var current = 0;
+																//
+																// 	if ($experienceTitle) {
+																//
+																// 		experienceTitle = $experienceTitle.text();
+																//
+																// 	}
+																//
+																// 	if ($experienceCompanyName) {
+																//
+																// 		experienceCompanyName = $experienceCompanyName.text();
+																//
+																// 	}
+																//
+																// 	if ($experienceDescription) {
+																//
+																// 		experienceDescription = $experienceDescription
+																// 			.clone() //clone the element
+																// 			.children() //select all the children
+																// 			.remove() //remove all the children
+																// 			.end() //again go back to selected element
+																// 			.text();
+																//
+																// 		function myTrim(x) {
+																// 			return x.replace(/^\s+|\s+$/gm, '');
+																// 		}
+																//
+																// 		experienceDescription = myTrim(experienceDescription);
+																// 		experienceDescription = decodeHtml(experienceDescription);
+																// 		experienceDescription = experienceDescription.replace(/(<br>)+/g, '\n ');
+																//
+																// 		// console.log(experienceDescription);
+																//
+																// 	}
+																//
+																// 	if ($experienceDateRange) {
+																//
+																// 		$experienceDateRange.each(function (index) {
+																//
+																// 			var $experienceDates = $experienceDateRange.find('time');
+																//
+																// 			var experienceDateLength = 0;
+																//
+																// 			$experienceDates.each(function (index) {
+																//
+																// 				experienceDateLength++
+																//
+																// 				// console.log(index + ": " + $(this).text());
+																//
+																// 				var experienceDate = $(this).text();
+																//
+																// 				var experienceDateSplit = experienceDate.split(' ');
+																// 				var experienceMonth = experienceDateSplit[0];
+																// 				var experienceYear = experienceDateSplit[1];
+																//
+																// 				if (experienceMonth === 'Jan') {
+																//
+																// 					experienceMonth = '01';
+																//
+																// 				} else if (experienceMonth === 'Feb') {
+																//
+																// 					experienceMonth = '02';
+																//
+																// 				} else if (experienceMonth === 'Mar') {
+																//
+																// 					experienceMonth = '03';
+																//
+																// 				} else if (experienceMonth === 'Apr') {
+																//
+																// 					experienceMonth = '04';
+																//
+																// 				} else if (experienceMonth === 'May') {
+																//
+																// 					experienceMonth = '05';
+																//
+																// 				} else if (experienceMonth === 'Jun') {
+																//
+																// 					experienceMonth = '06';
+																//
+																// 				} else if (experienceMonth === 'Jul') {
+																//
+																// 					experienceMonth = '07';
+																//
+																// 				} else if (experienceMonth === 'Aug') {
+																//
+																// 					experienceMonth = '08';
+																//
+																// 				} else if (experienceMonth === 'Sep') {
+																//
+																// 					experienceMonth = '09';
+																//
+																// 				} else if (experienceMonth === 'Oct') {
+																//
+																// 					experienceMonth = '10';
+																//
+																// 				} else if (experienceMonth === 'Nov') {
+																//
+																// 					experienceMonth = '11';
+																//
+																// 				} else if (experienceMonth === 'Dec') {
+																//
+																// 					experienceMonth = '12';
+																//
+																// 				} else if (experienceMonth === 'jan.') {
+																//
+																// 					experienceMonth = '01';
+																//
+																// 				} else if (experienceMonth === 'feb.') {
+																//
+																// 					experienceMonth = '02';
+																//
+																// 				} else if (experienceMonth === 'mar.') {
+																//
+																// 					experienceMonth = '03';
+																//
+																// 				} else if (experienceMonth === 'apr.') {
+																//
+																// 					experienceMonth = '04';
+																//
+																// 				} else if (experienceMonth === 'mai.') {
+																//
+																// 					experienceMonth = '05';
+																//
+																// 				} else if (experienceMonth === 'jun.') {
+																//
+																// 					experienceMonth = '06';
+																//
+																// 				} else if (experienceMonth === 'jul.') {
+																//
+																// 					experienceMonth = '07';
+																//
+																// 				} else if (experienceMonth === 'aug.') {
+																//
+																// 					experienceMonth = '08';
+																//
+																// 				} else if (experienceMonth === 'sep.') {
+																//
+																// 					experienceMonth = '09';
+																//
+																// 				} else if (experienceMonth === 'okt.') {
+																//
+																// 					experienceMonth = '10';
+																//
+																// 				} else if (experienceMonth === 'nov.') {
+																//
+																// 					experienceMonth = '11';
+																//
+																// 				} else if (experienceMonth === 'des.') {
+																//
+																// 					experienceMonth = '12';
+																//
+																// 				}
+																//
+																// 				if (index === 0) {
+																//
+																// 					experienceStartDate = '01.' + experienceMonth + '.' + experienceYear;
+																//
+																// 				} else if (index === 1) {
+																//
+																// 					experienceEndDate = '01.' + experienceMonth + '.' + experienceYear;
+																//
+																// 				}
+																//
+																// 			});
+																//
+																// 			// console.log(experienceDateLength);
+																//
+																// 			if (experienceDateLength === 1) {
+																//
+																// 				current = 1;
+																//
+																//
+																// 			} else if (experienceDateLength === 2) {
+																//
+																// 				current = 0;
+																//
+																// 			}
+																//
+																// 		});
+																//
+																// 	}
+																//
+																// 	experience.push({
+																// 		title: experienceTitle,
+																// 		companyName: experienceCompanyName,
+																// 		// location: location,
+																// 		startDate: experienceStartDate,
+																// 		endDate: experienceEndDate,
+																// 		description: experienceDescription,
+																// 		current: current,
+																// 	});
+																//
+																// 	education.push({
+																// 		schoolName: eudcationSchoolName,
+																// 		eudcationType: eudcationType,
+																// 		degree: eudcationDegree,
+																// 		startDate: educationStartDate,
+																// 		endDate: eudcationEndDate,
+																// 		description: eudcationDescription,
+																// 		current: eudcationIsCurrent,
+																// 	})
+																//
+																// 	// console.log(education);
+																//
+																// }, 500);
+
+															}
+
+														});
+
+														// var schoolName = value.schoolName;
+														// var eudcationType = value.fieldOfStudy;
+														// var degree = value.degree;
+														// var description = value.summary_lb;
+														//
+														// // console.log(eudcationType);
+														//
+														// if (value.hasOwnProperty('summary_lb')) {
+														// 	description = decodeHtml(description);
+														// 	description = description.replace(/(<br>)+/g, '\n');
+														// }
+														//
+														// if (value.hasOwnProperty('startDate') && value.startDate.isMonthDefined === true) {
+														// 	var startDate = '15.' + value.startDate.month + '.' + value.startDate.year;
+														// } else if (value.hasOwnProperty('startDate')) {
+														// 	var startDate = '15.08.' + value.startDate.year;
+														// }
+														//
+														// if (value.hasOwnProperty('endDate') && value.endDate.isMonthDefined === true) {
+														// 	var endDate = '15.' + value.endDate.month + '.' + value.endDate.year;
+														// } else if (value.hasOwnProperty('endDate')) {
+														// 	var endDate = '15.06.' + value.endDate.year;
+														// }
+														//
+														// education.push({
+														// 	schoolName: schoolName,
+														// 	eudcationType: eudcationType,
+														// 	degree: degree,
+														// 	startDate: startDate,
+														// 	endDate: endDate,
+														// 	description: description,
+														// })
 
 													} else {
 
@@ -1804,6 +1995,53 @@ console.log('RAMP loaded');
 													}
 
 												}
+
+												swal.queue([{
+													type: 'info',
+													title: 'Loading!',
+													// confirmButtonText: 'Show my public IP',
+													text: 'Fetching candidate data for ' + candidateFullName + '.',
+													showConfirmButton: false,
+													showLoaderOnConfirm: true,
+													preConfirm: function () {
+														return new Promise(function (resolve) {
+
+															function startSetInterval() {
+
+																var setIntervalAdd = setInterval(function () {
+
+																	if (sectionsScraped === sectionsToBeScraped) {
+
+																		console.log('all sections scraped for candidate info');
+
+																		clearInterval(setIntervalAdd);
+
+																		// swal.insertQueueStep('Success');
+
+																		setTimeout(function () {
+
+																			resolve();
+																			$('body').scrollTop(0);
+
+																		}, 2000);
+
+																	}
+
+																}, 500);
+
+																setIntervalAdd;
+
+															}
+
+															startSetInterval();
+
+														})
+
+													}
+
+												}]);
+
+												swal.clickConfirm();
 
 												// console.log('https:' + linkedInProfileDataUrl);
 												//

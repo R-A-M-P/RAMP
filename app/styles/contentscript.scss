@@ -104,6 +104,18 @@ body {
     width: 100%;
     z-index: 100;
 
+    &.payment_almost_due {
+      background-color: #3FC3EE;
+    }
+
+    &.payment_overdue {
+      background-color: #F8BB86;
+    }
+
+    &.account_cancelation_warning {
+      background-color: #F8BB86;
+    }
+
     &.account_closed {
       background-color: #F27474;
     }
