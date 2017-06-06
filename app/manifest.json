@@ -22,10 +22,14 @@
     ],
     "css": [
       "styles/contentscript.css",
-      "bower_components/sweetalert2/dist/sweetalert2.min.css"
+      "bower_components/sweetalert2/dist/sweetalert2.min.css",
+      "bower_components/Morphext/dist/morphext.css",
+      "bower_components/animate.css/animate.min.css"
     ],
     "js": [
-      "scripts/contentscript.js"
+      "bower_components/jquery/dist/jquery.min.js",
+      "scripts/contentscript.js",
+      "bower_components/Morphext/dist/morphext.min.js"
     ],
     "run_at": "document_end",
     "all_frames": true
@@ -45,7 +49,6 @@
       "*://*.linkedin.com/*",
       "*://*.recmanplugins.no/*",
       "*://*.recman.no/*",
-      "*://*.linkedin.com/*",
       "*://*.licdn.com/*",
       "*://*.intercomcdn.com/*",
       "http://localhost:9007/*"

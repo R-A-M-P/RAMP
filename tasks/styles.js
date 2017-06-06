@@ -13,7 +13,7 @@ gulp.task('styles:css', function() {
     .pipe(gulpif(args.sourcemaps, sourcemaps.init()))
     .pipe(gulpif(args.production, cleanCSS()))
     .pipe(gulpif(args.sourcemaps, sourcemaps.write()))
-    .pipe(gulp.dest(`dist/${args.vendor}/styles`))
+    .pipe(gulp.dest(`build/${args.vendor}/styles`))
     .pipe(gulpif(args.watch, livereload()));
 });
 
@@ -26,7 +26,7 @@ gulp.task('styles:less', function() {
     }))
     .pipe(gulpif(args.production, cleanCSS()))
     .pipe(gulpif(args.sourcemaps, sourcemaps.write()))
-    .pipe(gulp.dest(`dist/${args.vendor}/styles`))
+    .pipe(gulp.dest(`build/${args.vendor}/styles`))
     .pipe(gulpif(args.watch, livereload()));
 });
 
@@ -39,7 +39,7 @@ gulp.task('styles:sass', function() {
     }))
     .pipe(gulpif(args.production, cleanCSS()))
     .pipe(gulpif(args.sourcemaps, sourcemaps.write()))
-    .pipe(gulp.dest(`dist/${args.vendor}/styles`))
+    .pipe(gulp.dest(`build/${args.vendor}/styles`))
     .pipe(gulpif(args.watch, livereload()));
 });
 

@@ -1,4 +1,4 @@
-import { defaultParams, sweetContainer } from './utils/default.js'
+import defaultParams from './utils/params.js'
 import { swalClasses, iconTypes } from './utils/classes.js'
 import { colorLuminance } from './utils/utils.js'
 import * as dom from './utils/dom.js'
@@ -11,7 +11,7 @@ let swal2Observer
  * Set type, text and actions on modal
  */
 const setParameters = (params) => {
-  const modal = dom.getModal()
+  const modal = dom.getModal() || dom.init(params)
 
   for (let param in params) {
     if (!defaultParams.hasOwnProperty(param) && param !== 'extraParams') {
@@ -19,14 +19,19 @@ const setParameters = (params) => {
     }
   }
 
-  // set modal width and margin-left
+  // Set modal width
   modal.style.width = (typeof params.width === 'number') ? params.width + 'px' : params.width
 
   modal.style.padding = params.padding + 'px'
   modal.style.background = params.background
+  const successIconParts = modal.querySelectorAll('[class^=swal2-success-circular-line], .swal2-success-fix')
+  for (let i = 0; i < successIconParts.length; i++) {
+    successIconParts[i].style.background = params.background
+  }
 
   const title = dom.getTitle()
   const content = dom.getContent()
+  const buttonsWrapper = dom.getButtonsWrapper()
   const confirmButton = dom.getConfirmButton()
   const cancelButton = dom.getCancelButton()
   const closeButton = dom.getCloseButton()
@@ -124,21 +129,20 @@ const setParameters = (params) => {
     dom.show(icon)
 
     // Animate icon
-    switch (params.type) {
-      case 'success':
-        dom.addClass(icon, 'animate')
-        dom.addClass(icon.querySelector('.tip'), 'animate-success-tip')
-        dom.addClass(icon.querySelector('.long'), 'animate-success-long')
-        break
-      case 'error':
-        dom.addClass(icon, 'animate-error-icon')
-        dom.addClass(icon.querySelector('.x-mark'), 'animate-x-mark')
-        break
-      case 'warning':
-        dom.addClass(icon, 'pulse-warning')
-        break
-      default:
-        break
+    if (params.animation) {
+      switch (params.type) {
+        case 'success':
+          dom.addClass(icon, 'swal2-animate-success-icon')
+          dom.addClass(icon.querySelector('.swal2-success-line-tip'), 'swal2-animate-success-line-tip')
+          dom.addClass(icon.querySelector('.swal2-success-line-long'), 'swal2-animate-success-line-long')
+          break
+        case 'error':
+          dom.addClass(icon, 'swal2-animate-error-icon')
+          dom.addClass(icon.querySelector('.swal2-x-mark'), 'swal2-animate-x-mark')
+          break
+        default:
+          break
+      }
     }
   }
 
@@ -182,12 +186,11 @@ const setParameters = (params) => {
     dom.hide(confirmButton)
   }
 
-  // Buttons spacer
-  const spacer = dom.getSpacer()
+  // Buttons wrapper
   if (!params.showConfirmButton && !params.showCancelButton) {
-    dom.hide(spacer)
+    dom.hide(buttonsWrapper)
   } else {
-    dom.show(spacer)
+    dom.show(buttonsWrapper)
   }
 
   // Edit text on cancel and confirm buttons
@@ -230,10 +233,12 @@ const setParameters = (params) => {
  * Animations
  */
 const openModal = (animation, onComplete) => {
+  const container = dom.getContainer()
   const modal = dom.getModal()
+
   if (animation) {
     dom.addClass(modal, swalClasses.show)
-    dom.addClass(sweetContainer, swalClasses.fade)
+    dom.addClass(container, swalClasses.fade)
     dom.removeClass(modal, swalClasses.hide)
   } else {
     dom.removeClass(modal, swalClasses.fade)
@@ -241,23 +246,26 @@ const openModal = (animation, onComplete) => {
   dom.show(modal)
 
   // scrolling is 'hidden' until animation is done, after that 'auto'
-  sweetContainer.style.overflowY = 'hidden'
+  container.style.overflowY = 'hidden'
   if (dom.animationEndEvent && !dom.hasClass(modal, swalClasses.noanimation)) {
     modal.addEventListener(dom.animationEndEvent, function swalCloseEventFinished () {
       modal.removeEventListener(dom.animationEndEvent, swalCloseEventFinished)
-      sweetContainer.style.overflowY = 'auto'
+      container.style.overflowY = 'auto'
     })
   } else {
-    sweetContainer.style.overflowY = 'auto'
+    container.style.overflowY = 'auto'
   }
 
-  dom.addClass(sweetContainer, swalClasses.in)
-  dom.addClass(document.body, swalClasses.in)
+  dom.addClass(document.documentElement, swalClasses.shown)
+  dom.addClass(document.body, swalClasses.shown)
+  dom.addClass(container, swalClasses.shown)
   fixScrollbar()
   iOSfix()
   dom.states.previousActiveElement = document.activeElement
   if (onComplete !== null && typeof onComplete === 'function') {
-    onComplete(modal)
+    setTimeout(function () {
+      onComplete(modal)
+    })
   }
 }
 
@@ -300,7 +308,8 @@ const undoIOSfix = () => {
   }
 }
 
-const modalDependant = (...args) => {
+// SweetAlert entry point
+const sweetAlert = (...args) => {
   if (args[0] === undefined) {
     console.error('SweetAlert2 expects at least 1 attribute!')
     return false
@@ -329,6 +338,20 @@ const modalDependant = (...args) => {
           })
         }
       }
+
+      if (params.input === 'url' && params.inputValidator === null) {
+        params.inputValidator = (url) => {
+          return new Promise((resolve, reject) => {
+            // taken from https://stackoverflow.com/a/3809435/1331425
+            const urlRegex = /^https?:\/\/(www\.)?[-a-zA-Z0-9@:%._+~#=]{2,256}\.[a-z]{2,6}\b([-a-zA-Z0-9@:%_+.~#?&//=]*)$/
+            if (urlRegex.test(url)) {
+              resolve()
+            } else {
+              reject('Invalid URL')
+            }
+          })
+        }
+      }
       break
 
     default:
@@ -338,6 +361,7 @@ const modalDependant = (...args) => {
 
   setParameters(params)
 
+  const container = dom.getContainer()
   const modal = dom.getModal()
 
   return new Promise((resolve, reject) => {
@@ -345,7 +369,11 @@ const modalDependant = (...args) => {
     if (params.timer) {
       modal.timeout = setTimeout(() => {
         sweetAlert.closeModal(params.onClose)
-        reject('timer')
+        if (params.useRejections) {
+          reject('timer')
+        } else {
+          resolve({dismiss: 'timer'})
+        }
       }, params.timer)
     }
 
@@ -420,7 +448,11 @@ const modalDependant = (...args) => {
         )
       } else {
         sweetAlert.closeModal(params.onClose)
-        resolve(value)
+        if (params.useRejections) {
+          resolve(value)
+        } else {
+          resolve({value: value})
+        }
       }
     }
 
@@ -430,8 +462,8 @@ const modalDependant = (...args) => {
       const target = e.target || e.srcElement
       const confirmButton = dom.getConfirmButton()
       const cancelButton = dom.getCancelButton()
-      const targetedConfirm = confirmButton === target || confirmButton.contains(target)
-      const targetedCancel = cancelButton === target || cancelButton.contains(target)
+      const targetedConfirm = confirmButton && (confirmButton === target || confirmButton.contains(target))
+      const targetedCancel = cancelButton && (cancelButton === target || cancelButton.contains(target))
 
       switch (e.type) {
         case 'mouseover':
@@ -465,6 +497,7 @@ const modalDependant = (...args) => {
         case 'click':
           // Clicked 'confirm'
           if (targetedConfirm && sweetAlert.isVisible()) {
+            sweetAlert.disableButtons()
             if (params.input) {
               const inputValue = getInputValue()
 
@@ -472,10 +505,12 @@ const modalDependant = (...args) => {
                 sweetAlert.disableInput()
                 params.inputValidator(inputValue, params.extraParams).then(
                   () => {
+                    sweetAlert.enableButtons()
                     sweetAlert.enableInput()
                     confirm(inputValue)
                   },
                   (error) => {
+                    sweetAlert.enableButtons()
                     sweetAlert.enableInput()
                     if (error) {
                       sweetAlert.showValidationError(error)
@@ -491,8 +526,13 @@ const modalDependant = (...args) => {
 
           // Clicked 'cancel'
           } else if (targetedCancel && sweetAlert.isVisible()) {
+            sweetAlert.disableButtons()
             sweetAlert.closeModal(params.onClose)
-            reject('cancel')
+            if (params.useRejections) {
+              reject('cancel')
+            } else {
+              resolve({dismiss: 'cancel'})
+            }
           }
           break
         default:
@@ -510,24 +550,33 @@ const modalDependant = (...args) => {
     // Closing modal by close button
     dom.getCloseButton().onclick = () => {
       sweetAlert.closeModal(params.onClose)
-      reject('close')
+      if (params.useRejections) {
+        reject('close')
+      } else {
+        resolve({dismiss: 'close'})
+      }
     }
 
     // Closing modal by overlay click
-    sweetContainer.onclick = (e) => {
-      if (e.target !== sweetContainer) {
+    container.onclick = (e) => {
+      if (e.target !== container) {
         return
       }
       if (params.allowOutsideClick) {
         sweetAlert.closeModal(params.onClose)
-        reject('overlay')
+        if (params.useRejections) {
+          reject('overlay')
+        } else {
+          resolve({dismiss: 'overlay'})
+        }
       }
     }
 
+    const buttonsWrapper = dom.getButtonsWrapper()
     const confirmButton = dom.getConfirmButton()
     const cancelButton = dom.getCancelButton()
 
-    // Reverse buttons if neede d
+    // Reverse buttons (Confirm on the right side)
     if (params.reverseButtons) {
       confirmButton.parentNode.insertBefore(cancelButton, confirmButton)
     } else {
@@ -562,7 +611,7 @@ const modalDependant = (...args) => {
       const e = event || window.event
       const keyCode = e.keyCode || e.which
 
-      if ([9, 13, 32, 27].indexOf(keyCode) === -1) {
+      if ([9, 13, 32, 27, 37, 38, 39, 40].indexOf(keyCode) === -1) {
         // Don't do work on keys we don't care about.
         return
       }
@@ -590,26 +639,44 @@ const modalDependant = (...args) => {
         e.stopPropagation()
         e.preventDefault()
 
+      // ARROWS - switch focus between buttons
+      } else if (keyCode === 37 || keyCode === 38 || keyCode === 39 || keyCode === 40) {
+        // focus Cancel button if Confirm button is currently focused
+        if (document.activeElement === confirmButton && dom.isVisible(cancelButton)) {
+          cancelButton.focus()
+        // and vice versa
+        } else if (document.activeElement === cancelButton && dom.isVisible(confirmButton)) {
+          confirmButton.focus()
+        }
+
       // ENTER/SPACE
-      } else {
-        if (keyCode === 13 || keyCode === 32) {
-          if (btnIndex === -1) {
-            // ENTER/SPACE clicked outside of a button.
-            if (params.focusCancel) {
-              dom.fireClick(cancelButton, e)
-            } else {
-              dom.fireClick(confirmButton, e)
-            }
+      } else if (keyCode === 13 || keyCode === 32) {
+        if (btnIndex === -1 && params.allowEnterKey) {
+          // ENTER/SPACE clicked outside of a button.
+          if (params.focusCancel) {
+            dom.fireClick(cancelButton, e)
+          } else {
+            dom.fireClick(confirmButton, e)
           }
-        } else if (keyCode === 27 && params.allowEscapeKey === true) {
-          sweetAlert.closeModal(params.onClose)
+          e.stopPropagation()
+          e.preventDefault()
+        }
+
+      // ESC
+      } else if (keyCode === 27 && params.allowEscapeKey === true) {
+        sweetAlert.closeModal(params.onClose)
+        if (params.useRejections) {
           reject('esc')
+        } else {
+          resolve({dismiss: 'esc'})
         }
       }
     }
 
-    dom.states.previousWindowKeyDown = window.onkeydown
-    window.onkeydown = handleKeyDown
+    if (!window.onkeydown || window.onkeydown.toString() !== handleKeyDown.toString()) {
+      dom.states.previousWindowKeyDown = window.onkeydown
+      window.onkeydown = handleKeyDown
+    }
 
     // Loading state
     if (params.buttonsStyling) {
@@ -620,26 +687,14 @@ const modalDependant = (...args) => {
     /**
      * Show spinner instead of Confirm button and disable Cancel button
      */
-    sweetAlert.showLoading = sweetAlert.enableLoading = () => {
-      dom.show(dom.getSpacer())
-      dom.show(confirmButton, 'inline-block')
-      dom.addClass(confirmButton, swalClasses.loading)
-      dom.addClass(modal, swalClasses.loading)
-      confirmButton.disabled = true
-      cancelButton.disabled = true
-    }
-
-    /**
-     * Show spinner instead of Confirm button and disable Cancel button
-     */
     sweetAlert.hideLoading = sweetAlert.disableLoading = () => {
       if (!params.showConfirmButton) {
         dom.hide(confirmButton)
         if (!params.showCancelButton) {
-          dom.hide(dom.getSpacer())
+          dom.hide(dom.getButtonsWrapper())
         }
       }
-      dom.removeClass(confirmButton, swalClasses.loading)
+      dom.removeClass(buttonsWrapper, swalClasses.loading)
       dom.removeClass(modal, swalClasses.loading)
       confirmButton.disabled = false
       cancelButton.disabled = false
@@ -649,6 +704,7 @@ const modalDependant = (...args) => {
     sweetAlert.getContent = () => dom.getContent()
     sweetAlert.getInput = () => getInput()
     sweetAlert.getImage = () => dom.getImage()
+    sweetAlert.getButtonsWrapper = () => dom.getButtonsWrapper()
     sweetAlert.getConfirmButton = () => dom.getConfirmButton()
     sweetAlert.getCancelButton = () => dom.getCancelButton()
 
@@ -705,6 +761,9 @@ const modalDependant = (...args) => {
     // Set modal min-height to disable scrolling inside the modal
     sweetAlert.recalculateHeight = dom.debounce(() => {
       const modal = dom.getModal()
+      if (!modal) {
+        return
+      }
       const prevState = modal.style.display
       modal.style.minHeight = ''
       dom.show(modal)
@@ -719,8 +778,10 @@ const modalDependant = (...args) => {
       dom.show(validationError)
 
       const input = getInput()
-      dom.focusInput(input)
-      dom.addClass(input, swalClasses.inputerror)
+      if (input) {
+        dom.focusInput(input)
+        dom.addClass(input, swalClasses.inputerror)
+      }
     }
 
     // Hide block with validation error
@@ -795,6 +856,7 @@ const modalDependant = (...args) => {
       case 'password':
       case 'number':
       case 'tel':
+      case 'url':
         input = dom.getChildByClass(modal, swalClasses.input)
         input.value = params.inputValue
         input.placeholder = params.inputPlaceholder
@@ -893,7 +955,7 @@ const modalDependant = (...args) => {
       case null:
         break
       default:
-        console.error('SweetAlert2: Unexpected type of input! Expected "text", "email", "password", "select", "checkbox", "textarea" or "file", got "' + params.input + '"')
+        console.error(`SweetAlert2: Unexpected type of input! Expected "text", "email", "password", "number", "tel", "select", "radio", "checkbox", "textarea", "file" or "url", got "${params.input}"`)
         break
     }
 
@@ -914,10 +976,16 @@ const modalDependant = (...args) => {
     openModal(params.animation, params.onOpen)
 
     // Focus the first element (input or button)
-    setFocus(-1, 1)
+    if (params.allowEnterKey) {
+      setFocus(-1, 1)
+    } else {
+      if (document.activeElement) {
+        document.activeElement.blur()
+      }
+    }
 
     // fix scroll
-    sweetContainer.scrollTop = 0
+    dom.getContainer().scrollTop = 0
 
     // Observe changes inside the modal and adjust height
     if (typeof MutationObserver !== 'undefined' && !swal2Observer) {
@@ -927,21 +995,11 @@ const modalDependant = (...args) => {
   })
 }
 
-// SweetAlert entry point
-const sweetAlert = (...args) => {
-  if (sweetAlert.isVisible()) {
-    sweetAlert.close()
-  }
-
-  return modalDependant.apply(undefined, args)
-}
-
 /*
- * Global function to determine if swal2 modal is visible
+ * Global function to determine if swal2 modal is shown
  */
 sweetAlert.isVisible = () => {
-  const modal = dom.getModal()
-  return dom.isVisible(modal)
+  return !!dom.getModal()
 }
 
 /*
@@ -949,16 +1007,15 @@ sweetAlert.isVisible = () => {
  */
 sweetAlert.queue = (steps) => {
   queue = steps
-  const modal = dom.getModal()
   const resetQueue = () => {
     queue = []
-    modal.removeAttribute('data-queue-step')
+    document.body.removeAttribute('data-swal2-queue-step')
   }
   let queueResult = []
   return new Promise((resolve, reject) => {
     (function step (i, callback) {
       if (i < queue.length) {
-        modal.setAttribute('data-queue-step', i)
+        document.body.setAttribute('data-swal2-queue-step', i)
 
         sweetAlert(queue[i]).then(
           (result) => {
@@ -981,7 +1038,7 @@ sweetAlert.queue = (steps) => {
 /*
  * Global function for getting the index of current modal in queue
  */
-sweetAlert.getQueueStep = () => dom.getModal().getAttribute('data-queue-step')
+sweetAlert.getQueueStep = () => document.body.getAttribute('data-swal2-queue-step')
 
 /*
  * Global function for inserting a modal to the queue
@@ -1006,30 +1063,23 @@ sweetAlert.deleteQueueStep = (index) => {
  * Global function to close sweetAlert
  */
 sweetAlert.close = sweetAlert.closeModal = (onComplete) => {
+  const container = dom.getContainer()
   const modal = dom.getModal()
+  if (!modal) {
+    return
+  }
   dom.removeClass(modal, swalClasses.show)
   dom.addClass(modal, swalClasses.hide)
-
-  // Reset icon animations
-  const successIcon = modal.querySelector('.' + swalClasses.icon + '.' + iconTypes.success)
-  dom.removeClass(successIcon, 'animate')
-  dom.removeClass(successIcon.querySelector('.tip'), 'animate-success-tip')
-  dom.removeClass(successIcon.querySelector('.long'), 'animate-success-long')
-
-  const errorIcon = modal.querySelector('.' + swalClasses.icon + '.' + iconTypes.error)
-  dom.removeClass(errorIcon, 'animate-error-icon')
-  dom.removeClass(errorIcon.querySelector('.x-mark'), 'animate-x-mark')
-
-  const warningIcon = modal.querySelector('.' + swalClasses.icon + '.' + iconTypes.warning)
-  dom.removeClass(warningIcon, 'pulse-warning')
+  clearTimeout(modal.timeout)
 
   dom.resetPrevState()
 
-  const hideModalAndResetState = () => {
-    dom.hide(modal)
-    modal.style.minHeight = ''
-    dom.removeClass(sweetContainer, swalClasses.in)
-    dom.removeClass(document.body, swalClasses.in)
+  const removeModalAndResetState = () => {
+    if (container.parentNode) {
+      container.parentNode.removeChild(container)
+    }
+    dom.removeClass(document.documentElement, swalClasses.shown)
+    dom.removeClass(document.body, swalClasses.shown)
     undoScrollbar()
     undoIOSfix()
   }
@@ -1039,15 +1089,17 @@ sweetAlert.close = sweetAlert.closeModal = (onComplete) => {
     modal.addEventListener(dom.animationEndEvent, function swalCloseEventFinished () {
       modal.removeEventListener(dom.animationEndEvent, swalCloseEventFinished)
       if (dom.hasClass(modal, swalClasses.hide)) {
-        hideModalAndResetState()
+        removeModalAndResetState()
       }
     })
   } else {
-    // Otherwise, hide immediately
-    hideModalAndResetState()
+    // Otherwise, remove immediately
+    removeModalAndResetState()
   }
   if (onComplete !== null && typeof onComplete === 'function') {
-    onComplete(modal)
+    setTimeout(function () {
+      onComplete(modal)
+    })
   }
 }
 
@@ -1060,6 +1112,26 @@ sweetAlert.clickConfirm = () => dom.getConfirmButton().click()
  * Global function to click 'Cancel' button
  */
 sweetAlert.clickCancel = () => dom.getCancelButton().click()
+
+/**
+ * Show spinner instead of Confirm button and disable Cancel button
+ */
+sweetAlert.showLoading = sweetAlert.enableLoading = () => {
+  const modal = dom.getModal()
+  if (!modal) {
+    sweetAlert('')
+  }
+  const buttonsWrapper = dom.getButtonsWrapper()
+  const confirmButton = dom.getConfirmButton()
+  const cancelButton = dom.getCancelButton()
+
+  dom.show(buttonsWrapper)
+  dom.show(confirmButton, 'inline-block')
+  dom.addClass(buttonsWrapper, swalClasses.loading)
+  dom.addClass(modal, swalClasses.loading)
+  confirmButton.disabled = true
+  cancelButton.disabled = true
+}
 
 /**
  * Set default params for each popup

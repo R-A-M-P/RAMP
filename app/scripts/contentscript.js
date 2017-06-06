@@ -1,5 +1,7 @@
-import $ from 'jquery';
-import swal from 'sweetalert2';
+// import $ from 'jquery';
+import {
+	default as swal
+} from 'sweetalert2';
 import * as firebase from 'firebase/app';
 import 'firebase/database';
 import * as toastr from 'toastr';
@@ -1337,7 +1339,7 @@ console.log('RAMP loaded');
 																		// experienceDateLength++
 
 																		// console.log(index + ": " + $(this).text());
-																		// console.log('index, value', index, value);
+																		// console.log('experienceDates ' + index + ': ' + value);
 
 																		// var experienceDate = $(this).text();
 
@@ -1443,6 +1445,10 @@ console.log('RAMP loaded');
 
 																				experienceMonth = '12';
 
+																			} else {
+
+																				experienceMonth = '01';
+
 																			}
 
 																			if (index === 0) {
@@ -1465,35 +1471,18 @@ console.log('RAMP loaded');
 
 																		} else {
 
+																			if (experienceYear === undefined) {
+
+																				experienceMonth = '01';
+																				experienceYear = experienceDateSplit[0];
+
+																			}
+
 																			setExperienceMonth();
 
 																		}
 
-																		// console.log(experienceDateLength);
-
-																		// if (experienceDateLength === 1) {
-																		//
-																		// 	current = 1;
-																		//
-																		// } else if (experienceDateLength === 2) {
-																		//
-																		// 	current = 0;
-																		//
-																		// }
-
 																	});
-
-																	// experience.push({
-																	// 	title: experienceTitle,
-																	// 	companyName: experienceCompanyName,
-																	// 	location: experienceLocation,
-																	// 	startDate: experienceStartDate,
-																	// 	endDate: experienceEndDate,
-																	// 	description: experienceDescription,
-																	// 	current: current,
-																	// });
-
-																	// console.log(experience);
 
 																});
 
@@ -1515,7 +1504,7 @@ console.log('RAMP loaded');
 
 														}).promise().done(function () {
 
-															console.log('experience', experience);
+															// console.log('experience', experience);
 
 														});
 
@@ -1526,8 +1515,7 @@ console.log('RAMP loaded');
 														if ($('.experience-section').find('.pv-profile-section__actions-inline').find('button.link').length) {
 
 															sectionsToBeScraped++;
-
-															var $seeMoreExperienceButton = $('.experience-section').find('.pv-profile-section__actions-inline').find('button.link');
+															console.log('sectionsToBeScraped is: ', sectionsToBeScraped);
 
 															var setIntervalValue = 0;
 
@@ -1535,7 +1523,7 @@ console.log('RAMP loaded');
 
 																var setIntervalAdd = setInterval(function () {
 
-																	if (setIntervalValue < 50) {
+																	if (setIntervalValue < 25) {
 
 																		setIntervalValue++;
 
@@ -1544,15 +1532,6 @@ console.log('RAMP loaded');
 																			console.log('seeMoreExperienceButton clicked ' + setIntervalValue + ' times.');
 
 																			$('.experience-section .pv-profile-section__actions-inline button').click();
-
-																			// function clickShowMore() {
-																			//
-																			// 	$('.experience-section .pv-profile-section__actions-inline button').click();
-																			//
-																			// }
-																			//
-																			// $('.experience-section .pv-profile-section__actions-inline button').onclick = clickShowMore;
-
 
 																		} else if ($('.experience-section .pv-profile-section__actions-inline button').attr('aria-expanded') === 'true') {
 
@@ -1599,299 +1578,366 @@ console.log('RAMP loaded');
 
 												RAMP.scrapeEducations = function () {
 
-													if ($('.pv-profile-section.education-section .pv-profile-section__section-info-item')) {
+													if ('.education-section') {
 
-														console.warn('Could not fetch Education data automaticly. Initiating manuall scraping...');
+														if ($('.education-section').find('.pv-profile-section__actions-inline').find('button.link').length) {
 
-														$('.pv-profile-section.education-section').find('.pv-profile-section__section-info-item').each(function (index) {
+															sectionsToBeScraped++;
+															console.log('sectionsToBeScraped is: ', sectionsToBeScraped);
 
-															var $showMoreButton = $(this).find('button.pv-profile-section__see-more-inline');
+															var setIntervalValue = 0;
 
-															if ($showMoreButton) {
+															function startSetInterval() {
 
-																$showMoreButton.click();
+																var setIntervalAdd = setInterval(function () {
 
-																console.log(index);
+																	if (setIntervalValue < 25) {
 
-																var $entry = $(this);
+																		setIntervalValue++;
 
-																// setTimeout(function () {
-																//
-																// 	var eudcationSchoolName;
-																// 	var eudcationType;
-																// 	var eudcationDegree;
-																// 	var educationStartDate;
-																// 	var eudcationEndDate;
-																// 	var eudcationDescription;
-																// 	var eudcationIsCurrent;
-																//
-																// 	var $eudcationSchoolName;
-																// 	var $eudcationType;
-																// 	var $eudcationDegree;
-																// 	var $educationStartDate;
-																// 	var $eudcationEndDate;
-																// 	var $eudcationDescription;
-																// 	var $eudcationIsCurrent;
-																//
-																// 	var $experienceTitle = $entry.find('.pv-entity__summary-info > h3');
-																// 	var $experienceCompanyName = $entry.find('.pv-entity__summary-info > h4 > .pv-entity__secondary-title');
-																// 	var $experienceDescription = $entry.find('.pv-entity__description');
-																// 	var $experienceDateRange = $entry.find('.pv-entity__date-range');
-																//
-																// 	var current = 0;
-																//
-																// 	if ($experienceTitle) {
-																//
-																// 		experienceTitle = $experienceTitle.text();
-																//
-																// 	}
-																//
-																// 	if ($experienceCompanyName) {
-																//
-																// 		experienceCompanyName = $experienceCompanyName.text();
-																//
-																// 	}
-																//
-																// 	if ($experienceDescription) {
-																//
-																// 		experienceDescription = $experienceDescription
-																// 			.clone() //clone the element
-																// 			.children() //select all the children
-																// 			.remove() //remove all the children
-																// 			.end() //again go back to selected element
-																// 			.text();
-																//
-																// 		function myTrim(x) {
-																// 			return x.replace(/^\s+|\s+$/gm, '');
-																// 		}
-																//
-																// 		experienceDescription = myTrim(experienceDescription);
-																// 		experienceDescription = decodeHtml(experienceDescription);
-																// 		experienceDescription = experienceDescription.replace(/(<br>)+/g, '\n ');
-																//
-																// 		// console.log(experienceDescription);
-																//
-																// 	}
-																//
-																// 	if ($experienceDateRange) {
-																//
-																// 		$experienceDateRange.each(function (index) {
-																//
-																// 			var $experienceDates = $experienceDateRange.find('time');
-																//
-																// 			var experienceDateLength = 0;
-																//
-																// 			$experienceDates.each(function (index) {
-																//
-																// 				experienceDateLength++
-																//
-																// 				// console.log(index + ": " + $(this).text());
-																//
-																// 				var experienceDate = $(this).text();
-																//
-																// 				var experienceDateSplit = experienceDate.split(' ');
-																// 				var experienceMonth = experienceDateSplit[0];
-																// 				var experienceYear = experienceDateSplit[1];
-																//
-																// 				if (experienceMonth === 'Jan') {
-																//
-																// 					experienceMonth = '01';
-																//
-																// 				} else if (experienceMonth === 'Feb') {
-																//
-																// 					experienceMonth = '02';
-																//
-																// 				} else if (experienceMonth === 'Mar') {
-																//
-																// 					experienceMonth = '03';
-																//
-																// 				} else if (experienceMonth === 'Apr') {
-																//
-																// 					experienceMonth = '04';
-																//
-																// 				} else if (experienceMonth === 'May') {
-																//
-																// 					experienceMonth = '05';
-																//
-																// 				} else if (experienceMonth === 'Jun') {
-																//
-																// 					experienceMonth = '06';
-																//
-																// 				} else if (experienceMonth === 'Jul') {
-																//
-																// 					experienceMonth = '07';
-																//
-																// 				} else if (experienceMonth === 'Aug') {
-																//
-																// 					experienceMonth = '08';
-																//
-																// 				} else if (experienceMonth === 'Sep') {
-																//
-																// 					experienceMonth = '09';
-																//
-																// 				} else if (experienceMonth === 'Oct') {
-																//
-																// 					experienceMonth = '10';
-																//
-																// 				} else if (experienceMonth === 'Nov') {
-																//
-																// 					experienceMonth = '11';
-																//
-																// 				} else if (experienceMonth === 'Dec') {
-																//
-																// 					experienceMonth = '12';
-																//
-																// 				} else if (experienceMonth === 'jan.') {
-																//
-																// 					experienceMonth = '01';
-																//
-																// 				} else if (experienceMonth === 'feb.') {
-																//
-																// 					experienceMonth = '02';
-																//
-																// 				} else if (experienceMonth === 'mar.') {
-																//
-																// 					experienceMonth = '03';
-																//
-																// 				} else if (experienceMonth === 'apr.') {
-																//
-																// 					experienceMonth = '04';
-																//
-																// 				} else if (experienceMonth === 'mai.') {
-																//
-																// 					experienceMonth = '05';
-																//
-																// 				} else if (experienceMonth === 'jun.') {
-																//
-																// 					experienceMonth = '06';
-																//
-																// 				} else if (experienceMonth === 'jul.') {
-																//
-																// 					experienceMonth = '07';
-																//
-																// 				} else if (experienceMonth === 'aug.') {
-																//
-																// 					experienceMonth = '08';
-																//
-																// 				} else if (experienceMonth === 'sep.') {
-																//
-																// 					experienceMonth = '09';
-																//
-																// 				} else if (experienceMonth === 'okt.') {
-																//
-																// 					experienceMonth = '10';
-																//
-																// 				} else if (experienceMonth === 'nov.') {
-																//
-																// 					experienceMonth = '11';
-																//
-																// 				} else if (experienceMonth === 'des.') {
-																//
-																// 					experienceMonth = '12';
-																//
-																// 				}
-																//
-																// 				if (index === 0) {
-																//
-																// 					experienceStartDate = '01.' + experienceMonth + '.' + experienceYear;
-																//
-																// 				} else if (index === 1) {
-																//
-																// 					experienceEndDate = '01.' + experienceMonth + '.' + experienceYear;
-																//
-																// 				}
-																//
-																// 			});
-																//
-																// 			// console.log(experienceDateLength);
-																//
-																// 			if (experienceDateLength === 1) {
-																//
-																// 				current = 1;
-																//
-																//
-																// 			} else if (experienceDateLength === 2) {
-																//
-																// 				current = 0;
-																//
-																// 			}
-																//
-																// 		});
-																//
-																// 	}
-																//
-																// 	experience.push({
-																// 		title: experienceTitle,
-																// 		companyName: experienceCompanyName,
-																// 		// location: location,
-																// 		startDate: experienceStartDate,
-																// 		endDate: experienceEndDate,
-																// 		description: experienceDescription,
-																// 		current: current,
-																// 	});
-																//
-																// 	education.push({
-																// 		schoolName: eudcationSchoolName,
-																// 		eudcationType: eudcationType,
-																// 		degree: eudcationDegree,
-																// 		startDate: educationStartDate,
-																// 		endDate: eudcationEndDate,
-																// 		description: eudcationDescription,
-																// 		current: eudcationIsCurrent,
-																// 	})
-																//
-																// 	// console.log(education);
-																//
-																// }, 500);
+																		if ($('.education-section .pv-profile-section__actions-inline button').attr('aria-expanded') === 'false') {
+
+																			console.log('seeMoreExperienceButton clicked ' + setIntervalValue + ' times.');
+
+																			$('.education-section .pv-profile-section__actions-inline button').click();
+
+																		} else if ($('.education-section .pv-profile-section__actions-inline button').attr('aria-expanded') === 'true') {
+
+																			console.log('all educations showing');
+
+																			clearInterval(setIntervalAdd);
+
+																			sectionsScraped++;
+																			console.log('sectionsScraped', sectionsScraped);
+
+																			// fetchExperiences();
+
+																		}
+
+																	} else {
+
+																		console.log('setIntervalValue har reached it\'s limit');
+
+																		clearInterval(setIntervalAdd);
+
+																	}
+
+																}, 300);
+
+																setIntervalAdd;
 
 															}
 
-														});
+															startSetInterval();
 
-														// var schoolName = value.schoolName;
-														// var eudcationType = value.fieldOfStudy;
-														// var degree = value.degree;
-														// var description = value.summary_lb;
-														//
-														// // console.log(eudcationType);
-														//
-														// if (value.hasOwnProperty('summary_lb')) {
-														// 	description = decodeHtml(description);
-														// 	description = description.replace(/(<br>)+/g, '\n');
-														// }
-														//
-														// if (value.hasOwnProperty('startDate') && value.startDate.isMonthDefined === true) {
-														// 	var startDate = '15.' + value.startDate.month + '.' + value.startDate.year;
-														// } else if (value.hasOwnProperty('startDate')) {
-														// 	var startDate = '15.08.' + value.startDate.year;
-														// }
-														//
-														// if (value.hasOwnProperty('endDate') && value.endDate.isMonthDefined === true) {
-														// 	var endDate = '15.' + value.endDate.month + '.' + value.endDate.year;
-														// } else if (value.hasOwnProperty('endDate')) {
-														// 	var endDate = '15.06.' + value.endDate.year;
-														// }
-														//
-														// education.push({
-														// 	schoolName: schoolName,
-														// 	eudcationType: eudcationType,
-														// 	degree: degree,
-														// 	startDate: startDate,
-														// 	endDate: endDate,
-														// 	description: description,
-														// })
+														} else {
+
+															// fetchExperiences();
+
+														}
 
 													} else {
 
-														console.warn('Sorry, no Education to scrape...');
+														console.warn('Sorry, no educations to scrape...');
 
 													}
+
+													// if ($('.pv-profile-section.education-section .pv-profile-section__section-info-item')) {
+													//
+													// 	console.warn('Could not fetch Education data automaticly. Initiating manuall scraping...');
+													//
+													// 	$('.pv-profile-section.education-section').find('.pv-profile-section__section-info-item').each(function (index) {
+													//
+													// 		var $showMoreButton = $(this).find('button.pv-profile-section__see-more-inline');
+													//
+													// 		if ($showMoreButton) {
+													//
+													// 			$showMoreButton.click();
+													//
+													// 			console.log(index);
+													//
+													// 			var $entry = $(this);
+													//
+													// 			// setTimeout(function () {
+													// 			//
+													// 			// 	var eudcationSchoolName;
+													// 			// 	var eudcationType;
+													// 			// 	var eudcationDegree;
+													// 			// 	var educationStartDate;
+													// 			// 	var eudcationEndDate;
+													// 			// 	var eudcationDescription;
+													// 			// 	var eudcationIsCurrent;
+													// 			//
+													// 			// 	var $eudcationSchoolName;
+													// 			// 	var $eudcationType;
+													// 			// 	var $eudcationDegree;
+													// 			// 	var $educationStartDate;
+													// 			// 	var $eudcationEndDate;
+													// 			// 	var $eudcationDescription;
+													// 			// 	var $eudcationIsCurrent;
+													// 			//
+													// 			// 	var $experienceTitle = $entry.find('.pv-entity__summary-info > h3');
+													// 			// 	var $experienceCompanyName = $entry.find('.pv-entity__summary-info > h4 > .pv-entity__secondary-title');
+													// 			// 	var $experienceDescription = $entry.find('.pv-entity__description');
+													// 			// 	var $experienceDateRange = $entry.find('.pv-entity__date-range');
+													// 			//
+													// 			// 	var current = 0;
+													// 			//
+													// 			// 	if ($experienceTitle) {
+													// 			//
+													// 			// 		experienceTitle = $experienceTitle.text();
+													// 			//
+													// 			// 	}
+													// 			//
+													// 			// 	if ($experienceCompanyName) {
+													// 			//
+													// 			// 		experienceCompanyName = $experienceCompanyName.text();
+													// 			//
+													// 			// 	}
+													// 			//
+													// 			// 	if ($experienceDescription) {
+													// 			//
+													// 			// 		experienceDescription = $experienceDescription
+													// 			// 			.clone() //clone the element
+													// 			// 			.children() //select all the children
+													// 			// 			.remove() //remove all the children
+													// 			// 			.end() //again go back to selected element
+													// 			// 			.text();
+													// 			//
+													// 			// 		function myTrim(x) {
+													// 			// 			return x.replace(/^\s+|\s+$/gm, '');
+													// 			// 		}
+													// 			//
+													// 			// 		experienceDescription = myTrim(experienceDescription);
+													// 			// 		experienceDescription = decodeHtml(experienceDescription);
+													// 			// 		experienceDescription = experienceDescription.replace(/(<br>)+/g, '\n ');
+													// 			//
+													// 			// 		// console.log(experienceDescription);
+													// 			//
+													// 			// 	}
+													// 			//
+													// 			// 	if ($experienceDateRange) {
+													// 			//
+													// 			// 		$experienceDateRange.each(function (index) {
+													// 			//
+													// 			// 			var $experienceDates = $experienceDateRange.find('time');
+													// 			//
+													// 			// 			var experienceDateLength = 0;
+													// 			//
+													// 			// 			$experienceDates.each(function (index) {
+													// 			//
+													// 			// 				experienceDateLength++
+													// 			//
+													// 			// 				// console.log(index + ": " + $(this).text());
+													// 			//
+													// 			// 				var experienceDate = $(this).text();
+													// 			//
+													// 			// 				var experienceDateSplit = experienceDate.split(' ');
+													// 			// 				var experienceMonth = experienceDateSplit[0];
+													// 			// 				var experienceYear = experienceDateSplit[1];
+													// 			//
+													// 			// 				if (experienceMonth === 'Jan') {
+													// 			//
+													// 			// 					experienceMonth = '01';
+													// 			//
+													// 			// 				} else if (experienceMonth === 'Feb') {
+													// 			//
+													// 			// 					experienceMonth = '02';
+													// 			//
+													// 			// 				} else if (experienceMonth === 'Mar') {
+													// 			//
+													// 			// 					experienceMonth = '03';
+													// 			//
+													// 			// 				} else if (experienceMonth === 'Apr') {
+													// 			//
+													// 			// 					experienceMonth = '04';
+													// 			//
+													// 			// 				} else if (experienceMonth === 'May') {
+													// 			//
+													// 			// 					experienceMonth = '05';
+													// 			//
+													// 			// 				} else if (experienceMonth === 'Jun') {
+													// 			//
+													// 			// 					experienceMonth = '06';
+													// 			//
+													// 			// 				} else if (experienceMonth === 'Jul') {
+													// 			//
+													// 			// 					experienceMonth = '07';
+													// 			//
+													// 			// 				} else if (experienceMonth === 'Aug') {
+													// 			//
+													// 			// 					experienceMonth = '08';
+													// 			//
+													// 			// 				} else if (experienceMonth === 'Sep') {
+													// 			//
+													// 			// 					experienceMonth = '09';
+													// 			//
+													// 			// 				} else if (experienceMonth === 'Oct') {
+													// 			//
+													// 			// 					experienceMonth = '10';
+													// 			//
+													// 			// 				} else if (experienceMonth === 'Nov') {
+													// 			//
+													// 			// 					experienceMonth = '11';
+													// 			//
+													// 			// 				} else if (experienceMonth === 'Dec') {
+													// 			//
+													// 			// 					experienceMonth = '12';
+													// 			//
+													// 			// 				} else if (experienceMonth === 'jan.') {
+													// 			//
+													// 			// 					experienceMonth = '01';
+													// 			//
+													// 			// 				} else if (experienceMonth === 'feb.') {
+													// 			//
+													// 			// 					experienceMonth = '02';
+													// 			//
+													// 			// 				} else if (experienceMonth === 'mar.') {
+													// 			//
+													// 			// 					experienceMonth = '03';
+													// 			//
+													// 			// 				} else if (experienceMonth === 'apr.') {
+													// 			//
+													// 			// 					experienceMonth = '04';
+													// 			//
+													// 			// 				} else if (experienceMonth === 'mai.') {
+													// 			//
+													// 			// 					experienceMonth = '05';
+													// 			//
+													// 			// 				} else if (experienceMonth === 'jun.') {
+													// 			//
+													// 			// 					experienceMonth = '06';
+													// 			//
+													// 			// 				} else if (experienceMonth === 'jul.') {
+													// 			//
+													// 			// 					experienceMonth = '07';
+													// 			//
+													// 			// 				} else if (experienceMonth === 'aug.') {
+													// 			//
+													// 			// 					experienceMonth = '08';
+													// 			//
+													// 			// 				} else if (experienceMonth === 'sep.') {
+													// 			//
+													// 			// 					experienceMonth = '09';
+													// 			//
+													// 			// 				} else if (experienceMonth === 'okt.') {
+													// 			//
+													// 			// 					experienceMonth = '10';
+													// 			//
+													// 			// 				} else if (experienceMonth === 'nov.') {
+													// 			//
+													// 			// 					experienceMonth = '11';
+													// 			//
+													// 			// 				} else if (experienceMonth === 'des.') {
+													// 			//
+													// 			// 					experienceMonth = '12';
+													// 			//
+													// 			// 				}
+													// 			//
+													// 			// 				if (index === 0) {
+													// 			//
+													// 			// 					experienceStartDate = '01.' + experienceMonth + '.' + experienceYear;
+													// 			//
+													// 			// 				} else if (index === 1) {
+													// 			//
+													// 			// 					experienceEndDate = '01.' + experienceMonth + '.' + experienceYear;
+													// 			//
+													// 			// 				}
+													// 			//
+													// 			// 			});
+													// 			//
+													// 			// 			// console.log(experienceDateLength);
+													// 			//
+													// 			// 			if (experienceDateLength === 1) {
+													// 			//
+													// 			// 				current = 1;
+													// 			//
+													// 			//
+													// 			// 			} else if (experienceDateLength === 2) {
+													// 			//
+													// 			// 				current = 0;
+													// 			//
+													// 			// 			}
+													// 			//
+													// 			// 		});
+													// 			//
+													// 			// 	}
+													// 			//
+													// 			// 	experience.push({
+													// 			// 		title: experienceTitle,
+													// 			// 		companyName: experienceCompanyName,
+													// 			// 		// location: location,
+													// 			// 		startDate: experienceStartDate,
+													// 			// 		endDate: experienceEndDate,
+													// 			// 		description: experienceDescription,
+													// 			// 		current: current,
+													// 			// 	});
+													// 			//
+													// 			// 	education.push({
+													// 			// 		schoolName: eudcationSchoolName,
+													// 			// 		eudcationType: eudcationType,
+													// 			// 		degree: eudcationDegree,
+													// 			// 		startDate: educationStartDate,
+													// 			// 		endDate: eudcationEndDate,
+													// 			// 		description: eudcationDescription,
+													// 			// 		current: eudcationIsCurrent,
+													// 			// 	})
+													// 			//
+													// 			// 	// console.log(education);
+													// 			//
+													// 			// }, 500);
+													//
+													// 		}
+													//
+													// 	});
+													//
+													// 	// var schoolName = value.schoolName;
+													// 	// var eudcationType = value.fieldOfStudy;
+													// 	// var degree = value.degree;
+													// 	// var description = value.summary_lb;
+													// 	//
+													// 	// // console.log(eudcationType);
+													// 	//
+													// 	// if (value.hasOwnProperty('summary_lb')) {
+													// 	// 	description = decodeHtml(description);
+													// 	// 	description = description.replace(/(<br>)+/g, '\n');
+													// 	// }
+													// 	//
+													// 	// if (value.hasOwnProperty('startDate') && value.startDate.isMonthDefined === true) {
+													// 	// 	var startDate = '15.' + value.startDate.month + '.' + value.startDate.year;
+													// 	// } else if (value.hasOwnProperty('startDate')) {
+													// 	// 	var startDate = '15.08.' + value.startDate.year;
+													// 	// }
+													// 	//
+													// 	// if (value.hasOwnProperty('endDate') && value.endDate.isMonthDefined === true) {
+													// 	// 	var endDate = '15.' + value.endDate.month + '.' + value.endDate.year;
+													// 	// } else if (value.hasOwnProperty('endDate')) {
+													// 	// 	var endDate = '15.06.' + value.endDate.year;
+													// 	// }
+													// 	//
+													// 	// education.push({
+													// 	// 	schoolName: schoolName,
+													// 	// 	eudcationType: eudcationType,
+													// 	// 	degree: degree,
+													// 	// 	startDate: startDate,
+													// 	// 	endDate: endDate,
+													// 	// 	description: description,
+													// 	// })
+													//
+													// } else {
+													//
+													// 	console.warn('Sorry, no Education to scrape...');
+													//
+													// }
 
 												}
 
 												RAMP.scrapeSkills = function () {
 
 													if ('.pv-featured-skills-section') {
+
+														sectionsToBeScraped++;
+														console.log('sectionsToBeScraped is: ', sectionsToBeScraped);
 
 														console.warn('Could not fetch Skills data automaticly. Initiating manuall scraping...');
 
@@ -1914,6 +1960,9 @@ console.log('RAMP loaded');
 
 															});
 
+															sectionsScraped++;
+															console.log('sectionsScraped', sectionsScraped);
+
 														}, 500);
 
 													}
@@ -1929,6 +1978,9 @@ console.log('RAMP loaded');
 													// });
 
 													if ('.pv-top-card-section__summary') {
+
+														sectionsToBeScraped++;
+														console.log('sectionsToBeScraped is: ', sectionsToBeScraped);
 
 														console.warn('Could not fetch Summary data automaticly. Initiating manuall scraping...');
 
@@ -1956,6 +2008,9 @@ console.log('RAMP loaded');
 
 															// console.log(summary);
 
+															sectionsScraped++;
+															console.log('sectionsScraped', sectionsScraped);
+
 														}, 500);
 
 													}
@@ -1967,7 +2022,7 @@ console.log('RAMP loaded');
 													imageUrl = $('.pv-top-card-section__image').attr('src');
 													profileImageExtension = 'jpg';
 
-													console.log(imageUrl);
+													// console.log(imageUrl);
 												}
 
 												RAMP.scrapeContactInfo = function () {
@@ -1975,6 +2030,9 @@ console.log('RAMP loaded');
 													$('button[data-control-name="contact_see_more"]').click();
 
 													if ($('.pv-contact-info__contact-type.ci-vanity-url')) {
+
+														sectionsToBeScraped++;
+														console.log('sectionsToBeScraped is: ', sectionsToBeScraped);
 
 														var linkedinUrl = $('.pv-contact-info__contact-type.ci-vanity-url .pv-contact-info__ci-container .pv-contact-info__contact-item').text();
 
@@ -1992,27 +2050,39 @@ console.log('RAMP loaded');
 
 														// console.log(linkedin);
 
+														sectionsScraped++;
+														console.log('sectionsScraped', sectionsScraped);
+
 													}
 
 												}
 
 												swal.queue([{
 													type: 'info',
-													title: 'Loading!',
-													// confirmButtonText: 'Show my public IP',
-													text: 'Fetching candidate data for ' + candidateFullName + '.',
+													title: 'WTF!',
+													allowOutsideClick: false,
+													allowEscapeKey: false,
+													html: 'Fetching <strong><span id="js-rotating">Contact and Personal Info, Experience, Education, Skills, Certifications, Languages</span></strong> for ' + candidateFullName + '.',
+													// html: 'Fetching <strong><span id="js-rotating">information</span></strong> about ' + candidateFullName + '.',
 													showConfirmButton: false,
 													showLoaderOnConfirm: true,
 													preConfirm: function () {
+
 														return new Promise(function (resolve) {
+
+															$("#js-rotating").Morphext({
+																animation: "bounceIn",
+																separator: ",",
+																speed: 700
+															});
 
 															function startSetInterval() {
 
 																var setIntervalAdd = setInterval(function () {
 
-																	if (sectionsScraped === sectionsToBeScraped) {
+																	if (sectionsToBeScraped == sectionsScraped) {
 
-																		console.log('all sections scraped for candidate info');
+																		console.info(sectionsScraped + ' out of ' + sectionsToBeScraped + ' sections scraped for info');
 
 																		clearInterval(setIntervalAdd);
 
@@ -2021,7 +2091,12 @@ console.log('RAMP loaded');
 																		setTimeout(function () {
 
 																			resolve();
+																			$('#send_to_rm').prop('disabled', false);
 																			$('body').scrollTop(0);
+
+																			// swal.clickConfirm();
+
+																			console.log('success!!!');
 
 																		}, 2000);
 
@@ -3437,7 +3512,7 @@ console.log('RAMP loaded');
 															// console.log(profilePicture.extension);
 															// console.log(profilePicture.base64);
 
-															$('#send_to_rm').prop('disabled', false);
+															// $('#send_to_rm').prop('disabled', false);
 
 															// console.log('candidateData', candidateData);
 
@@ -3936,7 +4011,7 @@ console.log('RAMP loaded');
 																		}
 																	};
 
-																	$('#send_to_rm').prop('disabled', false);
+																	// $('#send_to_rm').prop('disabled', false);
 
 																	console.log('candidateData', candidateData);
 

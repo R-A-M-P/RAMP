@@ -73,9 +73,9 @@
 
 body {
   &.swal2-in {
+    #ramp_notification_bar,
     .application-outlet,
-    .extended-nav,
-    #ramp_notification_bar {
+    .extended-nav {
       -webkit-filter: blur(2px);
       filter: blur(2px);
     }
@@ -164,6 +164,16 @@ body {
 
     .swal2-styled:not(.swal2-loading) {
       border-radius: 2px;
+    }
+
+    button {
+      /*&.swal2-loading {
+        border-left-color: #3FC3EE !important;
+        border-right-color: #3FC3EE !important;
+        margin-top: -237px;
+        width: 88px;
+        height: 88px;
+      }*/
     }
   }
 }
