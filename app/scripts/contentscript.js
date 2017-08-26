@@ -686,6 +686,12 @@ console.log( 'RAMP loaded' );
 											};
 											img.src = url;
 										}
+										// $( '.pv-profile-section__see-more-inline.link' ).each( function ( index ) {
+										// 	console.log( 'buttons found', index );
+										// 	var $seeMoreButton = $( this );
+										// 	console.log($seeMoreButton);
+										// 	$seeMoreButton.click();
+										// } );
 										RAMP.scrapeExperiences = function () {
 											function fetchExperiences() {
 												if ( 'li.pv-position-entity' ) {
@@ -741,7 +747,7 @@ console.log( 'RAMP loaded' );
 															}
 															if ( $experienceDateRange ) {
 																var experienceDateRange = $experienceDateRange.text();
-																console.log( experienceDateRange );
+																// console.log( experienceDateRange );
 																$experienceDateRange.each( function ( index ) {
 																	if ( experienceDateRange.indexOf( ' – ' ) > -1 ) {
 																		var experienceDatesSplit = experienceDateRange.split( ' – ' );
@@ -750,22 +756,22 @@ console.log( 'RAMP loaded' );
 																	}
 																	var experienceDateStart = experienceDatesSplit[ 0 ];
 																	var experienceDateEnd = experienceDatesSplit[ 1 ];
-																	console.log( 'experienceDateStart', experienceDateStart );
-																	console.log( 'experienceDateEnd', experienceDateEnd );
+																	// console.log( 'experienceDateStart', experienceDateStart );
+																	// console.log( 'experienceDateEnd', experienceDateEnd );
 																	var experienceDates = [];
 																	experienceDates.push( experienceDateStart );
 																	experienceDates.push( experienceDateEnd );
-																	console.log( experienceDates );
+																	// console.log( experienceDates );
 																	// var experienceDateLength = 0;
 																	var current = 0;
 																	$.each( experienceDates, function ( index, value ) {
 																		if ( $.isNumeric( value ) && value.length === 4 ) {
-																			console.log( 'NUMBER' );
-																			console.log( 'index, value', index, value );
+																			// console.log( 'NUMBER' );
+																			// console.log( 'index, value', index, value );
 																			var experienceYear = value;
 																		} else {
-																			console.log( 'NOT NUMBER' );
-																			console.log( 'index, value', index, value );
+																			// console.log( 'NOT NUMBER' );
+																			// console.log( 'index, value', index, value );
 																			var experienceDateSplit = value.split( ' ' );
 																			var experienceMonth = experienceDateSplit[ 0 ];
 																			var experienceYear = experienceDateSplit[ 1 ];
@@ -827,10 +833,10 @@ console.log( 'RAMP loaded' );
 																			}
 																			if ( index === 0 ) {
 																				experienceStartDate = '01.' + experienceMonth + '.' + experienceYear;
-																				console.log( 'experienceStartDate', experienceStartDate );
+																				// console.log( 'experienceStartDate', experienceStartDate );
 																			} else if ( index === 1 ) {
 																				experienceEndDate = '01.' + experienceMonth + '.' + experienceYear;
-																				console.log( 'experienceEndDate', experienceEndDate );
+																				// console.log( 'experienceEndDate', experienceEndDate );
 																			}
 																		}
 																		if ( experienceMonth == 'Present' || value == 'nå' ) {
@@ -875,250 +881,184 @@ console.log( 'RAMP loaded' );
 														}, 500 );
 													} );
 													// console.log(experience);
+													console.log( 'Experience section scraped.' );
 												} else {
 													console.warn( 'Sorry, no Experience to scrape...' );
 												}
 											}
-											if ( 'button.pv-profile-section__see-more-inline' ) {
-												var $seeMorePositionsButton = $( 'button.pv-profile-section__see-more-inline' );
-												console.log( 'click seeMorePositionsButton' );
-												$seeMorePositionsButton.click();
-												setTimeout( function () {
-													fetchExperiences();
-												}, 500 );
+											if ( $( '.experience-section' ).find( '.pv-profile-section__actions-inline' ).find( 'button.link' ).length ) {
+												var setIntervalValue = 0;
+
+												function startSetInterval() {
+													var setIntervalAdd = setInterval( function () {
+														if ( setIntervalValue < 25 ) {
+															setIntervalValue++;
+															if ( $( '.experience-section .pv-profile-section__actions-inline button' ).attr( 'aria-expanded' ) === 'false' ) {
+																console.log( 'seeMoreEeperienceButton clicked ' + setIntervalValue + ' times.' );
+																$( '.experience-section .pv-profile-section__actions-inline button' ).click();
+															} else if ( $( '.experience-section .pv-profile-section__actions-inline button' ).attr( 'aria-expanded' ) === 'true' ) {
+																console.log( 'all experience showing' );
+																clearInterval( setIntervalAdd );
+																fetchExperiences();
+															}
+														} else {
+															console.log( 'Experience setIntervalValue har reached it\'s limit' );
+															clearInterval( setIntervalAdd );
+														}
+													}, 200 );
+													setIntervalAdd;
+												}
+												startSetInterval();
 											} else {
-												fetchExperiences()
+												fetchExperiences();
 											}
 										}
 										RAMP.scrapeEducations = function () {
-											if ( 'li.pv-education-entity' ) {
-												console.warn( 'Could not fetch Education data automaticly. Initiating manuall scraping...' );
-												// 	$('li.position-entity').each(function (index) {
-												//
-												// 		var $entry = $(this);
-												//
-												// 		// $(this).find('button.pv-profile-section__show-more-detail').click();
-												//
-												// 		var $showMoreButton = $(this).find('button.pv-profile-section__show-more-detail');
-												//
-												// 		if ($showMoreButton) {
-												//
-												// 			$showMoreButton.click();
-												//
-												// 			setTimeout(function () {
-												//
-												// 				var experienceTitle;
-												// 				var experienceCompanyName;
-												// 				var experienceDescription;
-												// 				var experienceStartDate;
-												// 				var experienceEndDate;
-												//
-												// 				var $experienceTitle = $entry.find('.pv-entity__summary-info > h3');
-												// 				var $experienceCompanyName = $entry.find('.pv-entity__summary-info > h4 > .pv-entity__secondary-title');
-												// 				var $experienceDescription = $entry.find('.pv-entity__description');
-												// 				var $experienceDateRange = $entry.find('.pv-entity__date-range');
-												//
-												// 				var current = 0;
-												//
-												// 				if ($experienceTitle) {
-												//
-												// 					experienceTitle = $experienceTitle.text();
-												//
-												// 				}
-												//
-												// 				if ($experienceCompanyName) {
-												//
-												// 					experienceCompanyName = $experienceCompanyName.text();
-												//
-												// 				}
-												//
-												// 				if ($experienceDescription) {
-												//
-												// 					experienceDescription = $experienceDescription
-												// 						.clone() //clone the element
-												// 						.children() //select all the children
-												// 						.remove() //remove all the children
-												// 						.end() //again go back to selected element
-												// 						.text();
-												//
-												// 					function myTrim(x) {
-												// 						return x.replace(/^\s+|\s+$/gm, '');
-												// 					}
-												//
-												// 					experienceDescription = myTrim(experienceDescription);
-												// 					experienceDescription = decodeHtml(experienceDescription);
-												// 					experienceDescription = experienceDescription.replace(/(<br>)+/g, '\n ');
-												//
-												// 					// console.log(experienceDescription);
-												//
-												// 				}
-												//
-												// 				if ($experienceDateRange) {
-												//
-												// 					$experienceDateRange.each(function (index) {
-												//
-												// 						var $experienceDates = $experienceDateRange.find('time');
-												//
-												// 						var experienceDateLength = 0;
-												//
-												// 						$experienceDates.each(function (index) {
-												//
-												// 							experienceDateLength++
-												//
-												// 							// console.log(index + ": " + $(this).text());
-												//
-												// 							var experienceDate = $(this).text();
-												//
-												// 							var experienceDateSplit = experienceDate.split(' ');
-												// 							var experienceMonth = experienceDateSplit[0];
-												// 							var experienceYear = experienceDateSplit[1];
-												//
-												// 							if (experienceMonth === 'Jan') {
-												//
-												// 								experienceMonth = '01';
-												//
-												// 							} else if (experienceMonth === 'Feb') {
-												//
-												// 								experienceMonth = '02';
-												//
-												// 							} else if (experienceMonth === 'Mar') {
-												//
-												// 								experienceMonth = '03';
-												//
-												// 							} else if (experienceMonth === 'Apr') {
-												//
-												// 								experienceMonth = '04';
-												//
-												// 							} else if (experienceMonth === 'May') {
-												//
-												// 								experienceMonth = '05';
-												//
-												// 							} else if (experienceMonth === 'Jun') {
-												//
-												// 								experienceMonth = '06';
-												//
-												// 							} else if (experienceMonth === 'Jul') {
-												//
-												// 								experienceMonth = '07';
-												//
-												// 							} else if (experienceMonth === 'Aug') {
-												//
-												// 								experienceMonth = '08';
-												//
-												// 							} else if (experienceMonth === 'Sep') {
-												//
-												// 								experienceMonth = '09';
-												//
-												// 							} else if (experienceMonth === 'Oct') {
-												//
-												// 								experienceMonth = '10';
-												//
-												// 							} else if (experienceMonth === 'Nov') {
-												//
-												// 								experienceMonth = '11';
-												//
-												// 							} else if (experienceMonth === 'Dec') {
-												//
-												// 								experienceMonth = '12';
-												//
-												// 							} else if (experienceMonth === 'jan.') {
-												//
-												// 								experienceMonth = '01';
-												//
-												// 							} else if (experienceMonth === 'feb.') {
-												//
-												// 								experienceMonth = '02';
-												//
-												// 							} else if (experienceMonth === 'mar.') {
-												//
-												// 								experienceMonth = '03';
-												//
-												// 							} else if (experienceMonth === 'apr.') {
-												//
-												// 								experienceMonth = '04';
-												//
-												// 							} else if (experienceMonth === 'mai.') {
-												//
-												// 								experienceMonth = '05';
-												//
-												// 							} else if (experienceMonth === 'jun.') {
-												//
-												// 								experienceMonth = '06';
-												//
-												// 							} else if (experienceMonth === 'jul.') {
-												//
-												// 								experienceMonth = '07';
-												//
-												// 							} else if (experienceMonth === 'aug.') {
-												//
-												// 								experienceMonth = '08';
-												//
-												// 							} else if (experienceMonth === 'sep.') {
-												//
-												// 								experienceMonth = '09';
-												//
-												// 							} else if (experienceMonth === 'okt.') {
-												//
-												// 								experienceMonth = '10';
-												//
-												// 							} else if (experienceMonth === 'nov.') {
-												//
-												// 								experienceMonth = '11';
-												//
-												// 							} else if (experienceMonth === 'des.') {
-												//
-												// 								experienceMonth = '12';
-												//
-												// 							}
-												//
-												// 							if (index === 0) {
-												//
-												// 								experienceStartDate = '01.' + experienceMonth + '.' + experienceYear;
-												//
-												// 							} else if (index === 1) {
-												//
-												// 								experienceEndDate = '01.' + experienceMonth + '.' + experienceYear;
-												//
-												// 							}
-												//
-												// 						});
-												//
-												// 						// console.log(experienceDateLength);
-												//
-												// 						if (experienceDateLength === 1) {
-												//
-												// 							current = 1;
-												//
-												//
-												// 						} else if (experienceDateLength === 2) {
-												//
-												// 							current = 0;
-												//
-												// 						}
-												//
-												// 					});
-												//
-												// 				}
-												//
-												// 				experience.push({
-												// 					title: experienceTitle,
-												// 					companyName: experienceCompanyName,
-												// 					// location: location,
-												// 					startDate: experienceStartDate,
-												// 					endDate: experienceEndDate,
-												// 					description: experienceDescription,
-												// 					current: current,
-												// 				});
-												//
-												// 				// console.log(experience);
-												//
-												// 			}, 500);
-												//
-												// 		}
-												//
-												// 	});
+											function fetchEducation() {
+												if ( '.education-section > .pv-education-entity' ) {
+													console.warn( 'Could not fetch Education data automaticly. Initiating manuall scraping...' );
+													$( '.education-section li' ).each( function ( index ) {
+														var $entry = $( this, '.pv-education-entity' );
+														// $(this).find('button.pv-profile-section__show-more-detail').click();
+														var educationSchoolName;
+														var educationType;
+														var educationDegree;
+														var educationLocation
+														var educationStartDate;
+														var educationEndDate;
+														var educationDescription;
+														var $showMoreButton = $( this ).find( 'button.pv-profile-section__show-more-detail' );
+
+														function grabEducationDescription() {
+															setTimeout( function () {
+																var $educationDescription = $entry.find( '.pv-entity__description' );
+																if ( $educationDescription ) {
+																	educationDescription = $educationDescription.clone() //clone the element
+																		.children() //select all the children
+																		.remove() //remove all the children
+																		.end() //again go back to selected element
+																		.text();
+
+																	function myTrim( x ) {
+																		return x.replace( /^\s+|\s+$/gm, '' );
+																	}
+																	educationDescription = myTrim( educationDescription );
+																	educationDescription = decodeHtml( educationDescription );
+																	educationDescription = educationDescription.replace( /(<br>)+/g, '\n ' );
+																	// console.log( 'educationDescription', educationDescription );
+																	if ( educationDescription.trim() ) {
+																		// console.log( educationDescription );
+																	}
+																} else {
+																	console.log( 'No Education description...' );
+																}
+															}, 400 );
+														}
+														if ( $showMoreButton ) {
+															$showMoreButton.click();
+															grabEducationDescription();
+														} else {
+															grabEducationDescription();
+														}
+														setTimeout( function () {
+															var $educationSchoolName = $entry.find( '.pv-entity__school-name' );
+															var $educationType = $entry.find( '.pv-entity__degree-name > span:not(.visually-hidden)' );
+															var $educationDegree = $entry.find( '.pv-entity__fos > span:not(.visually-hidden)' );
+															var $educationLocation;
+															var $educationDateRange = $entry.find( '.pv-entity__dates > span:not(.visually-hidden)' );
+															if ( $educationSchoolName ) {
+																educationSchoolName = $educationSchoolName.text();
+																// console.log( 'educationSchoolName', educationSchoolName );
+															}
+															if ( $educationType ) {
+																educationType = $educationType.text();
+																// console.log( 'educationType', educationType );
+															}
+															if ( $educationDegree ) {
+																educationDegree = $educationDegree.text();
+																// console.log( 'educationDegree', educationDegree );
+															}
+															if ( $educationLocation ) {
+																//
+															}
+															if ( $educationDateRange ) {
+																var educationDateRange = $.trim( $educationDateRange.text() );
+																// console.log( experienceDateRange );
+																$educationDateRange.each( function ( index ) {
+																	if ( educationDateRange.indexOf( ' – ' ) > -1 ) {
+																		var educationDatesSplit = educationDateRange.split( ' – ' );
+																	} else if ( educationDateRange.indexOf( ' - ' ) > -1 ) {
+																		var educationDatesSplit = educationDateRange.split( ' - ' );
+																	}
+																	var educationDateStart = '15.08.' + educationDatesSplit[ 0 ];
+																	var educationDateEnd = '15.06.' + educationDatesSplit[ 1 ];
+																	// console.log( 'educationDateStart', educationDateStart );
+																	// console.log( 'educationDateEnd', educationDateEnd );
+																	var educationDates = [];
+																	educationDates.push( educationDateStart );
+																	educationDates.push( educationDateEnd );
+																	// console.log( 'educationDates', educationDates );
+																	// var experienceDateLength = 0;
+																	var current = 0;
+																	// $.each( educationDates, function ( index, value ) {
+																	// 	if ( $.isNumeric( value ) && value.length === 4 ) {
+																	// 		// console.log( 'NUMBER' );
+																	// 		// console.log( 'index, value', index, value );
+																	// 		var educationYear = value;
+																	// 	} else {
+																	// 		// console.log( 'NOT NUMBER' );
+																	// 		// console.log( 'index, value', index, value );
+																	// 		var educationDateSplit = value.split( ' ' );
+																	// 		var educationMonth = educationDateSplit[ 0 ];
+																	// 		var educationYear = educationDateSplit[ 1 ];
+																	// 	}
+																	//
+																	// } );
+																	education.push( {
+																		schoolName: educationSchoolName,
+																		educationType: educationType,
+																		degree: educationDegree,
+																		location: educationLocation,
+																		startDate: educationDateStart,
+																		endDate: educationDateEnd,
+																		description: educationDescription,
+																	} );
+																	// console.log( 'education', education );
+																} );
+															}
+														}, 500 );
+													} );
+													// console.log(experience);
+													console.log( 'Education section scraped.' );
+												} else {
+													console.warn( 'Sorry, no Education to scrape...' );
+												}
+											}
+											if ( $( '.education-section' ).find( '.pv-profile-section__actions-inline' ).find( 'button.link' ).length ) {
+												var setIntervalValue = 0;
+
+												function startSetInterval() {
+													var setIntervalAdd = setInterval( function () {
+														if ( setIntervalValue < 25 ) {
+															setIntervalValue++;
+															if ( $( '.education-section .pv-profile-section__actions-inline button' ).attr( 'aria-expanded' ) === 'false' ) {
+																console.log( 'seeMoreEducationButton clicked ' + setIntervalValue + ' times.' );
+																$( '.education-section .pv-profile-section__actions-inline button' ).click();
+															} else if ( $( '.education-section .pv-profile-section__actions-inline button' ).attr( 'aria-expanded' ) === 'true' ) {
+																console.log( 'all education showing' );
+																clearInterval( setIntervalAdd );
+																fetchEducation();
+															}
+														} else {
+															console.log( 'Education setIntervalValue har reached it\'s limit' );
+															clearInterval( setIntervalAdd );
+														}
+													}, 200 );
+													setIntervalAdd;
+												}
+												startSetInterval();
 											} else {
-												console.warn( 'Sorry, no Education to scrape...' );
+												fetchEducation();
 											}
 										}
 										RAMP.scrapeSkills = function () {
@@ -1146,9 +1086,9 @@ console.log( 'RAMP loaded' );
 											// });
 											if ( '.pv-top-card-section__summary' ) {
 												console.warn( 'Could not fetch Summary data automaticly. Initiating manuall scraping...' );
-												$( '.pv-top-card-section__summary' ).find( 'button.truncate-multiline--button' ).click();
+												$( '.pv-top-card-section__summary' ).find( 'button.pv-top-card-section__summary-toggle-button' ).click();
 												setTimeout( function () {
-													var summaryText = $( 'p.pv-top-card-section__summary' ).clone() //clone the element
+													var summaryText = $( '.pv-top-card-section__summary > .pv-top-card-section__summary-text' ).clone() //clone the element
 														.children() //select all the children
 														.remove() //remove all the children
 														.end() //again go back to selected element
@@ -1161,7 +1101,8 @@ console.log( 'RAMP loaded' );
 													summaryText = decodeHtml( summaryText );
 													summaryText = summaryText.replace( /(<br>)+/g, '\n' );
 													summary.push( summaryText );
-													// console.log(summary);
+													// console.log( 'summaryText', summaryText );
+													// console.log( 'summary', summary );
 												}, 500 );
 											}
 										}
@@ -1172,16 +1113,30 @@ console.log( 'RAMP loaded' );
 										}
 										RAMP.scrapeContactInfo = function () {
 											$( 'button[data-control-name="contact_see_more"]' ).click();
-											if ( $( '.pv-contact-info__contact-type.ci-vanity-url' ) ) {
-												var linkedinUrl = $( '.pv-contact-info__contact-type.ci-vanity-url .pv-contact-info__ci-container .pv-contact-info__contact-item' ).text();
-												// console.log(linkedinUrl);
-												linkedinUrl = linkedinUrl.replace( /(\r\n|\n|\r)/gm, "" );
-												// console.log(linkedinUrl);
-												linkedinUrl = $.trim( linkedinUrl );
-												// console.log(linkedinUrl);
-												linkedin = 'https://' + linkedinUrl;
-												// console.log(linkedin);
+											if ( $( '.pv-contact-info__contact-type' ).hasClass( 'ci-vanity-url' ) ) {
+												linkedin = $( '.pv-contact-info__contact-type.ci-vanity-url' ).find( '.pv-contact-info__ci-container' ).find( 'a' ).attr( 'href' );
+												console.log( linkedin );
 											}
+											if ( $( '.pv-contact-info__contact-type' ).hasClass( 'ci-email' ) ) {
+												email = $( '.pv-contact-info__contact-type.ci-email' ).find( '.pv-contact-info__ci-container' ).find( 'a' ).attr( 'href' );
+												email = email.split( 'mailto:' );
+												email = email[ 1 ];
+												console.log( email );
+											}
+											if ( $( '.pv-contact-info__contact-type' ).hasClass( 'ci-twitter' ) ) {
+												twitter = $( '.pv-contact-info__contact-type.ci-twitter' ).find( '.pv-contact-info__ci-container' ).find( 'a' ).attr( 'href' );
+												console.log( twitter );
+											}
+											if ( $( '.pv-contact-info__contact-type' ).hasClass( 'ci-phone' ) ) {
+												mobilePhone = $( '.pv-contact-info__contact-type.ci-phone' ).find( '.pv-contact-info__ci-container' ).find( 'a' ).attr( 'href' );
+												mobilePhone = mobilePhone.split( 'tel:' );
+												mobilePhone = mobilePhone[ 1 ];
+												console.log( mobilePhone );
+											}
+											// if ( $( '.pv-contact-info__contact-type' ).hasClass( 'ci-web' ) ) {
+											// 	web = $( '.pv-contact-info__contact-type.ci-web' ).find( '.pv-contact-info__ci-container' ).find( 'a' ).attr( 'href' );
+											// 	console.log( web );
+											// }
 										}
 										// console.log('https:' + linkedInProfileDataUrl);
 										//
@@ -2831,6 +2786,37 @@ console.log( 'RAMP loaded' );
 														}
 													}
 													checkIfTagExistsSomeWhere();
+													candidateData = {
+														'key': storrageResult.apiKey,
+														'scope': 'candidate',
+														'operation': 'insert',
+														'data': {
+															'corporationId': storrageResult.corporation_id,
+															'connectDepartment': [ storrageResult.department_id ],
+															'connectUser': [ storrageResult.intercom_employeee_id ],
+															'firstName': candidateFirstName,
+															'lastName': candidateLastName,
+															'title': inMemberObject.occupation,
+															'mobilePhone': mobilePhone,
+															'email': email,
+															'twitter': twitter,
+															'facebook': facebook,
+															'web': web,
+															'dob': dob,
+															'description': summary[ 0 ],
+															'linkedin': linkedin,
+															'experience': experience,
+															'education': education,
+															'skills': skills,
+															'profilePicture': profilePicture,
+															'certifications': certifications,
+															'languages': languages,
+															'notes': 'Imported by RAMP.',
+															// 'internal': 0,
+															'tags': [ linkedInTagId ]
+														}
+													};
+													console.info( candidateData );
 													$( '#send_to_rm' ).on( 'click', function ( e ) {
 														candidateData = {
 															'key': storrageResult.apiKey,
