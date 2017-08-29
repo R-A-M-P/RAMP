@@ -323,6 +323,31 @@ console.log( 'RAMP loaded' );
 		// RAMP.inHotjar();
 		// debugger;
 	}
+	RAMP.loadHelpCrunch = function () {
+		console.info( 'helpCrunch loaded' );
+		( function ( w, d ) {
+			w.HelpCrunch = function () { w.HelpCrunch.q.push( arguments ) };
+			w.HelpCrunch.q = [];
+
+			function r() {
+				var s = document.createElement( 'script' );
+				s.async = 1;
+				s.type = 'text/javascript';
+				s.src = 'https://widget.helpcrunch.com/';
+				( d.body || d.head ).appendChild( s );
+			}
+			if ( w.attachEvent ) { w.attachEvent( 'onload', r ) } else { w.addEventListener( 'load', r, false ) }
+		} )( window, document )
+	}
+	RAMP.loadHelpCrunch();
+	RAMP.initHelpChrunch = function () {
+		HelpCrunch( 'init', 'ramp', {
+			applicationId: 1749,
+			applicationSecret: 'A4wXKoKrkapufLrurc/pE5qRn4qBbTpVYHSyrq0/7nxj66bvQEDAKj2pMdMlGRPfNzOCJMTGpHN75x7xSFeGSg=='
+		} );
+		HelpCrunch( 'showChatWidget' );
+	}
+	RAMP.initHelpChrunch();
 	var preferedLanguage = localStorage.getItem( 'preferedLanguage' );
 	console.log( 'Your prefered language is ' + preferedLanguage );
 	RAMP.whatThatLanguage = function () {

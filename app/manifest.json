@@ -18,8 +18,10 @@
     "matches": [
       "https://*.linkedin.com/in/*",
       "https://*.linkedin.com/profile/*",
-      "https://*.intercomcdn.com/*"
+      "https://*.intercomcdn.com/*",
+      "*://*.helpcrunch.com/*"
     ],
+    "content_security_policy": "script-src 'self' 'unsafe-eval'; object-src 'self'",
     "css": [
       "styles/contentscript.css",
       "bower_components/sweetalert2/dist/sweetalert2.min.css"
@@ -48,6 +50,7 @@
       "*://*.linkedin.com/*",
       "*://*.licdn.com/*",
       "*://*.intercomcdn.com/*",
+      "*://*.helpcrunch.com/*",
       "http://localhost:9007/*"
 
     ]
