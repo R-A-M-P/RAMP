@@ -1,8 +1,8 @@
 // Enable chromereload by uncommenting this line:
 import 'chromereload/devonly';
-// if (ENV === 'development') {
-// 	console.log('We are in development mode!');
-// }
+if (ENV === 'development') {
+	console.log('We are in development mode!');
+}
 // chrome.runtime.onInstalled.addListener(function(details) {
 //   console.log('previousVersion', details.previousVersion);
 //

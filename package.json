@@ -1,7 +1,7 @@
 {
   "name": "RAMP Shuttle Beta",
   "private": true,
-  "version": "1.29.10.56-beta",
+  "version": "1.29.10.57-beta",
   "description": "Easily export candidate details from LinkedIn to Recruitment Manager.",
   "scripts": {
     "start": "npm run dev:chrome",

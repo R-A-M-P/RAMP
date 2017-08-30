@@ -188,11 +188,22 @@ body {
     #btnSetupExtension {}
   }
 }
+
 .ember-view {
-  .application-outlet  {
-    .msg-overlay-container{
-      left: 8px !important;
-      right: inherit;
+  .application-outlet {
+    .msg-overlay-container {
+      /*left: 8px !important;
+      right: inherit;*/
+    }
+  }
+}
+
+.pv-top-card-section__ramp {
+  p {
+    border-top: 1px #cdcfd2 solid;
+
+    .primary:nth-child(2) {
+      margin-left: 10px;
     }
   }
 }

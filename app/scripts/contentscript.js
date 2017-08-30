@@ -584,21 +584,22 @@ console.log( 'RAMP loaded' );
 								inMemberObject = inMemberObject[ 0 ];
 								if ( inMemberObject === undefined ) {
 									console.error( 'Error fetching "inMemberObject"...' );
-									swal( {
-										title: 'Working...',
-										text: 'Communicating with LinkedIn',
-										type: 'info',
-										allowOutsideClick: false,
-										allowEscapeKey: false,
-										confirmButtonText: 'Speed Up',
-										timer: 5000
-									} ).then( function () {
-										console.warn( 'Initializing page reloading...' );
-										location.reload();
-									}, function () {
-										console.warn( 'Initializing page reloading...' );
-										location.reload();
-									} ).catch( swal.noop )
+									// swal( {
+									// 	title: 'Working...',
+									// 	text: 'Communicating with LinkedIn',
+									// 	type: 'info',
+									// 	allowOutsideClick: false,
+									// 	allowEscapeKey: false,
+									// 	confirmButtonText: 'Speed Up',
+									// 	timer: 3000
+									// } ).then( function () {
+									// 	console.warn( 'Initializing page reloading...' );
+									// 	location.reload();
+									// }, function () {
+									// 	console.warn( 'Initializing page reloading...' );
+									// 	location.reload();
+									// } ).catch( swal.noop )
+									location.reload();
 								} else {
 									console.log( inMemberObject );
 									var candidateFirstName = inMemberObject.firstName;
@@ -613,7 +614,8 @@ console.log( 'RAMP loaded' );
 										console.log( 'success' );
 									} ).done( function ( callback ) {
 										console.log( callback );
-										console.log( callback.btnSendToRM.message );
+										console.log( callback.btnSaveCandidate.message );
+										console.log( callback.btnSaveContact.message );
 
 										function addRampBanner() {
 											var rampAdBannerH1 = '<h1>automagically</h1>';
@@ -634,11 +636,15 @@ console.log( 'RAMP loaded' );
 										} else if ( window.location.href === 'https://www.linkedin.com/in/finnmartinsen/' ) {
 											addRampBanner();
 										}
-										if ( $( '.pv-top-card-section__body .pv-top-card-section__overflow-wrapper' ).length ) {
-											$( '<button id="send_to_rm" class="connect primary top-card-action ember-view ramp" disabled><span class="default-text">' + callback.btnSendToRM.message + '</span></button>' ).insertBefore( '.pv-top-card-section__body .pv-top-card-section__overflow-wrapper' );
-										} else if ( $( '.pv-top-card-section__body .pv-top-card-section__actions' ).length ) {
-											$( '<button id="send_to_rm" class="connect primary top-card-action ember-view ramp" disabled><span class="default-text">' + callback.btnSendToRM.message + '</span></button>' ).appendTo( '.pv-top-card-section__body .pv-top-card-section__actions' );
-										}
+										// $( '<div class="pv-top-card-section__ramp mt4 ph2"><p class="text-align-center mt5 pt5"></p></div>' ).insertAfter( '.pv-top-card-section__body .pv-top-card-section__actions' );
+										$( '.pv-top-card-section__body .pv-top-card-section__actions' ).append( '<div class="pv-top-card-section__ramp mt4 ph2"><p class="text-align-center mt5 pt5"></p></div>' )
+										$( '.pv-top-card-section__ramp p' ).append( '<button id="send_contact_to_rm" class="connect secondary top-card-action ember-view ramp contact" disabled><span class="default-text">' + callback.btnSaveContact.message + '</span></button>' );
+										$( '.pv-top-card-section__ramp p' ).append( '<button id="send_to_rm" class="connect primary top-card-action ember-view ramp candidate" disabled><span class="default-text">' + callback.btnSaveCandidate.message + '</span></button>' );
+										// if ( $( '.pv-top-card-section__body .pv-top-card-section__overflow-wrapper' ).length ) {
+										// 	$( '<button id="send_to_rm" class="connect primary top-card-action ember-view ramp" disabled><span class="default-text">' + callback.btnSaveCandidate.message + '</span></button>' ).insertBefore( '.pv-top-card-section__body .pv-top-card-section__overflow-wrapper' );
+										// } else if ( $( '.pv-top-card-section__body .pv-top-card-section__actions' ).length ) {
+										// 	$( '<button id="send_to_rm" class="connect primary top-card-action ember-view ramp" disabled><span class="default-text">' + callback.btnSaveCandidate.message + '</span></button>' ).appendTo( '.pv-top-card-section__body .pv-top-card-section__actions' );
+										// }
 										var linkedInProfileId = inMemberId;
 										// // console.log(linkedInProfileId);
 										//
@@ -2296,6 +2302,7 @@ console.log( 'RAMP loaded' );
 												// console.log(profilePicture.extension);
 												// console.log(profilePicture.base64);
 												$( '#send_to_rm' ).prop( 'disabled', false );
+												// $( '#send_contact_to_rm' ).prop( 'disabled', false );
 												// console.log('candidateData', candidateData);
 												$( '#send_to_rm' ).on( 'click', function ( e ) {
 													candidateData = {
@@ -2672,175 +2679,145 @@ console.log( 'RAMP loaded' );
 											// }).then(function () {
 											// 	location.reload();
 											// })
-											RAMP.scrapeExperiences();
-											RAMP.scrapeEducations();
-											RAMP.scrapeSkills();
-											RAMP.scrapeSummary();
-											RAMP.scrapeContactInfo();
-											RAMP.scrapeProfilePicture();
-											setTimeout( function () {
-												toDataUrl( imageUrl, function ( base64Img ) {
-													// console.log(base64Img);
-													var base64ImgSplit = base64Img.split( ',' );
-													base64Img = base64ImgSplit[ 1 ];
-													var profilePicture = {
-														'extension': profileImageExtension,
-														'base64': base64Img
-													};
-													console.log( profilePicture );
-													// console.log(profilePicture.extension);
-													// console.log(profilePicture.base64);
-													// $('#send_to_rm').prop('disabled', false);
-													var getTagsSettings = {
-														'async': true,
-														'crossDomain': true,
-														'url': 'https://api.recman.no/v1.php?key=' + storrageResult.apiKey + '&type=json&scope=tag_list&fields=tagId',
-														'method': 'GET',
-														'headers': {
-															'cache-control': 'no-cache',
-															'postman-token': '807f9037-4484-5af4-52b3-a93723064423'
+											function scrapeTheShitOutOfThisProfile() {
+												RAMP.scrapeExperiences();
+												RAMP.scrapeEducations();
+												RAMP.scrapeSkills();
+												RAMP.scrapeSummary();
+												RAMP.scrapeContactInfo();
+												RAMP.scrapeProfilePicture();
+												setTimeout( function () {
+													toDataUrl( imageUrl, function ( base64Img ) {
+														// console.log(base64Img);
+														var base64ImgSplit = base64Img.split( ',' );
+														base64Img = base64ImgSplit[ 1 ];
+														var profilePicture = {
+															'extension': profileImageExtension,
+															'base64': base64Img
+														};
+														console.log( profilePicture );
+														// console.log(profilePicture.extension);
+														// console.log(profilePicture.base64);
+														// $('#send_to_rm').prop('disabled', false);
+														var getTagsSettings = {
+															'async': true,
+															'crossDomain': true,
+															'url': 'https://api.recman.no/v1.php?key=' + storrageResult.apiKey + '&type=json&scope=tag_list&fields=tagId',
+															'method': 'GET',
+															'headers': {
+																'cache-control': 'no-cache',
+																'postman-token': '807f9037-4484-5af4-52b3-a93723064423'
+															}
 														}
-													}
 
-													function readySetGo() {
-														$( '#send_to_rm' ).prop( 'disabled', false );
-														// console.log( 'candidateData', candidateData );
-													}
-													var tagLinkedInExsists = false;
-													var linkedInTagId;
-													var linkedInTagName = 'LinkedIn (RAMP)';
+														function readySetGo() {
+															$( '#send_to_rm' ).prop( 'disabled', false );
+															$( '#send_contact_to_rm' ).prop( 'disabled', false );
+															// console.log( 'candidateData', candidateData );
+														}
+														var tagLinkedInExsists = false;
+														var linkedInTagId;
+														var linkedInTagName = 'LinkedIn (RAMP)';
 
-													function populateLinkedInTagId() {
-														$.ajax( getTagsSettings ).done( function ( response ) {
-															if ( ~response.indexOf( '"success":false' ) ) {
-																createRemoteLinkedInTag();
-																console.warn( 'NO TAG remotely, initiating creation process...' );
-															} else {
-																console.log( 'listTags', response );
-																$.each( response, function ( key, value ) {
-																	if ( value.name === linkedInTagName ) {
-																		console.log( 'Found TAG remotely.' );
-																		console.log( value.name );
-																		console.log( value.tag_id );
-																		tagLinkedInExsists = true;
-																		linkedInTagId = value.tag_id;
-																		localStorage.setItem( 'linkedInTagId', linkedInTagId );
-																	}
-																} );
-																setTimeout( function () {
-																	if ( tagLinkedInExsists ) {
-																		readySetGo();
-																	} else {
-																		console.warn( 'NO TAG remotely, initiating creation process...' );
-																		createRemoteLinkedInTag();
-																	}
-																}, 500 );
-															}
-														} );
-													}
-
-													function createRemoteLinkedInTag() {
-														var createTagRemotelyData = JSON.stringify( {
-															'key': storrageResult.apiKey,
-															'scope': 'tags',
-															'operation': 'insert',
-															'data': {
-																'name': linkedInTagName
-															}
-														} );
-														var xhr = new XMLHttpRequest();
-														// xhr.withCredentials = true;
-														xhr.addEventListener( 'load', function () {
-															var response = $.parseJSON( this.response );
-															// var response = this.response;
-															console.log( response );
-															if ( response.success === true ) {
-																// console.log( response );
-																// console.log( response.responseText );
-																console.log( 'Created TAG remotely. End.' );
-																populateLinkedInTagId();
-															} else if ( response.success === false ) {
-																console.log( 'Created TAG remotely failed. Checking why...' );
-																// console.log( response.error[0].code );
-																if ( response.error[ 0 ].code === 4 ) {
-																	console.log( 'code IS 4' );
-																	swal( {
-																		title: 'Oops...',
-																		html: 'Your API-key is missing the <strong>Tag Index</strong> permission!</br></br>Please enable this module for API-key <h6>' + storrageResult.apiKey + '</h6> in <a href="https://www.recman.no/user/api.settings.php" target="_blank">Recruitment Manager</a>, and then try again.',
-																		type: 'error',
-																		allowOutsideClick: false,
-																		allowEscapeKey: false,
-																		confirmButtonText: 'Try again'
-																	} ).then( function () {
-																		console.warn( 'Initializing page reloading...' );
-																		location.reload();
-																	} ).catch( swal.noop )
+														function populateLinkedInTagId() {
+															$.ajax( getTagsSettings ).done( function ( response ) {
+																if ( ~response.indexOf( '"success":false' ) ) {
+																	createRemoteLinkedInTag();
+																	console.warn( 'NO TAG remotely, initiating creation process...' );
 																} else {
-																	var responseErrorMsg = response.error;
-																	console.log( response.error );
-																	responseErrorMsg = responseErrorMsg.split( 'Tag already exist. TagId: ' );
-																	linkedInTagId = responseErrorMsg[ 1 ];
-																	console.log( 'TAG ID: ', linkedInTagId );
-																	// localStorage.setItem( 'linkedInTagId', linkedInTagId );
-																	// if ( !localStorage.getItem( 'linkedInTagId' ) ) {
-																	// 	console.warn( 'Creating TAG locally via fallback failed.' );
-																	// } else {
-																	// 	console.log( 'TAG created locally.End.' );
-																	// 	checkIfTagExistsSomeWhere();
-																	// }
+																	console.log( 'listTags', response );
+																	$.each( response, function ( key, value ) {
+																		if ( value.name === linkedInTagName ) {
+																			console.log( 'Found TAG remotely.' );
+																			console.log( value.name );
+																			console.log( value.tag_id );
+																			tagLinkedInExsists = true;
+																			linkedInTagId = value.tag_id;
+																			localStorage.setItem( 'linkedInTagId', linkedInTagId );
+																		}
+																	} );
+																	setTimeout( function () {
+																		if ( tagLinkedInExsists ) {
+																			readySetGo();
+																		} else {
+																			console.warn( 'NO TAG remotely, initiating creation process...' );
+																			createRemoteLinkedInTag();
+																		}
+																	}, 500 );
 																}
-															}
-														} );
-														xhr.open( 'POST', 'https://api.recman.no/post/' );
-														xhr.setRequestHeader( 'content-type', 'application/json' );
-														xhr.setRequestHeader( 'cache-control', 'no-cache' );
-														xhr.send( createTagRemotelyData );
-													}
+															} );
+														}
 
-													function checkIfTagExistsSomeWhere() {
-														if ( !localStorage.getItem( 'linkedInTagId' ) ) {
-															populateLinkedInTagId();
-															console.log( 'No TAG locally, checking remote.' );
-														} else {
-															linkedInTagId = localStorage.getItem( 'linkedInTagId' );
-															console.log( 'LinkedIn tagId = ', linkedInTagId );
-															console.log( 'Found TAG locally.' );
-															readySetGo();
+														function createRemoteLinkedInTag() {
+															var createTagRemotelyData = JSON.stringify( {
+																'key': storrageResult.apiKey,
+																'scope': 'tags',
+																'operation': 'insert',
+																'data': {
+																	'name': linkedInTagName
+																}
+															} );
+															var xhr = new XMLHttpRequest();
+															// xhr.withCredentials = true;
+															xhr.addEventListener( 'load', function () {
+																var response = $.parseJSON( this.response );
+																// var response = this.response;
+																console.log( response );
+																if ( response.success === true ) {
+																	// console.log( response );
+																	// console.log( response.responseText );
+																	console.log( 'Created TAG remotely. End.' );
+																	populateLinkedInTagId();
+																} else if ( response.success === false ) {
+																	console.log( 'Created TAG remotely failed. Checking why...' );
+																	// console.log( response.error[0].code );
+																	if ( response.error[ 0 ].code === 4 ) {
+																		console.log( 'code IS 4' );
+																		swal( {
+																			title: 'Oops...',
+																			html: 'Your API-key is missing the <strong>Tag Index</strong> permission!</br></br>Please enable this module for API-key <h6>' + storrageResult.apiKey + '</h6> in <a href="https://www.recman.no/user/api.settings.php" target="_blank">Recruitment Manager</a>, and then try again.',
+																			type: 'error',
+																			allowOutsideClick: false,
+																			allowEscapeKey: false,
+																			confirmButtonText: 'Try again'
+																		} ).then( function () {
+																			console.warn( 'Initializing page reloading...' );
+																			location.reload();
+																		} ).catch( swal.noop )
+																	} else {
+																		var responseErrorMsg = response.error;
+																		console.log( response.error );
+																		responseErrorMsg = responseErrorMsg.split( 'Tag already exist. TagId: ' );
+																		linkedInTagId = responseErrorMsg[ 1 ];
+																		console.log( 'TAG ID: ', linkedInTagId );
+																		// localStorage.setItem( 'linkedInTagId', linkedInTagId );
+																		// if ( !localStorage.getItem( 'linkedInTagId' ) ) {
+																		// 	console.warn( 'Creating TAG locally via fallback failed.' );
+																		// } else {
+																		// 	console.log( 'TAG created locally.End.' );
+																		// 	checkIfTagExistsSomeWhere();
+																		// }
+																	}
+																}
+															} );
+															xhr.open( 'POST', 'https://api.recman.no/post/' );
+															xhr.setRequestHeader( 'content-type', 'application/json' );
+															xhr.setRequestHeader( 'cache-control', 'no-cache' );
+															xhr.send( createTagRemotelyData );
 														}
-													}
-													checkIfTagExistsSomeWhere();
-													candidateData = {
-														'key': storrageResult.apiKey,
-														'scope': 'candidate',
-														'operation': 'insert',
-														'data': {
-															'corporationId': storrageResult.corporation_id,
-															'connectDepartment': [ storrageResult.department_id ],
-															'connectUser': [ storrageResult.intercom_employeee_id ],
-															'firstName': candidateFirstName,
-															'lastName': candidateLastName,
-															'title': inMemberObject.occupation,
-															'mobilePhone': mobilePhone,
-															'email': email,
-															'twitter': twitter,
-															'facebook': facebook,
-															'web': web,
-															'dob': dob,
-															'description': summary[ 0 ],
-															'linkedin': linkedin,
-															'experience': experience,
-															'education': education,
-															'skills': skills,
-															'profilePicture': profilePicture,
-															'certifications': certifications,
-															'languages': languages,
-															'notes': 'Imported by RAMP.',
-															// 'internal': 0,
-															'tags': [ linkedInTagId ]
+
+														function checkIfTagExistsSomeWhere() {
+															if ( !localStorage.getItem( 'linkedInTagId' ) ) {
+																populateLinkedInTagId();
+																console.log( 'No TAG locally, checking remote.' );
+															} else {
+																linkedInTagId = localStorage.getItem( 'linkedInTagId' );
+																console.log( 'LinkedIn tagId = ', linkedInTagId );
+																console.log( 'Found TAG locally.' );
+																readySetGo();
+															}
 														}
-													};
-													console.info( candidateData );
-													$( '#send_to_rm' ).on( 'click', function ( e ) {
+														checkIfTagExistsSomeWhere();
 														candidateData = {
 															'key': storrageResult.apiKey,
 															'scope': 'candidate',
@@ -2871,118 +2848,184 @@ console.log( 'RAMP loaded' );
 																'tags': [ linkedInTagId ]
 															}
 														};
-														console.info( 'candidateData', candidateData );
-														candidateData = JSON.stringify( candidateData );
-														// var  candidateData = candidateData;
-														console.log( 'API Key: ' + storrageResult.apiKey );
-														console.log( 'Corporation ID: ' + storrageResult.corporation_id );
-														console.log( 'Department ID: ' + storrageResult.department_id );
-														console.log( 'User ID: ' + storrageResult.intercom_employeee_id );
-														swal( {
-															title: callback.dialog__text_plain__request_process_title_generic.message,
-															text: callback.dialog__text_plain__request_process_message_generic.message,
-															type: "info",
-															showLoaderOnConfirm: true,
-															onOpen: function () {
-																swal.clickConfirm();
-															},
-															preConfirm: function () {
-																return new Promise( function ( resolve ) {
-																	var xhr = new XMLHttpRequest();
-																	// xhr.withCredentials = true;
-																	xhr.addEventListener( 'readystatechange', function () {
-																		if ( this.readyState === 4 ) {
-																			var response = $.parseJSON( this.response );
-																			// var response = this.response;
-																			console.log( response );
-																			if ( response.success === true ) {
-																				console.group( 'CANDIDATE EXPORT INITIATED' );
-																				console.info( this.response );
-																				// console.info(this.responseText);
-																				var totalExportedLinkedInRef = firebase.database().ref( 'statistics/candidates/exported/LinkedIn' );
-																				totalExportedLinkedInRef.transaction( function ( currentExported ) {
-																					return currentExported + 1;
-																				}, function ( error, committed, snapshot ) {
-																					if ( error ) {
-																						console.log( 'Transaction failed abnormally!', error );
-																					} else if ( !committed ) {
-																						console.log( 'We aborted the transaction (because ada already exists).' );
-																					} else {
-																						var totalExportedRef = firebase.database().ref( 'statistics/candidates/exported/total' );
-																						totalExportedRef.transaction( function ( currentExported ) {
-																							return currentExported + 1;
-																						}, function ( error, committed, snapshot ) {
-																							if ( error ) {
-																								console.log( 'Transaction failed abnormally!', error );
-																							} else if ( !committed ) {
-																								console.log( 'We aborted the transaction (because ada already exists).' );
-																							} else {
-																								// setTimeout(function() {
-																								swal( {
-																									type: 'success',
-																									title: callback.dialog__text_plain__dialog_success_title_generic.message,
-																									text: candidateFirstName + ' ' + candidateLastName + ' ' + callback.dialog__text_plain__request_success_message.message + ' ' + callback.didialog__text_service__service_name_recruitmentmanager.message,
-																									timer: 3000
-																								} ).catch( swal.noop )
-																								// }, 2000)
-																								// console.log(candidateData);
-																								console.log( 'Total number of candidates added: ', snapshot.val() );
-																							}
-																						} );
-																						console.log( 'Total number of candidates added from LinkedIn: ', snapshot.val() );
-																					}
-																				} );
-																				console.groupEnd();
-																			} else if ( response.success === false ) {
+														console.info( candidateData );
+														$( '#send_to_rm' ).on( 'click', function ( e ) {
+															candidateData = {
+																'key': storrageResult.apiKey,
+																'scope': 'candidate',
+																'operation': 'insert',
+																'data': {
+																	'corporationId': storrageResult.corporation_id,
+																	'connectDepartment': [ storrageResult.department_id ],
+																	'connectUser': [ storrageResult.intercom_employeee_id ],
+																	'firstName': candidateFirstName,
+																	'lastName': candidateLastName,
+																	'title': inMemberObject.occupation,
+																	'mobilePhone': mobilePhone,
+																	'email': email,
+																	'twitter': twitter,
+																	'facebook': facebook,
+																	'web': web,
+																	'dob': dob,
+																	'description': summary[ 0 ],
+																	'linkedin': linkedin,
+																	'experience': experience,
+																	'education': education,
+																	'skills': skills,
+																	'profilePicture': profilePicture,
+																	'certifications': certifications,
+																	'languages': languages,
+																	'notes': 'Imported by RAMP.',
+																	// 'internal': 0,
+																	'tags': [ linkedInTagId ]
+																}
+															};
+															console.info( 'candidateData', candidateData );
+															candidateData = JSON.stringify( candidateData );
+															// var  candidateData = candidateData;
+															console.log( 'API Key: ' + storrageResult.apiKey );
+															console.log( 'Corporation ID: ' + storrageResult.corporation_id );
+															console.log( 'Department ID: ' + storrageResult.department_id );
+															console.log( 'User ID: ' + storrageResult.intercom_employeee_id );
+															swal( {
+																title: callback.dialog__text_plain__request_process_title_generic.message,
+																text: callback.dialog__text_plain__request_process_message_generic.message,
+																type: "info",
+																showLoaderOnConfirm: true,
+																onOpen: function () {
+																	swal.clickConfirm();
+																},
+																preConfirm: function () {
+																	return new Promise( function ( resolve ) {
+																		var xhr = new XMLHttpRequest();
+																		// xhr.withCredentials = true;
+																		xhr.addEventListener( 'readystatechange', function () {
+																			if ( this.readyState === 4 ) {
+																				var response = $.parseJSON( this.response );
+																				// var response = this.response;
 																				console.log( response );
-																				setTimeout( function () {
-																					swal( {
-																						type: 'error',
-																						title: callback.dialog__text_plain__dialog_error_title_generic.message,
-																						text: callback.dialog__text_plain__request_error_message.message,
-																						allowOutsideClick: false,
-																						allowEscapeKey: false,
-																						showCancelButton: true,
-																						reverseButtons: true,
-																						cancelButtonText: callback.dialog__button_cancel__dialog_button_cancel.message,
-																						confirmButtonText: callback.dialog__button_confirm__dialog_button_try_again.message,
-																					} ).then( function () {
-																						$( '#send_to_rm' ).click();
-																					} )
-																				}, 2000 )
-																			} else {
-																				console.log( response );
-																				setTimeout( function () {
-																					swal( {
-																						type: 'error',
-																						title: callback.dialog__text_plain__dialog_error_title_generic.message,
-																						text: callback.dialog__text_plain__request_error_message.message,
-																						allowOutsideClick: false,
-																						allowEscapeKey: false,
-																						showCancelButton: true,
-																						reverseButtons: true,
-																						cancelButtonText: callback.dialog__button_cancel__dialog_button_cancel.message,
-																						confirmButtonText: callback.dialog__button_confirm__dialog_button_try_again.message,
-																					} ).then( function () {
-																						$( '#send_to_rm' ).click();
-																					} )
-																				}, 2000 )
+																				if ( response.success === true ) {
+																					console.group( 'CANDIDATE EXPORT INITIATED' );
+																					console.info( this.response );
+																					// console.info(this.responseText);
+																					var totalExportedLinkedInRef = firebase.database().ref( 'statistics/candidates/exported/LinkedIn' );
+																					totalExportedLinkedInRef.transaction( function ( currentExported ) {
+																						return currentExported + 1;
+																					}, function ( error, committed, snapshot ) {
+																						if ( error ) {
+																							console.log( 'Transaction failed abnormally!', error );
+																						} else if ( !committed ) {
+																							console.log( 'We aborted the transaction (because ada already exists).' );
+																						} else {
+																							var totalExportedRef = firebase.database().ref( 'statistics/candidates/exported/total' );
+																							totalExportedRef.transaction( function ( currentExported ) {
+																								return currentExported + 1;
+																							}, function ( error, committed, snapshot ) {
+																								if ( error ) {
+																									console.log( 'Transaction failed abnormally!', error );
+																								} else if ( !committed ) {
+																									console.log( 'We aborted the transaction (because ada already exists).' );
+																								} else {
+																									// setTimeout(function() {
+																									swal( {
+																										type: 'success',
+																										title: callback.dialog__text_plain__dialog_success_title_generic.message,
+																										text: candidateFirstName + ' ' + candidateLastName + ' ' + callback.dialog__text_plain__request_success_message.message + ' ' + callback.didialog__text_service__service_name_recruitmentmanager.message,
+																										timer: 3000
+																									} ).catch( swal.noop )
+																									// }, 2000)
+																									// console.log(candidateData);
+																									console.log( 'Total number of candidates added: ', snapshot.val() );
+																								}
+																							} );
+																							console.log( 'Total number of candidates added from LinkedIn: ', snapshot.val() );
+																						}
+																					} );
+																					console.groupEnd();
+																				} else if ( response.success === false ) {
+																					console.log( response );
+																					setTimeout( function () {
+																						swal( {
+																							type: 'error',
+																							title: callback.dialog__text_plain__dialog_error_title_generic.message,
+																							text: callback.dialog__text_plain__request_error_message.message,
+																							allowOutsideClick: false,
+																							allowEscapeKey: false,
+																							showCancelButton: true,
+																							reverseButtons: true,
+																							cancelButtonText: callback.dialog__button_cancel__dialog_button_cancel.message,
+																							confirmButtonText: callback.dialog__button_confirm__dialog_button_try_again.message,
+																						} ).then( function () {
+																							$( '#send_to_rm' ).click();
+																						} )
+																					}, 2000 )
+																				} else {
+																					console.log( response );
+																					setTimeout( function () {
+																						swal( {
+																							type: 'error',
+																							title: callback.dialog__text_plain__dialog_error_title_generic.message,
+																							text: callback.dialog__text_plain__request_error_message.message,
+																							allowOutsideClick: false,
+																							allowEscapeKey: false,
+																							showCancelButton: true,
+																							reverseButtons: true,
+																							cancelButtonText: callback.dialog__button_cancel__dialog_button_cancel.message,
+																							confirmButtonText: callback.dialog__button_confirm__dialog_button_try_again.message,
+																						} ).then( function () {
+																							$( '#send_to_rm' ).click();
+																						} )
+																					}, 2000 )
+																				}
 																			}
-																		}
+																		} );
+																		xhr.open( 'POST', 'https://api.recman.no/post/' );
+																		// xhr.open('POST', 'https://api.recman.no/dgfhfgh/');
+																		xhr.setRequestHeader( 'content-type', 'application/json' );
+																		xhr.setRequestHeader( 'cache-control', 'no-cache' );
+																		xhr.send( candidateData );
+																		// xhr.send(tagData);
 																	} );
-																	xhr.open( 'POST', 'https://api.recman.no/post/' );
-																	// xhr.open('POST', 'https://api.recman.no/dgfhfgh/');
-																	xhr.setRequestHeader( 'content-type', 'application/json' );
-																	xhr.setRequestHeader( 'cache-control', 'no-cache' );
-																	xhr.send( candidateData );
-																	// xhr.send(tagData);
-																} );
-															},
-															allowOutsideClick: false
+																},
+																allowOutsideClick: false
+															} );
 														} );
 													} );
-												} );
-											}, 500 );
+												}, 500 );
+											}
+											var isUsersProfile;
+											function isThisUsersProfile() {
+												if ( $( '.pv-dashboard-section' ).length > 0 ) {
+													console.log( 'you shall not pass' );
+													isUsersProfile = true;
+												} else {
+													isUsersProfile = false;
+													scrapeTheShitOutOfThisProfile();
+												}
+											}
+											isThisUsersProfile();
+											function detectUrlChange() {
+												// store url on load
+												var currentPage = window.location.href;
+												// listen for changes
+												var startInterval = setInterval( function () {
+													if ( currentPage != window.location.href ) {
+														isThisUsersProfile();
+														$( '#send_to_rm' ).prop( 'disabled', true );
+														$( '#send_contact_to_rm' ).prop( 'disabled', true );
+														clearInterval( startInterval );
+														console.log( 'url change detected' );
+														if ( !isUsersProfile ) {
+															location.reload();
+														}
+
+													}
+												}, 200 );
+											}
+											$( document ).click( function () {
+												console.log( 'click on page' );
+												detectUrlChange();
+											} );
 										} );
 									} ).fail( function ( jqxhr, settings, exception ) {
 										console.log( jqxhr, settings, exception );
