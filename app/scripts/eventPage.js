@@ -1,5 +1,5 @@
 // Enable chromereload by uncommenting this line:
-import 'chromereload/devonly';
+// import 'chromereload/devonly';
 // if (ENV === 'development') {
 // 	console.log('We are in development mode!');
 // }
