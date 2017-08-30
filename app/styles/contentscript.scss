@@ -180,12 +180,19 @@ body {
 
       &:hover {
         background-color: #2672ae;
-
         background-color: #2672ae; // Old browsers
         box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
       }
     }
 
     #btnSetupExtension {}
+  }
+}
+.ember-view {
+  .application-outlet  {
+    .msg-overlay-container{
+      left: 8px !important;
+      right: inherit;
+    }
   }
 }

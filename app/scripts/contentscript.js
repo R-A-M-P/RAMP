@@ -323,31 +323,6 @@ console.log( 'RAMP loaded' );
 		// RAMP.inHotjar();
 		// debugger;
 	}
-	RAMP.loadHelpCrunch = function () {
-		console.info( 'helpCrunch loaded' );
-		( function ( w, d ) {
-			w.HelpCrunch = function () { w.HelpCrunch.q.push( arguments ) };
-			w.HelpCrunch.q = [];
-
-			function r() {
-				var s = document.createElement( 'script' );
-				s.async = 1;
-				s.type = 'text/javascript';
-				s.src = 'https://widget.helpcrunch.com/';
-				( d.body || d.head ).appendChild( s );
-			}
-			if ( w.attachEvent ) { w.attachEvent( 'onload', r ) } else { w.addEventListener( 'load', r, false ) }
-		} )( window, document )
-	}
-	RAMP.loadHelpCrunch();
-	RAMP.initHelpChrunch = function () {
-		HelpCrunch( 'init', 'ramp', {
-			applicationId: 1749,
-			applicationSecret: 'A4wXKoKrkapufLrurc/pE5qRn4qBbTpVYHSyrq0/7nxj66bvQEDAKj2pMdMlGRPfNzOCJMTGpHN75x7xSFeGSg=='
-		} );
-		HelpCrunch( 'showChatWidget' );
-	}
-	RAMP.initHelpChrunch();
 	var preferedLanguage = localStorage.getItem( 'preferedLanguage' );
 	console.log( 'Your prefered language is ' + preferedLanguage );
 	RAMP.whatThatLanguage = function () {
@@ -2733,28 +2708,34 @@ console.log( 'RAMP loaded' );
 													}
 													var tagLinkedInExsists = false;
 													var linkedInTagId;
-													var linkedInTagName = 'RAMP - LinkedIn';
+													var linkedInTagName = 'LinkedIn (RAMP)';
 
 													function populateLinkedInTagId() {
-														$.ajax( getTagsSettings ).done( function ( listTags ) {
-															$.each( listTags, function ( key, value ) {
-																if ( value.name === linkedInTagName ) {
-																	console.log( 'Found TAG remotely.' );
-																	console.log( value.name );
-																	console.log( value.tag_id );
-																	tagLinkedInExsists = true;
-																	linkedInTagId = value.tag_id;
-																	localStorage.setItem( 'linkedInTagId', linkedInTagId );
-																}
-															} );
-															setTimeout( function () {
-																if ( tagLinkedInExsists ) {
-																	readySetGo();
-																} else {
-																	createRemoteLinkedInTag();
-																	console.log( 'NO TAG remotly, initiating creation process.' );
-																}
-															}, 500 );
+														$.ajax( getTagsSettings ).done( function ( response ) {
+															if ( ~response.indexOf( '"success":false' ) ) {
+																createRemoteLinkedInTag();
+																console.warn( 'NO TAG remotely, initiating creation process...' );
+															} else {
+																console.log( 'listTags', response );
+																$.each( response, function ( key, value ) {
+																	if ( value.name === linkedInTagName ) {
+																		console.log( 'Found TAG remotely.' );
+																		console.log( value.name );
+																		console.log( value.tag_id );
+																		tagLinkedInExsists = true;
+																		linkedInTagId = value.tag_id;
+																		localStorage.setItem( 'linkedInTagId', linkedInTagId );
+																	}
+																} );
+																setTimeout( function () {
+																	if ( tagLinkedInExsists ) {
+																		readySetGo();
+																	} else {
+																		console.warn( 'NO TAG remotely, initiating creation process...' );
+																		createRemoteLinkedInTag();
+																	}
+																}, 500 );
+															}
 														} );
 													}
 
@@ -2769,7 +2750,7 @@ console.log( 'RAMP loaded' );
 														} );
 														var xhr = new XMLHttpRequest();
 														// xhr.withCredentials = true;
-														xhr.addEventListener( 'readystatechange', function () {
+														xhr.addEventListener( 'load', function () {
 															var response = $.parseJSON( this.response );
 															// var response = this.response;
 															console.log( response );
@@ -2779,17 +2760,34 @@ console.log( 'RAMP loaded' );
 																console.log( 'Created TAG remotely. End.' );
 																populateLinkedInTagId();
 															} else if ( response.success === false ) {
-																console.log( 'Created TAG remotely failed. Trying local fallback creation.' );
-																var responseErrorMsg = response.error;
-																responseErrorMsg = responseErrorMsg.split( 'Tag already exist. TagId: ' );
-																linkedInTagId = responseErrorMsg[ 1 ];
-																console.log( 'TAG ID: ', linkedInTagId );
-																localStorage.setItem( 'linkedInTagId', linkedInTagId );
-																if ( !localStorage.getItem( 'linkedInTagId' ) ) {
-																	console.warn( 'Creating TAG locally via fallback failed.' );
+																console.log( 'Created TAG remotely failed. Checking why...' );
+																// console.log( response.error[0].code );
+																if ( response.error[ 0 ].code === 4 ) {
+																	console.log( 'code IS 4' );
+																	swal( {
+																		title: 'Oops...',
+																		html: 'Your API-key is missing the <strong>Tag Index</strong> permission!</br></br>Please enable this module for API-key <h6>' + storrageResult.apiKey + '</h6> in <a href="https://www.recman.no/user/api.settings.php" target="_blank">Recruitment Manager</a>, and then try again.',
+																		type: 'error',
+																		allowOutsideClick: false,
+																		allowEscapeKey: false,
+																		confirmButtonText: 'Try again'
+																	} ).then( function () {
+																		console.warn( 'Initializing page reloading...' );
+																		location.reload();
+																	} ).catch( swal.noop )
 																} else {
-																	console.log( 'TAG created locally.End.' );
-																	checkIfTagExistsSomeWhere();
+																	var responseErrorMsg = response.error;
+																	console.log( response.error );
+																	responseErrorMsg = responseErrorMsg.split( 'Tag already exist. TagId: ' );
+																	linkedInTagId = responseErrorMsg[ 1 ];
+																	console.log( 'TAG ID: ', linkedInTagId );
+																	// localStorage.setItem( 'linkedInTagId', linkedInTagId );
+																	// if ( !localStorage.getItem( 'linkedInTagId' ) ) {
+																	// 	console.warn( 'Creating TAG locally via fallback failed.' );
+																	// } else {
+																	// 	console.log( 'TAG created locally.End.' );
+																	// 	checkIfTagExistsSomeWhere();
+																	// }
 																}
 															}
 														} );
@@ -3010,6 +3008,53 @@ console.log( 'RAMP loaded' );
 				}
 			}
 		} );
+		// RAMP.loadHelpCrunch = function () {
+		// 	console.log( 'helpcrunch init' );
+		// 	var helpcrunchScriptPath = chrome.extension.getURL( 'scripts/helpcrunch-sdk-code.js' );
+		// 	// $( 'head' ).append( $( '<script>' ).attr( 'src', helpcrunchLoaderPath ) );
+		// 	( function ( w, d ) {
+		// 		w.HelpCrunch = function () { w.HelpCrunch.q.push( arguments ) };
+		// 		w.HelpCrunch.q = [];
+		//
+		// 		function r() {
+		// 			var s = document.createElement( 'script' );
+		// 			s.async = 1;
+		// 			s.type = 'text/javascript';
+		// 			s.src = helpcrunchScriptPath;
+		// 			( d.body || d.head ).appendChild( s );
+		// 		}
+		// 		if ( w.attachEvent ) { w.attachEvent( 'onload', r ) } else { w.addEventListener( 'load', r, false ) }
+		// 	} )( window, document )
+		// }
+		// RAMP.initHelpChrunch = function () {
+		// 	HelpCrunch( 'init', 'ramp', {
+		// 		applicationId: 1749,
+		// 		applicationSecret: 'A4wXKoKrkapufLrurc/pE5qRn4qBbTpVYHSyrq0/7nxj66bvQEDAKj2pMdMlGRPfNzOCJMTGpHN75x7xSFeGSg=='
+		// 	} );
+		// 	HelpCrunch( 'showChatWidget' );
+		// }
+		// RAMP.loadHelpCrunch();
+		// RAMP.initHelpChrunch();
+		// RAMP.initGTM = function () {
+		// 	console.log( 'GTM init' );
+		// 	( function ( w, d, s, l, i ) {
+		// 		w[ l ] = w[ l ] || [];
+		// 		w[ l ].push( {
+		// 			'gtm.start': new Date().getTime(),
+		// 			event: 'gtm.js'
+		// 		} );
+		// 		var f = d.getElementsByTagName( s )[ 0 ],
+		// 			j = d.createElement( s ),
+		// 			dl = l != 'dataLayer' ? '&l=' + l : '';
+		// 		j.async = true;
+		// 		j.src = 'https://www.googletagmanager.com/gtm.js?id=' + i + dl;
+		// 		f.parentNode.insertBefore( j, f );
+		// 	} )( window, document, 'script', 'dataLayer', 'GTM-MNXZ7SS' );
+		// }
+		// $( 'body' ).prepend( '<!-- Google Tag Manager (noscript) --><noscript><iframe src="//www.googletagmanager.com/ns.html?id=GTM-MNXZ7SS" height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript><!-- End Google Tag Manager (noscript) -->' )
+		// RAMP.initGTM();
+		// $( '.application-outlet' ).append( '<div class="ramp-bar"></div>' );
+		// // $( '.ramp-bar' ).html( '<iframe src="http://google.com"></iframe>' );
 	}
 	// RAMP.inHotjar = function() {
 	//   (function(h, o, t, j, a, r) {
