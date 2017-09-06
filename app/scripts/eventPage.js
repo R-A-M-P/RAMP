@@ -1,8 +1,8 @@
 // Enable chromereload by uncommenting this line:
 import 'chromereload/devonly';
-if (ENV === 'development') {
-	console.log('We are in development mode!');
-}
+// if (ENV === 'development') {
+// 	console.log('We are in development mode!');
+// }
 // chrome.runtime.onInstalled.addListener(function(details) {
 //   console.log('previousVersion', details.previousVersion);
 //
@@ -34,11 +34,12 @@ chrome.runtime.onInstalled.addListener( function ( details ) {
 		console.log( 'This is the first install of RAMP!' );
 	} else if ( details.reason === 'update' ) {
 		var thisVersion = chrome.runtime.getManifest().version;
+		var thisVersionName = chrome.runtime.getManifest().version_name
 		if ( details.previousVersion !== thisVersion ) {
-			console.log( 'Updated from v' + details.previousVersion + ' to v' + thisVersion + '!' );
-			notifyMe( thisVersion );
+			console.log( 'Updated from v' + details.previousVersion + ' to v' + thisVersionName + '!' );
+			notifyMe( thisVersionName );
 		} else {
-			console.log( 'Running RAMP v' + thisVersion + '!' );
+			console.log( 'Running RAMP v' + thisVersionName + '!' );
 		}
 	}
 } );
