@@ -138,6 +138,15 @@ chrome.extension.onMessage.addListener( function ( message, sender ) {
 			path: 'images/icon-finn-32.png'
 		} );
 		chrome.pageAction.show( sender.tab.id );
+	} else if ( message === 'showPageActionRecman' ) {
+		console.log( message );
+		var tab = sender.tab;
+		chrome.pageAction.show( tab.id );
+		chrome.pageAction.setIcon( {
+			tabId: tab.id,
+			path: 'images/icon-recman-32.png'
+		} );
+		chrome.pageAction.show( sender.tab.id );
 	}
 } );
 // Called when the user clicks on the browser action.

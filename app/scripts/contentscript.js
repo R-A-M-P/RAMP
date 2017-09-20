@@ -1,8 +1,12 @@
 import $ from 'jquery';
-import swal from 'sweetalert2';
-import * as firebase from 'firebase/app';
-import 'firebase/database';
+// import * as firebase from 'firebase/app';
+// import 'firebase/database';
+import * as firebase from "firebase";
 import * as toastr from 'toastr';
+import swal from 'sweetalert2';
+import select2 from 'select2';
+import typeahead from 'corejs-typeahead';
+// import Bloodhound from 'corejs-typeahead';
 console.log( 'RAMP loaded' );
 ( function ( window, document, $, undefined ) {
 	'use strict';
@@ -323,59 +327,61 @@ console.log( 'RAMP loaded' );
 		// RAMP.inHotjar();
 		// debugger;
 	}
-	var preferedLanguage = localStorage.getItem( 'preferedLanguage' );
-	console.log( 'Your prefered language is ' + preferedLanguage );
-	RAMP.whatThatLanguage = function () {
-		var i18nLocale = RAMP.i18nLocale;
-		console.log( i18nLocale );
+	if ( window.location.href.indexOf( 'https://www.linkedin.com/in/' ) > -1 ) {
+		var preferedLanguage = localStorage.getItem( 'preferedLanguage' );
+		console.log( 'Your prefered language is ' + preferedLanguage );
+		RAMP.whatThatLanguage = function () {
+			var i18nLocale = RAMP.i18nLocale;
+			console.log( i18nLocale );
 
-		function changeLanguage() {
-			swal( {
-				type: 'info',
-				title: 'RAMP currently supports English and Norwegian',
-				text: 'Please select your preferd language.',
-				allowOutsideClick: false,
-				allowEscapeKey: false,
-				confirmButtonText: 'English',
-				confirmButtonColor: '#0084BF',
-				showCancelButton: true,
-				cancelButtonText: 'Norwegian',
-				cancelButtonColor: '#0084BF'
-			} ).then( function ( result ) {
-				// handle confirm, result is needed for modals with input
-				preferedLanguage = 'en';
-				localStorage.setItem( 'preferedLanguage', preferedLanguage );
-				console.log( 'Your prefered language is ' + preferedLanguage );
-				i18nLocale = preferedLanguage;
-				location.reload();
-			}, function ( dismiss ) {
-				// dismiss can be "cancel" | "close" | "outside"
-				preferedLanguage = 'no';
-				localStorage.setItem( 'preferedLanguage', preferedLanguage );
-				console.log( 'Your prefered language is ' + preferedLanguage );
-				i18nLocale = preferedLanguage;
-				location.reload();
-			} );
-		}
-		if ( i18nLocale !== preferedLanguage ) {
-			console.log( 'i18nLocale is not the same as your prefered language: ' + i18nLocale + '/' + preferedLanguage );
-			if ( i18nLocale === 'no' || i18nLocale === 'en' ) {
+			function changeLanguage() {
+				swal( {
+					type: 'info',
+					title: 'RAMP currently supports English and Norwegian',
+					text: 'Please select your preferd language.',
+					allowOutsideClick: false,
+					allowEscapeKey: false,
+					confirmButtonText: 'English',
+					confirmButtonColor: '#0084BF',
+					showCancelButton: true,
+					cancelButtonText: 'Norwegian',
+					cancelButtonColor: '#0084BF'
+				} ).then( function ( result ) {
+					// handle confirm, result is needed for modals with input
+					preferedLanguage = 'en';
+					localStorage.setItem( 'preferedLanguage', preferedLanguage );
+					console.log( 'Your prefered language is ' + preferedLanguage );
+					i18nLocale = preferedLanguage;
+					location.reload();
+				}, function ( dismiss ) {
+					// dismiss can be "cancel" | "close" | "outside"
+					preferedLanguage = 'no';
+					localStorage.setItem( 'preferedLanguage', preferedLanguage );
+					console.log( 'Your prefered language is ' + preferedLanguage );
+					i18nLocale = preferedLanguage;
+					location.reload();
+				} );
+			}
+			if ( i18nLocale !== preferedLanguage ) {
+				console.log( 'i18nLocale is not the same as your prefered language: ' + i18nLocale + '/' + preferedLanguage );
+				if ( i18nLocale === 'no' || i18nLocale === 'en' ) {
+					preferedLanguage = i18nLocale;
+					localStorage.setItem( 'preferedLanguage', preferedLanguage );
+					console.log( 'Your prefered language is i18nLocale: ' + preferedLanguage );
+				} else if ( preferedLanguage === null ) {
+					changeLanguage();
+				}
+			} else if ( i18nLocale === 'no' || i18nLocale === 'en' ) {
 				preferedLanguage = i18nLocale;
 				localStorage.setItem( 'preferedLanguage', preferedLanguage );
 				console.log( 'Your prefered language is i18nLocale: ' + preferedLanguage );
-			} else if ( preferedLanguage === null ) {
-				changeLanguage();
 			}
-		} else if ( i18nLocale === 'no' || i18nLocale === 'en' ) {
-			preferedLanguage = i18nLocale;
-			localStorage.setItem( 'preferedLanguage', preferedLanguage );
-			console.log( 'Your prefered language is i18nLocale: ' + preferedLanguage );
+			chrome.extension.onMessage.addListener( function ( msg, sender, sendResponse ) {
+				if ( msg.action === 'change_language' ) {
+					changeLanguage();
+				}
+			} );
 		}
-		chrome.extension.onMessage.addListener( function ( msg, sender, sendResponse ) {
-			if ( msg.action === 'change_language' ) {
-				changeLanguage();
-			}
-		} );
 	}
 	RAMP.initIn = function () {
 		// var installType;
@@ -637,9 +643,13 @@ console.log( 'RAMP loaded' );
 											addRampBanner();
 										}
 										// $( '<div class="pv-top-card-section__ramp mt4 ph2"><p class="text-align-center mt5 pt5"></p></div>' ).insertAfter( '.pv-top-card-section__body .pv-top-card-section__actions' );
-										$( '.pv-top-card-section__body .pv-top-card-section__actions' ).append( '<div class="pv-top-card-section__ramp mt4 ph2"><p class="text-align-center mt5 pt5"></p></div>' )
-										$( '.pv-top-card-section__ramp p' ).append( '<button id="send_contact_to_rm" class="connect secondary top-card-action ember-view ramp contact" disabled><span class="default-text">' + callback.btnSaveContact.message + '</span></button>' );
-										$( '.pv-top-card-section__ramp p' ).append( '<button id="send_to_rm" class="connect primary top-card-action ember-view ramp candidate" disabled><span class="default-text">' + callback.btnSaveCandidate.message + '</span></button>' );
+										if ( !$( '.pv-top-card-section__ramp' ).length ) {
+											$( '.pv-top-card-section__body .pv-top-card-section__actions' ).append( '<div class="pv-top-card-section__ramp mt4 ph2"><p class="text-align-center mt5 pt5"></p></div>' );
+											if ( !$( '#send_to_rm' ).length ) {
+												$( '.pv-top-card-section__ramp p' ).append( '<button id="send_to_rm" class="connect primary top-card-action ember-view ramp candidate" disabled><span class="default-text">' + callback.btnSaveCandidate.message + '</span></button>' );
+											}
+										}
+										// $( '.pv-top-card-section__ramp p' ).append( '<button id="send_contact_to_rm" class="connect secondary top-card-action ember-view ramp contact" disabled><span class="default-text">' + callback.btnSaveContact.message + '</span></button>' );
 										// if ( $( '.pv-top-card-section__body .pv-top-card-section__overflow-wrapper' ).length ) {
 										// 	$( '<button id="send_to_rm" class="connect primary top-card-action ember-view ramp" disabled><span class="default-text">' + callback.btnSaveCandidate.message + '</span></button>' ).insertBefore( '.pv-top-card-section__body .pv-top-card-section__overflow-wrapper' );
 										// } else if ( $( '.pv-top-card-section__body .pv-top-card-section__actions' ).length ) {
@@ -698,6 +708,10 @@ console.log( 'RAMP loaded' );
 										// 	console.log($seeMoreButton);
 										// 	$seeMoreButton.click();
 										// } );
+										$( 'body' ).wrapInner( '<div class="ramp-body-wrapper"></div>' );
+										swal.setDefaults( {
+											animation: false
+										} );
 										RAMP.scrapeExperiences = function () {
 											function fetchExperiences() {
 												if ( 'li.pv-position-entity' ) {
@@ -716,24 +730,28 @@ console.log( 'RAMP loaded' );
 															$showMoreButton.click();
 															setTimeout( function () {
 																var $experienceDescription = $entry.find( '.pv-entity__description' );
-																if ( $experienceDescription ) {
-																	experienceDescription = $experienceDescription.clone() //clone the element
-																		.children() //select all the children
-																		.remove() //remove all the children
-																		.end() //again go back to selected element
-																		.text();
-
-																	function myTrim( x ) {
-																		return x.replace( /^\s+|\s+$/gm, '' );
-																	}
-																	experienceDescription = myTrim( experienceDescription );
-																	experienceDescription = decodeHtml( experienceDescription );
-																	experienceDescription = experienceDescription.replace( /(<br>)+/g, '\n ' );
+																if ( $experienceDescription.length ) {
+																	var descriptionInnerHTML = $experienceDescription;
+																	// console.log( descriptionInnerHTML );
+																	experienceDescription = descriptionInnerHTML[ '0' ].innerText;
+																	// console.log( 'experienceDescription', experienceDescription );
+																	// experienceDescription = $experienceDescription.clone() //clone the element
+																	// 	.children() //select all the children
+																	// 	.remove() //remove all the children
+																	// 	.end() //again go back to selected element
+																	// 	.text();
+																	//
+																	// function myTrim( x ) {
+																	// 	return x.replace( /^\s+|\s+$/gm, '' );
+																	// }
+																	// experienceDescription = myTrim( experienceDescription );
+																	// experienceDescription = decodeHtml( experienceDescription );
+																	// experienceDescription = experienceDescription.replace( /(<br>)+/g, '\n ' );
 																	if ( experienceDescription.trim() ) {
 																		// console.log(experienceDescription);
 																	}
 																} else {
-																	console.log( 'No Experience description...' );
+																	// console.warn( 'No Experience description...' );
 																}
 															}, 400 );
 														}
@@ -938,25 +956,29 @@ console.log( 'RAMP loaded' );
 														function grabEducationDescription() {
 															setTimeout( function () {
 																var $educationDescription = $entry.find( '.pv-entity__description' );
-																if ( $educationDescription ) {
-																	educationDescription = $educationDescription.clone() //clone the element
-																		.children() //select all the children
-																		.remove() //remove all the children
-																		.end() //again go back to selected element
-																		.text();
-
-																	function myTrim( x ) {
-																		return x.replace( /^\s+|\s+$/gm, '' );
-																	}
-																	educationDescription = myTrim( educationDescription );
-																	educationDescription = decodeHtml( educationDescription );
-																	educationDescription = educationDescription.replace( /(<br>)+/g, '\n ' );
+																if ( $educationDescription.length ) {
+																	var descriptionInnerHTML = $educationDescription;
+																	// console.log( 'descriptionInnerHTML', descriptionInnerHTML );
+																	educationDescription = descriptionInnerHTML[ '0' ].innerText;
+																	// console.log( 'educationDescription', educationDescription );
+																	// educationDescription = $educationDescription.clone() //clone the element
+																	// 	.children() //select all the children
+																	// 	.remove() //remove all the children
+																	// 	.end() //again go back to selected element
+																	// 	.text();
+																	//
+																	// function myTrim( x ) {
+																	// 	return x.replace( /^\s+|\s+$/gm, '' );
+																	// }
+																	// educationDescription = myTrim( educationDescription );
+																	// educationDescription = decodeHtml( educationDescription );
+																	// educationDescription = educationDescription.replace( /(<br>)+/g, '\n ' );
 																	// console.log( 'educationDescription', educationDescription );
 																	if ( educationDescription.trim() ) {
 																		// console.log( educationDescription );
 																	}
 																} else {
-																	console.log( 'No Education description...' );
+																	// console.warn( 'No Education description...' );
 																}
 															}, 400 );
 														}
@@ -1094,19 +1116,36 @@ console.log( 'RAMP loaded' );
 												console.warn( 'Could not fetch Summary data automaticly. Initiating manuall scraping...' );
 												$( '.pv-top-card-section__summary' ).find( 'button.pv-top-card-section__summary-toggle-button' ).click();
 												setTimeout( function () {
-													var summaryText = $( '.pv-top-card-section__summary > .pv-top-card-section__summary-text' ).clone() //clone the element
-														.children() //select all the children
-														.remove() //remove all the children
-														.end() //again go back to selected element
-														.text();
-
-													function myTrim( x ) {
-														return x.replace( /^\s+|\s+$/gm, '' );
+													var $summaryDescription = $( '.pv-top-card-section__summary > .pv-top-card-section__summary-text' );
+													if ( $summaryDescription.length ) {
+														var descriptionInnerHTML = $summaryDescription;
+														// console.log( descriptionInnerHTML );
+														var summaryInnerText = descriptionInnerHTML[ '0' ].innerText;
+														// console.log( 'summaryInnerText', summaryInnerText );
+														summary.push( summaryInnerText );
+														// console.log( 'summary', summary );
+													} else {
+														console.warn( 'No profile description...' );
 													}
-													summaryText = myTrim( summaryText );
-													summaryText = decodeHtml( summaryText );
-													summaryText = summaryText.replace( /(<br>)+/g, '\n' );
-													summary.push( summaryText );
+													// var summaryInnerHTML = $( '.pv-top-card-section__summary > .pv-top-card-section__summary-text' );
+													// console.log( summaryInnerText );
+													// var summaryInnerText = summaryInnerHTML[ '0' ].innerText
+													// summary.push( summaryInnerText );
+													// console.log( 'summary', summary );
+													// console.log( summaryInnerText );
+													// var summaryText = $( '.pv-top-card-section__summary > .pv-top-card-section__summary-text' ).clone() //clone the element
+													// 	.children() //select all the children
+													// 	.remove() //remove all the children
+													// 	.end() //again go back to selected element
+													// 	.text();
+													//
+													// function myTrim( x ) {
+													// 	return x.replace( /^\s+|\s+$/gm, '' );
+													// }
+													// summaryText = myTrim( summaryText );
+													// summaryText = decodeHtml( summaryText );
+													// summaryText = summaryText.replace( /(<br>)+/g, '\n' );
+													// summary.push( summaryInnerText );
 													// console.log( 'summaryText', summaryText );
 													// console.log( 'summary', summary );
 												}, 500 );
@@ -2712,7 +2751,7 @@ console.log( 'RAMP loaded' );
 
 														function readySetGo() {
 															$( '#send_to_rm' ).prop( 'disabled', false );
-															$( '#send_contact_to_rm' ).prop( 'disabled', false );
+															// $( '#send_contact_to_rm' ).prop( 'disabled', false );
 															// console.log( 'candidateData', candidateData );
 														}
 														var tagLinkedInExsists = false;
@@ -2994,6 +3033,7 @@ console.log( 'RAMP loaded' );
 												}, 500 );
 											}
 											var isUsersProfile;
+
 											function isThisUsersProfile() {
 												if ( $( '.pv-dashboard-section' ).length > 0 ) {
 													console.log( 'you shall not pass' );
@@ -3004,28 +3044,220 @@ console.log( 'RAMP loaded' );
 												}
 											}
 											isThisUsersProfile();
+											var isLiProfileDetails = window.location.href.indexOf( 'linkedin.com/in/' + publicIdentifier + '/detail/photo/' ) > -1;
+
 											function detectUrlChange() {
+												// var isLiProfileUrl = window.location.href.indexOf( 'linkedin.com/in/' ) != -1
+												console.log( 'isLiProfileDetails', isLiProfileDetails );
 												// store url on load
 												var currentPage = window.location.href;
 												// listen for changes
+												// if ( !isUsersProfile && !isLiProfileDetails ) {
 												var startInterval = setInterval( function () {
 													if ( currentPage != window.location.href ) {
 														isThisUsersProfile();
 														$( '#send_to_rm' ).prop( 'disabled', true );
-														$( '#send_contact_to_rm' ).prop( 'disabled', true );
+														// $( '#send_contact_to_rm' ).prop( 'disabled', true );
 														clearInterval( startInterval );
 														console.log( 'url change detected' );
-														if ( !isUsersProfile ) {
-															location.reload();
-														}
-
+														// if ( !isUsersProfile && !isLiProfileDetails ) {
+														location.reload();
+														// }
 													}
 												}, 200 );
+												// }
 											}
 											$( document ).click( function () {
 												console.log( 'click on page' );
 												detectUrlChange();
 											} );
+											// $( '.pv-member-photo-modal' ).on( 'click', function () {
+											// 	detectUrlChange();
+											// } );
+											/*
+											// NOTE 5.0 – SEND AS CONTACT TO COMPANY
+											*/
+											RAMP.sendContactToRM = function () {
+												// NOTE 5.1 - open modal
+												function openSendContactModal() {
+													var recmanCompanies = [];
+													var listAllCompaniesPageNumber = 1;
+													swal( {
+														title: 'Retrieving companies from CRM',
+														text: callback.dialog__text_plain__request_process_message_generic.message,
+														type: "info",
+														showLoaderOnConfirm: true,
+														onOpen: function () {
+															swal.clickConfirm();
+														},
+														preConfirm: function () {
+															return new Promise( function ( resolve ) {
+																// NOTE 5.2 - list companies
+																function listAllCompanies() {
+																	var listAllCompaniesData = JSON.stringify( {
+																		// 'key': '161212075444k83d3345be4c4591326728edc6cbea28a1727308864',
+																		'key': storrageResult.apiKey,
+																		'scope': 'company',
+																		'operation': 'select',
+																		'data': {
+																			'page': listAllCompaniesPageNumber,
+																			'fields': [ 'companyId', 'name', 'branchCategoryId' ]
+																		}
+																	} );
+																	var xhr = new XMLHttpRequest();
+																	xhr.withCredentials = true;
+																	xhr.addEventListener( "readystatechange", function () {
+																		if ( this.readyState === 4 ) {
+																			// console.log( this );
+																			var response = JSON.parse( this.response );
+																			if ( response.success === true ) {
+																				var obj = response.data
+																				console.log( 'returned ' + Object.keys( obj ).length + ' objects.' );
+																				// console.log( 'response', response );
+																				for ( var key in obj ) {
+																					if ( obj.hasOwnProperty( key ) ) {
+																						// console.log( obj[ key ] );
+																						recmanCompanies.push( obj[ key ] );
+																					}
+																				}
+																				if ( Object.keys( obj ).length === 100 ) {
+																					listAllCompaniesPageNumber++
+																					listAllCompanies();
+																				} else {
+																					console.log( 'recmanCompanies', recmanCompanies );
+																					// resolve();
+																					// NOTE 5.3 - search companies
+																					var recmanCompaniesSelectData = $.map( recmanCompanies, function ( obj ) {
+																						obj.id = obj.id || obj.companyId;
+																						obj.text = obj.text || obj.name;
+																						return obj;
+																					} );
+																					swal( {
+																						type: 'question',
+																						title: 'Please select the company',
+																						html: '<h4>you want this contact to be associated with</h4>',
+																						// html: '<div class="selectWrapper"></div>',
+																						confirmButtonText: 'Add XXX to Company XXX',
+																						confirmButtonClass: 'button-primary-large ml3',
+																						showCancelButton: true,
+																						cancelButtonClass: 'button-secondary-large-muted',
+																						buttonsStyling: false,
+																						reverseButtons: true,
+																						showCloseButton: true,
+																						useRejections: true,
+																						allowOutsideClick: false,
+																						allowEscapeKey: false,
+																						allowEnterKey: false,
+																						input: 'text',
+																						inputClass: 'recmanCompanies',
+																						// customClass: 'recmanCompanies',
+																						onOpen: function () {
+																							// console.log( $( 'input.recmanCompanies' ) )
+																							var substringMatcher = function ( strs ) {
+																								return function findMatches( q, cb ) {
+																									var matches, substrRegex;
+																									// an array that will be populated with substring matches
+																									matches = [];
+																									// regex used to determine if a string contains the substring `q`
+																									substrRegex = new RegExp( q, 'i' );
+																									// iterate through the pool of strings and for any string that
+																									// contains the substring `q`, add it to the `matches` array
+																									$.each( strs, function ( i, str ) {
+																										if ( substrRegex.test( str ) ) {
+																											matches.push( str );
+																										}
+																									} );
+																									cb( matches );
+																								};
+																							};
+																							var states = [ 'Alabama', 'Alaska', 'Arizona', 'Arkansas', 'California', 'Colorado', 'Connecticut', 'Delaware', 'Florida', 'Georgia', 'Hawaii', 'Idaho', 'Illinois', 'Indiana', 'Iowa', 'Kansas', 'Kentucky' ];
+																							$( 'input.recmanCompanies' ).typeahead( {
+																								hint: true,
+																								highlight: true,
+																								minLength: 1
+																							}, {
+																								name: 'states',
+																								source: substringMatcher( recmanCompanies )
+																							} );
+																							// $( '#recmanCompanies' ).select2( {
+																							// 	placeholder: 'Find your company',
+																							// 	data: recmanCompaniesSelectData,
+																							// 	// minimumInputLength: 1,
+																							// 	dropdownParent: $( '.swal2-container.swal2-shown' ),
+																							// 	language: {
+																							// 		noResults: function ( term ) {
+																							// 			return 'No company named <strong>' + event.target.value + '</strong> found in Recman CRM.<br><br> Check your spelling or click the link below to create a new company in Recruitment Manager</a>.<br><br><button id="noCompaniesResultsBtn" class="button-tertiary-small">Create a new company in Recruitment Manager</button>';
+																							// 		}
+																							// 	},
+																							// 	escapeMarkup: function ( markup ) {
+																							// 		return markup;
+																							// 	}
+																							// } );
+																							// Preserve last string query
+																							// var selectedValue = '';
+																							// $( document ).on( 'select2:closing', '.select2-hidden-accessible', function () {
+																							// 	$( this ).data( 'nextSearchTerm', $( '.select2-search__field' ).val() );
+																							// 	if ( $( this ).data( 'nextSearchTerm' ) !== selectedValue ) {
+																							// 		selectedValue = '';
+																							// 		$( '#recmanCompanies' ).val( null ).trigger( 'change' );
+																							// 	}
+																							// } );
+																							// $( document ).on( 'select2:open', '.select2-hidden-accessible', function () {
+																							// 	if ( typeof $( this ).data( 'nextSearchTerm' ) == 'undefined' ) {
+																							// 		return;
+																							// 	}
+																							// 	var prevValue = $( this ).data( 'nextSearchTerm' );
+																							// 	if ( selectedValue !== prevValue && selectedValue !== '' ) {
+																							// 		$( '.select2-search__field' ).trigger( 'keypress' ).val( selectedValue );
+																							// 	} else if ( prevValue !== '' ) {
+																							// 		$( '.select2-search__field' ).val( prevValue ).trigger( 'keydown' ).trigger( 'input' );
+																							// 	} else {
+																							// 		selectedValue = '';
+																							// 		$( '#recmanCompanies' ).val( null ).trigger( 'change' );
+																							// 	}
+																							// } );
+																							// $( '#recmanCompanies' ).on( 'select2:select', function ( e ) {
+																							// 	selectedValue = e.params.data.name;
+																							// 	$( '.select2-search__field' ).val( selectedValue ).trigger( 'keydown' ).trigger( 'input' );
+																							// } );
+																							$( document ).on( 'click', '#noCompaniesResultsBtn', function ( e ) {
+																								e.preventDefault();
+																								window.open( 'https://www.recman.no/user/new_customer.php', '_blank' );
+																							} );
+																						}
+																					} ).then( function () {
+																						// swal( {
+																						// 	type: 'success',
+																						// 	title: callback.dialog__text_plain__dialog_success_title_generic.message,
+																						// 	text: candidateFirstName + ' ' + candidateLastName + ' ' + callback.dialog__text_plain__request_success_message.message + ' ' + 'Company XXX' + '.',
+																						// 	// timer: 3000
+																						// } ).catch( swal.noop )
+																					} );
+																				}
+																			}
+																		}
+																	} );
+																	xhr.open( 'POST', 'https://api.recman.no/post/' );
+																	xhr.setRequestHeader( 'content-type', 'application/json' );
+																	xhr.setRequestHeader( 'cache-control', 'max-age=3600' );
+																	xhr.send( listAllCompaniesData );
+																}
+																listAllCompanies();
+															} );
+														},
+														allowOutsideClick: false
+													} ).then( function () {
+														//
+													} ).catch( swal.noop );
+												}
+												// NOTE 5.5 - button action
+												$( '#send_contact_to_rm' ).on( 'click', function ( e ) {
+													e.preventDefault();
+													console.log( 'send_contact_to_rm click' );
+													openSendContactModal();
+													// openSendContactModal();
+												} );
+											}
 										} );
 									} ).fail( function ( jqxhr, settings, exception ) {
 										console.log( jqxhr, settings, exception );
@@ -3224,6 +3456,15 @@ console.log( 'RAMP loaded' );
 			RAMP.preBirth();
 			console.log( 'Finn' );
 			chrome.extension.sendMessage( 'showPageActionFinn' );
+		} else if ( location.hostname.match( 'recman.no' ) ) {
+			console.log( 'Recman.no' );
+			chrome.extension.sendMessage( 'showPageActionRecman' );
+			if ( window.location.href.indexOf( 'https://www.recman.no/user/candidate.php' ) > -1 ) {
+				console.log( 'https://www.recman.no/user/candidate.php?candidate_id=1206094' );
+				$( '#candidate-header-box .columns > .four-columns.twelve-columns-mobile > span[style="font-size:11px;"] > i' ).css( 'white-space', 'pre-wrap' ).addClass('pre-wrap');
+				$( 'a[onclick="addWorkExperience()"]' ).closest( '.box.thin' ).find( 'ul.list li > p' ).css( 'white-space', 'pre-wrap' ).addClass('pre-wrap');
+				$( 'a[onclick="addEducation()"]' ).closest( '.box.thin' ).find( 'ul.list li > p' ).css( 'white-space', 'pre-wrap' ).addClass('pre-wrap');
+			}
 		} else {
 			console.log( 'FUBAR!' );
 		}
@@ -3231,7 +3472,7 @@ console.log( 'RAMP loaded' );
 	RAMP.initFirebase = function () {
 		// Set the configuration the Firebase app
 		var config = {
-			apiKey: 'firebase-ramphq',
+			apiKey: 'AIzaSyDWgeVYYCFNDYwedozcQAFrmsvIdEQJRS4',
 			authDomain: ' firebase-ramphq.firebaseapp.com',
 			databaseURL: 'https://ramphq.firebaseio.com',
 		};

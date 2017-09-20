@@ -1,7 +1,7 @@
 {
-  "name": "RAMP Shuttle Beta",
+  "name": "RAMP",
   "private": true,
-  "version": "1.29.10.57-beta",
+  "version": "1.29.10.58",
   "description": "Easily export candidate details from LinkedIn to Recruitment Manager.",
   "scripts": {
     "start": "npm run dev:chrome",
@@ -56,10 +56,12 @@
   "dependencies": {
     "ajax-request": "^1.2.1",
     "base64-img": "^1.0.3",
+    "corejs-typeahead": "^1.1.1",
     "file-system": "^2.2.2",
-    "firebase": "^3.6.7",
+    "firebase": "^4.3.1",
     "node-base64-image": "^1.0.3",
-    "sweetalert2": "^6.3.2",
+    "select2": "^4.0.3",
+    "sweetalert2": "^6.8.0",
     "toastr": "^2.1.2"
   }
 }
