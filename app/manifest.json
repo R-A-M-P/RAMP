@@ -1,9 +1,9 @@
 {
   "name": "__MSG_appName__",
-  "short_name": "__MSG_appShortName__",
+  "short_name": "RAMP",
   "description": "__MSG_appDescription__",
-  "version": "1.29.10.58",
-  "version_name": "1.29.10.58-beta.1",
+  "version": "1.29.10.59",
+  "version_name": "1.29.10.59-beta.1",
   "manifest_version": 2,
   "default_locale": "en",
   "icons": {
@@ -13,7 +13,7 @@
     "scripts": [
       "scripts/eventPage.js"
     ],
-    "persistent": true
+    "persistent": false
   },
   "content_scripts": [{
     "matches": [

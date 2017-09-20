@@ -351,14 +351,14 @@ console.log( 'RAMP loaded' );
 					localStorage.setItem( 'preferedLanguage', preferedLanguage );
 					console.log( 'Your prefered language is ' + preferedLanguage );
 					i18nLocale = preferedLanguage;
-					location.reload(true);
+					location.reload( true );
 				}, function ( dismiss ) {
 					// dismiss can be "cancel" | "close" | "outside"
 					preferedLanguage = 'no';
 					localStorage.setItem( 'preferedLanguage', preferedLanguage );
 					console.log( 'Your prefered language is ' + preferedLanguage );
 					i18nLocale = preferedLanguage;
-					location.reload(true);
+					location.reload( true );
 				} );
 			}
 			if ( i18nLocale !== preferedLanguage ) {
@@ -604,7 +604,7 @@ console.log( 'RAMP loaded' );
 									// 	console.warn( 'Initializing page reloading...' );
 									// 	location.reload();
 									// } ).catch( swal.noop )
-									location.reload(true);
+									location.reload( true );
 								} else {
 									console.log( inMemberObject );
 									var candidateFirstName = inMemberObject.firstName;
@@ -732,7 +732,7 @@ console.log( 'RAMP loaded' );
 											function fetchExperiences() {
 												if ( 'li.pv-position-entity' ) {
 													console.warn( 'Could not fetch Experience data automaticly. Initiating manuall scraping...' );
-													$( 'li.pv-position-entity' ).each( function ( index ) {
+													$( '.pv-profile-section.experience-section > ul > li' ).each( function ( index ) {
 														var $entry = $( this );
 														// $(this).find('button.pv-profile-section__show-more-detail').click();
 														var experienceTitle;
@@ -955,9 +955,9 @@ console.log( 'RAMP loaded' );
 										}
 										RAMP.scrapeEducations = function () {
 											function fetchEducation() {
-												if ( '.education-section > .pv-education-entity' ) {
+												if ( '.pv-profile-section.education-section' ) {
 													console.warn( 'Could not fetch Education data automaticly. Initiating manuall scraping...' );
-													$( '.education-section li' ).each( function ( index ) {
+													$( '.pv-profile-section.education-section > ul > li' ).each( function ( index ) {
 														var $entry = $( this, '.pv-education-entity' );
 														// $(this).find('button.pv-profile-section__show-more-detail').click();
 														var educationSchoolName;
@@ -1025,6 +1025,9 @@ console.log( 'RAMP loaded' );
 															if ( $educationLocation ) {
 																//
 															}
+															var educationDateStart
+															var educationDateEnd
+															var educationDates = [];
 															if ( $educationDateRange ) {
 																var educationDateRange = $.trim( $educationDateRange.text() );
 																// console.log( experienceDateRange );
@@ -1034,11 +1037,11 @@ console.log( 'RAMP loaded' );
 																	} else if ( educationDateRange.indexOf( ' - ' ) > -1 ) {
 																		var educationDatesSplit = educationDateRange.split( ' - ' );
 																	}
-																	var educationDateStart = '15.08.' + educationDatesSplit[ 0 ];
-																	var educationDateEnd = '15.06.' + educationDatesSplit[ 1 ];
+																	educationDateStart = '15.08.' + educationDatesSplit[ 0 ];
+																	educationDateEnd = '15.06.' + educationDatesSplit[ 1 ];
 																	// console.log( 'educationDateStart', educationDateStart );
 																	// console.log( 'educationDateEnd', educationDateEnd );
-																	var educationDates = [];
+																	// var educationDates = [];
 																	educationDates.push( educationDateStart );
 																	educationDates.push( educationDateEnd );
 																	// console.log( 'educationDates', educationDates );
@@ -1058,19 +1061,30 @@ console.log( 'RAMP loaded' );
 																	// 	}
 																	//
 																	// } );
-																	education.push( {
-																		schoolName: educationSchoolName,
-																		educationType: educationType,
-																		degree: educationDegree,
-																		location: educationLocation,
-																		startDate: educationDateStart,
-																		endDate: educationDateEnd,
-																		description: educationDescription,
-																	} );
+																	// education.push( {
+																	// 	schoolName: educationSchoolName,
+																	// 	educationType: educationType,
+																	// 	degree: educationDegree,
+																	// 	location: educationLocation,
+																	// 	startDate: educationDateStart,
+																	// 	endDate: educationDateEnd,
+																	// 	description: educationDescription,
+																	// } );
 																	// console.log( 'education', education );
 																} );
 															}
-														}, 500 );
+															setTimeout( function () {
+																education.push( {
+																	schoolName: educationSchoolName,
+																	educationType: educationType,
+																	degree: educationDegree,
+																	location: educationLocation,
+																	startDate: educationDateStart,
+																	endDate: educationDateEnd,
+																	description: educationDescription,
+																} );
+															}, 250 );
+														}, 250 );
 													} );
 													// console.log(experience);
 													console.log( 'Education section scraped.' );
@@ -1168,7 +1182,7 @@ console.log( 'RAMP loaded' );
 											}
 										}
 										RAMP.scrapeProfilePicture = function () {
-											imageUrl = $( '.pv-top-card-section__image >.presence-entity__image' ).attr( 'src' );
+											imageUrl = $( '.pv-top-card-section__image .presence-entity__image' ).attr( 'src' );
 											profileImageExtension = 'jpg';
 											console.log( imageUrl );
 										}
@@ -2837,7 +2851,7 @@ console.log( 'RAMP loaded' );
 																			confirmButtonText: 'Try again'
 																		} ).then( function () {
 																			console.warn( 'Initializing page reloading...' );
-																			location.reload(true);
+																			location.reload( true );
 																		} ).catch( swal.noop )
 																	} else {
 																		var responseErrorMsg = response.error;
@@ -3077,7 +3091,7 @@ console.log( 'RAMP loaded' );
 														clearInterval( startInterval );
 														console.log( 'url change detected' );
 														// if ( !isUsersProfile && !isLiProfileDetails ) {
-														location.reload(true);
+														location.reload( true );
 														// }
 													}
 												}, 200 );
@@ -3287,7 +3301,7 @@ console.log( 'RAMP loaded' );
 											reverseButtons: true,
 											confirmButtonText: callback.dialog__button_confirm__dialog_button_try_again.message,
 										} ).then( function () {
-											location.reload(true);
+											location.reload( true );
 										} )
 									} )
 								}
@@ -3377,7 +3391,7 @@ console.log( 'RAMP loaded' );
 	RAMP.startOver = function () {
 		chrome.runtime.onMessage.addListener( function ( request, sender, sendResponse ) {
 			if ( request.message === 'clicked_browser_action' ) {
-				location.reload(true);
+				location.reload( true );
 			}
 		} );
 	}
@@ -3392,10 +3406,10 @@ console.log( 'RAMP loaded' );
 			timer: 5000
 		} ).then( function () {
 			console.warn( 'Initializing page reloading...' );
-			location.reload(true);
+			location.reload( true );
 		}, function () {
 			console.warn( 'Initializing page reloading...' );
-			location.reload(true);
+			location.reload( true );
 		} ).catch( swal.noop )
 	}
 	RAMP.whoThatMember = function () {
