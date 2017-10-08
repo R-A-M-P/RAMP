@@ -3527,19 +3527,19 @@ console.log( 'RAMP loaded' );
 				$( 'a[onclick="addWorkExperience()"]' ).closest( '.box.thin' ).find( 'ul.list li > p' ).css( 'white-space', 'pre-wrap' ).addClass( 'pre-wrap' );
 				$( 'a[onclick="addEducation()"]' ).closest( '.box.thin' ).find( 'ul.list li > p' ).css( 'white-space', 'pre-wrap' ).addClass( 'pre-wrap' );
 			} else if ( window.location.href.indexOf( '/user/candidate_database' ) > -1 ) {
-				chrome.runtime.onMessage.addListener( function ( request, sender, sendResponse ) {
-					if ( request ) {
-						if ( request.message ) {
-							console.info( 'Message received...' );
-							console.log( request );
-							if ( request.message == 'recman_reload_candidate_listing_true' ) {
-								location.reload( true );
-								console.log( 'candidate added' );
-							}
-						}
-					}
-					return true;
-				} );
+				// chrome.runtime.onMessage.addListener( function ( request, sender, sendResponse ) {
+				// 	if ( request ) {
+				// 		if ( request.message ) {
+				// 			console.info( 'Message received...' );
+				// 			console.log( request );
+				// 			if ( request.message == 'recman_reload_candidate_listing_true' ) {
+				// 				location.reload( true );
+				// 				console.log( 'candidate added' );
+				// 			}
+				// 		}
+				// 	}
+				// 	return true;
+				// } );
 			}
 		} else {
 			console.log( 'FUBAR!' );
