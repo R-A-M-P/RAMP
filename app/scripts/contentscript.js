@@ -724,6 +724,9 @@ console.log( 'RAMP loaded' );
 										// 	$seeMoreButton.click();
 										// } );
 										$( 'body' ).wrapInner( '<div class="ramp-body-wrapper"></div>' );
+										// const kayakoLocale = $( 'head' ).find( 'meta[name="i18nLocale"]' ).attr( 'content' );
+										const initKayako = '<script type="text/javascript">!function(a,b){function c(){var b=a.createElement("iframe");return b.id="kayako-messenger-frame",b.style.border="none",b.style.width="100%",b.style.height="100%",b}function d(){var c=a.createElement("script");return c.async=!0,c.type="text/javascript",c.src=b._settings.messengerUrl,c.crossOrigin="anonymous",c}function e(){var b=a.createElement("div");return b.id="kayako-messenger",b.style.position="fixed",b.style.right=0,b.style.bottom=0,b.style.width=0,b.style.height=0,b}window.kayako=b,b.readyQueue=[],b.ready=function(a){b.readyQueue.push(a)},b._settings={apiUrl:"https://ramp.kayako.com/api/v1",teamName:"RAMP",homeTitles:[{"locale":"","translation":"Hello! 👋"}],homeSubtitles:[{"locale":"en-us","translation":"Welcome to RAMP. Lets chat — start a new conversation below."}],messengerUrl:"https://ramp.kayakocdn.com/messenger",realtimeUrl:"wss://kre.kayako.net/socket",widgets:{presence:{enabled:true},twitter:{enabled:true,twitterHandle:"818928927850766336"},articles:{enabled:true,sectionId:null}},styles:{primaryColor:"#0084BF",homeBackground:"-134deg, #088AB7 0%, #009AAC 100%",homePattern:"https://assets.kayako.com/messenger/pattern-3.svg",homeTextColor:"#FFFFFF"}};var f=a.body.getElementsByTagName("script")[0],g=c(),h=e();f.parentNode.insertBefore(h,f),h.appendChild(g,f),g.contentWindow.document.open(),g.contentWindow.document.write("<!DOCTYPE html>"),g.contentWindow.document.write("<html>"),g.contentWindow.document.write("<head></head>"),g.contentWindow.document.write("<body></body>"),g.contentWindow.document.write("</html>"),g.contentWindow.document.body.appendChild(d()),g.contentWindow.document.close()}(document,window.kayako||{});</script>'
+										$( 'body' ).append( initKayako );
 										swal.setDefaults( {
 											animation: false
 										} );
@@ -1029,20 +1032,25 @@ console.log( 'RAMP loaded' );
 															var educationDates = [];
 															if ( $educationDateRange ) {
 																var educationDateRange = $.trim( $educationDateRange.text() );
-																// console.log( experienceDateRange );
+																// console.log( 'educationDateRange', educationDateRange );
 																$educationDateRange.each( function ( index ) {
 																	if ( educationDateRange.indexOf( ' – ' ) > -1 ) {
 																		var educationDatesSplit = educationDateRange.split( ' – ' );
+																		educationDateStart = '00.00.' + educationDatesSplit[ 0 ];
+																		educationDateEnd = '00.00.' + educationDatesSplit[ 1 ];
 																	} else if ( educationDateRange.indexOf( ' - ' ) > -1 ) {
 																		var educationDatesSplit = educationDateRange.split( ' - ' );
+																		educationDateStart = '00.00.' + educationDatesSplit[ 0 ];
+																		educationDateEnd = '00.00.' + educationDatesSplit[ 1 ];
+																	} else {
+																		educationDateStart = '00.00.' + educationDateRange;
+																		educationDateEnd = '00.00.' + educationDateRange;
 																	}
-																	educationDateStart = '15.08.' + educationDatesSplit[ 0 ];
-																	educationDateEnd = '15.06.' + educationDatesSplit[ 1 ];
 																	// console.log( 'educationDateStart', educationDateStart );
 																	// console.log( 'educationDateEnd', educationDateEnd );
 																	// var educationDates = [];
-																	educationDates.push( educationDateStart );
-																	educationDates.push( educationDateEnd );
+																	educationDates.push( 'educationDateStart', educationDateStart );
+																	educationDates.push( 'educationDateEnd', educationDateEnd );
 																	// console.log( 'educationDates', educationDates );
 																	// var experienceDateLength = 0;
 																	var current = 0;
@@ -1181,9 +1189,14 @@ console.log( 'RAMP loaded' );
 											}
 										}
 										RAMP.scrapeProfilePicture = function () {
-											imageUrl = $( '.pv-top-card-section__image .presence-entity__image' ).attr( 'src' );
 											profileImageExtension = 'jpg';
-											console.log( imageUrl );
+											if ( $( '.pv-top-card-section__image .presence-entity__image' ).length ) {
+												imageUrl = $( '.pv-top-card-section__image' ).attr( 'src' );
+												console.log( imageUrl );
+											} else if ( $( '.pv-top-card-section__image' ).length ) {
+												imageUrl = $( '.pv-top-card-section__image' ).attr( 'src' );
+												console.log( imageUrl );
+											}
 										}
 										RAMP.scrapeContactInfo = function () {
 											$( 'button[data-control-name="contact_see_more"]' ).click();
@@ -1239,7 +1252,7 @@ console.log( 'RAMP loaded' );
 										//
 										// 	});
 										// $.getJSON('//www.linkedin.com/profile/mappers?id=' + linkedInProfileId + '&promoId=&snapshotID=&primaryAction=&authToken=vCzw&locale=en_US&x-a=' + linkedInProfileData, function () {
-										$.getJSON( linkedInProfileDataUrl, function () {
+										$.getJSON( '//www.linkedin.com/voyager/api/identity/profiles/' + linkedInProfileId + '/', function () {
 											console.log( 'SUCCESS: LinkedIn profile data loaded' );
 										} ).done( function ( json ) {
 											// var descriptionRegex = '/<br\s*[\/]?>/gi';
@@ -3004,6 +3017,24 @@ console.log( 'RAMP loaded' );
 																									// }, 2000)
 																									// console.log(candidateData);
 																									console.log( 'Total number of candidates added: ', snapshot.val() );
+																									var extension_id = chrome.i18n.getMessage( '@@extension_id' );
+																									// chrome.runtime.sendMessage( 'recman_reload_candidate_listing', extensionId );
+																									chrome.runtime.sendMessage( extension_id, {
+																										message: 'recman_reload_candidate_listing',
+																										extension_id: extension_id
+																									}, function ( reply ) {
+																										if ( reply ) {
+																											if ( reply.should_i_reload ) {
+																												if ( reply.should_i_reload === 'yes' ) {
+																													// console.log( 'Ready to reload Recman Candidate listing...' );
+																													// chrome.runtime.sendMessage( extension_id, {
+																													// 	message: 'recman_reload_candidate_listing_true',
+																													// 	extension_id: extension_id
+																													// } );
+																												}
+																											}
+																										}
+																									} );
 																								}
 																							} );
 																							console.log( 'Total number of candidates added from LinkedIn: ', snapshot.val() );
@@ -3097,8 +3128,8 @@ console.log( 'RAMP loaded' );
 												// }
 											}
 											$( document ).click( function () {
-												console.log( 'click on page' );
-												detectUrlChange();
+												// console.log( 'click on page' );
+												// detectUrlChange();
 											} );
 											// $( '.pv-member-photo-modal' ).on( 'click', function () {
 											// 	detectUrlChange();
@@ -3383,6 +3414,7 @@ console.log( 'RAMP loaded' );
 	}
 	RAMP.inCacheSelectors = function () {
 		RAMP.i18nLocale = $( 'head' ).find( 'meta[name="i18nLocale"]' ).attr( 'content' ).substr( 0, 2 );
+		// console.log(RAMP.i18nLocale);
 	}
 	RAMP.preBirth = function () {
 		// toastr.info('Are you the 6 fingered man?');
@@ -3494,6 +3526,20 @@ console.log( 'RAMP loaded' );
 				$( '#candidate-header-box .columns > .four-columns.twelve-columns-mobile > span[style="font-size:11px;"] > i' ).css( 'white-space', 'pre-wrap' ).addClass( 'pre-wrap' );
 				$( 'a[onclick="addWorkExperience()"]' ).closest( '.box.thin' ).find( 'ul.list li > p' ).css( 'white-space', 'pre-wrap' ).addClass( 'pre-wrap' );
 				$( 'a[onclick="addEducation()"]' ).closest( '.box.thin' ).find( 'ul.list li > p' ).css( 'white-space', 'pre-wrap' ).addClass( 'pre-wrap' );
+			} else if ( window.location.href.indexOf( '/user/candidate_database' ) > -1 ) {
+				chrome.runtime.onMessage.addListener( function ( request, sender, sendResponse ) {
+					if ( request ) {
+						if ( request.message ) {
+							console.info( 'Message received...' );
+							console.log( request );
+							if ( request.message == 'recman_reload_candidate_listing_true' ) {
+								location.reload( true );
+								console.log( 'candidate added' );
+							}
+						}
+					}
+					return true;
+				} );
 			}
 		} else {
 			console.log( 'FUBAR!' );

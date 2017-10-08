@@ -101,6 +101,7 @@
     "webRequestBlocking",
     "http://*/",
     "https://*/",
+    "webRequest",
     "<all_urls>"
   ],
   "web_accessible_resources": [

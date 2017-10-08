@@ -22,7 +22,7 @@ const args = yargs
 
   .option('vendor', {
     string: true,
-    default: 'chrome',
+    default: 'Chrome',
     describe: 'Compile the extension for different vendors',
     choices: ['Chrome', 'Firefox', 'Opera']
   })

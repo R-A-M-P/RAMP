@@ -3,6 +3,10 @@ import 'chromereload/devonly';
 // if (ENV === 'development') {
 // 	console.log('We are in development mode!');
 // }
+function logURL( requestDetails ) {
+	console.log( "Loading: " + requestDetails.url );
+}
+// chrome.webRequest.onBeforeRequest.addListener( logURL, { urls: [ "<all_urls>" ] } );
 // chrome.runtime.onInstalled.addListener(function(details) {
 //   console.log('previousVersion', details.previousVersion);
 //
@@ -28,6 +32,13 @@ function notifyMe( version ) {
 		};
 	}
 }
+var filter = {
+	url: [ { hostContains: 'linkedin.com' }, { hostPrefix: "www" } ]
+}
+// function logOnCompleted( details ) {
+// 	console.log( "onCompleted: " + details.url );
+// }
+// chrome.webNavigation.onCompleted.addListener( logOnCompleted, filter );
 // Check whether new version is installed
 chrome.runtime.onInstalled.addListener( function ( details ) {
 	if ( details.reason === 'install' ) {
@@ -162,6 +173,32 @@ chrome.pageAction.onClicked.addListener( function ( tab ) {
 		} );
 	} );
 } );
+// chrome.runtime.onMessage.addListener( function ( request, sender, sendResponse ) {
+// 	if ( request ) {
+// 		if ( request.message ) {
+// 			console.info( 'Message received...' );
+// 			console.log( request );
+// 			if ( request.message == 'recman_reload_candidate_listing' ) {
+// 				sendResponse( {
+// 					should_i_reload: 'yes'
+// 				} );
+// 			}
+// 		}
+// 	}
+// 	return true;
+// } );
+// function handleMessage( extensionId, message, sender ) {
+// 	// check that the message is from "blue@mozilla.org"
+// 	var extension_id = extensionId;
+// 	if ( sender.id === extension_id ) {
+// 		// process message
+// 		// location.reload( true );
+// 		console.log( 'candidate added' );
+// 	} else {
+// 		console.warn( 'nada!' );
+// 	}
+// }
+// chrome.runtime.onMessageExternal.addListener( handleMessage );
 chrome.runtime.onMessageExternal.addListener( function ( request, sender, sendResponse ) {
 	if ( request ) {
 		if ( request.message ) {
