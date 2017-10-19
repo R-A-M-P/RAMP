@@ -1,8 +1,9 @@
 {
   "name": "__MSG_appName__",
-  "short_name": "__MSG_appShortName__",
+  "short_name": "RAMP",
   "description": "__MSG_appDescription__",
-  "version": "1.29.10.55",
+  "version": "1.29.10.61",
+  "version_name": "1.29.10 – Build 61",
   "manifest_version": 2,
   "default_locale": "en",
   "icons": {
@@ -10,19 +11,19 @@
   },
   "background": {
     "scripts": [
-      "scripts/background.js"
+      "scripts/eventPage.js"
     ],
     "persistent": true
   },
   "content_scripts": [{
     "matches": [
       "https://*.linkedin.com/in/*",
-      "https://*.linkedin.com/profile/*",
-      "https://*.intercomcdn.com/*"
+      "https://www.recman.no/user/*"
     ],
     "css": [
       "styles/contentscript.css",
-      "bower_components/sweetalert2/dist/sweetalert2.min.css"
+      "bower_components/sweetalert2/dist/sweetalert2.min.css",
+      "bower_components/select2/dist/css/select2.css"
     ],
     "js": [
       "scripts/contentscript.js"
@@ -42,14 +43,14 @@
       "*"
     ],
     "matches": [
-      "*://*.linkedin.com/*",
       "*://*.recmanplugins.no/*",
       "*://*.recman.no/*",
       "*://*.linkedin.com/*",
       "*://*.licdn.com/*",
       "*://*.intercomcdn.com/*",
+      "*://*.helpcrunch.com/*",
+      "*://*.googletagmanager.com/*",
       "http://localhost:9007/*"
-
     ]
   },
   "page_action": {
@@ -100,6 +101,7 @@
     "webRequestBlocking",
     "http://*/",
     "https://*/",
+    "webRequest",
     "<all_urls>"
   ],
   "web_accessible_resources": [

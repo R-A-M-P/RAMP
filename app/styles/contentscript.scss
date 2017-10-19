@@ -1,191 +1,313 @@
 .ad-banner-container {
-  display: none !important;
+	display: none !important;
 }
 
 #ramp_info_section {
-  .ramp-ad-banner {
-    margin-top: 16px;
-    width: 312px;
-    height: 262px;
-    display: block;
-    background-color: #0084BF;
-    padding: 15px;
+	.ramp-ad-banner {
+		margin-top: 16px;
+		width: 312px;
+		height: 262px;
+		display: block;
+		background-color: #0084BF;
+		padding: 15px;
 
-    &:hover {
-      background-color: #0073B1;
-    }
+		&:hover {
+			background-color: #0073B1;
+		}
 
-    cite,
-    h1,
-    h2,
-    h3,
-    p {
-      font-family: Source Sans Pro,Helvetica,Arial,Noto Naskh Arabic,Noto Sans Thai,Droid Arabic Naskh,Geeza Pro,Simplified Arabic,Thonburi,Dokchampa,Droid Sans Thai,Hiragino Sans GB W3,Heiti SC,Segoe UI,Microsoft Yahei,Droid Sans Fallback,-apple-system,'.SFNSDisplay-Regular',sans-serif;
-      color: #fff;
-    }
+		cite,
+		h1,
+		h2,
+		h3,
+		p {
+			font-family: Source Sans Pro,Helvetica,Arial,Noto Naskh Arabic,Noto Sans Thai,Droid Arabic Naskh,Geeza Pro,Simplified Arabic,Thonburi,Dokchampa,Droid Sans Thai,Hiragino Sans GB W3,Heiti SC,Segoe UI,Microsoft Yahei,Droid Sans Fallback,-apple-system,'.SFNSDisplay-Regular',sans-serif;
+			color: #fff;
+		}
 
-    h1 {
-      line-height: 32px;
-      font-size: 26px;
-      font-weight: 600;
-    }
+		h1 {
+			line-height: 32px;
+			font-size: 26px;
+			font-weight: 600;
+		}
 
-    h2 {
-      line-height: 24px;
-      font-size: 17px;
-      font-weight: 400;
-      padding-top: 10px;
-    }
+		h2 {
+			line-height: 24px;
+			font-size: 17px;
+			font-weight: 400;
+			padding-top: 10px;
+		}
 
-    h3 {
-      font-weight: 600;
-      line-height: 24px;
-      font-size: 17px;
-    }
+		h3 {
+			font-weight: 600;
+			line-height: 24px;
+			font-size: 17px;
+		}
 
-    ol {
-      padding-left: 15px;
-      color: #fff;
-      padding-top: 5px;
-    }
+		ol {
+			padding-left: 15px;
+			color: #fff;
+			padding-top: 5px;
+		}
 
-    li,
-    p {
-      font-weight: 400;
-      font-size: 15px;
-      line-height: 20px;
-    }
+		li,
+		p {
+			font-weight: 400;
+			font-size: 15px;
+			line-height: 20px;
+		}
 
-    cite {
-      font-size: 13px;
-      line-height: 2rem;
-      margin-top: 5px;
-      display: block;
-    }
-  }
+		cite {
+			font-size: 13px;
+			line-height: 2rem;
+			margin-top: 5px;
+			display: block;
+		}
+	}
 }
 
 .pv-top-card-section__actions {
-  .primary:nth-child(3) {
-    margin-left: 8px;
-  }
+	.primary:nth-child(3) {
+		margin-left: 8px;
+	}
+}
+/*.select2-container {
+	width: 100% !important;
+
+	.selection {
+		.select2-selection {
+			&.select2-selection--single {
+				-moz-appearance: none;
+				-webkit-appearance: none;
+				appearance: none;
+				box-shadow: none;
+				outline: 0;
+				height: 32px;
+				line-height: 32px;
+				position: relative;
+				z-index: 2;
+				background: url('//static.licdn.com/sc/h/3emdxv1xgoutlr9qlomjim63v') top -311px right 1px no-repeat;
+				box-sizing: border-box;
+				border: 0;
+				width: 100%;
+				border: 1px solid rgba(0,0,0,.25);
+				padding: 0 10px;
+				transition-property: border-color,box-shadow;
+				transition-duration: 334ms;
+				transition-timing-function: cubic-bezier(.4,0,.2,1);
+				transition-delay: 0s;
+				border-radius: 1px;
+				color: rgba(0,0,0,.85);
+				font-size: 1.5rem;
+				line-height: 2rem;
+				font-weight: 400;
+
+				&:hover {
+					border-color: rgba(0,0,0,.55);
+				}
+
+				&:focus {
+					border-color: #0084bf;
+					box-shadow: 0 0 0 1px #0084bf;
+				}
+
+				.select2-selection__rendered {
+					color: rgba(0,0,0,.85);
+					height: 32px;
+					line-height: 32px;
+					padding: 0 10px;
+					text-overflow: ellipsis;
+					font-size: 17px;
+					font-weight: 400;
+					font-family: Source Sans Pro,Helvetica,Arial,sans-serif,Hiragino Kaku Gothic Pro,Meiryo,Hiragino Sans GB W3,Noto Naskh Arabic,Droid Arabic Naskh,Geeza Pro,Simplified Arabic,Noto Sans Thai,Thonburi,Dokchampa,Droid Sans Thai,Droid Sans Fallback,-apple-system,'.SFNSDisplay-Regular',Heiti SC,Microsoft Yahei,Segoe UI;
+
+					.select2-selection__placeholder {
+						color: rgba(0,0,0,.85);
+						height: 32px;
+						line-height: 32px;
+					}
+				}
+
+				.select2-selection__arrow {
+					display: none;
+				}
+			}
+		}
+	}
+
+	&.select2-container--open {
+		.select2-dropdown {
+			z-index: 999999 !important;
+
+			&.select2-dropdown--below {
+				.select2-search {
+					.select2-search__field {
+						text-align: center;
+					}
+
+					&.select2-search--dropdown {
+						margin-top: -32px;
+						padding: 0;
+						background-color: #ffffff;
+					}
+				}
+
+				.select2-results {
+					.select2-results__options {
+						text-align: center;
+
+						&.select2-results__message {
+						}
+					}
+				}
+			}
+		}
+	}
+}*/
+.swal2-content {
+	.type-ahead-input {
+		label {
+			text-align: left !important;
+			margin: 0 0 4px !important;
+		}
+	}
 }
 
 body {
-  &.swal2-in {
-    .application-outlet {
-      -webkit-filter: blur(2px);
-      filter: blur(2px);
-    }
-  }
+	&.swal2-shown {
+		overflow: hidden;
+
+		.ramp-body-wrapper {
+			-webkit-filter: blur(2px);
+			filter: blur(2px);
+		}
+	}
 }
 
 .swal2-container {
-  &.swal2-in {
-    background-color: rgba(0, 0, 0, 0.7) !important;
-  }
+	&.swal2-shown {
+		background-color: rgba(0, 0, 0, 0.7) !important;
+		overflow: hidden;
+		overflow-y: hidden;
+	}
 
-  .swal2-modal {
-    &.swal2-show {
-      font-family: Source Sans Pro, Helvetica, Arial, Noto Naskh Arabic, Noto Sans Thai, Droid Arabic Naskh, Geeza Pro, Simplified Arabic, Thonburi, Dokchampa, Droid Sans Thai, Hiragino Sans GB W3, Heiti SC, Segoe UI, Microsoft Yahei, Droid Sans Fallback, -apple-system, '.SFNSDisplay-Regular', sans-serif !important;
-      border: 1px solid rgba(0, 0, 0, 0.05) !important;
-      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.25) !important;
-      border-radius: 2px !important;
-    }
-
-    .swal2-styled:not(.swal2-loading) {
-      border-radius: 2px;
-    }
-  }
+	.swal2-modal {
+		/*&.swal2-show {*/
+		font-family: Source Sans Pro, Helvetica, Arial, Noto Naskh Arabic, Noto Sans Thai, Droid Arabic Naskh, Geeza Pro, Simplified Arabic, Thonburi, Dokchampa, Droid Sans Thai, Hiragino Sans GB W3, Heiti SC, Segoe UI, Microsoft Yahei, Droid Sans Fallback, -apple-system, '.SFNSDisplay-Regular', sans-serif !important;
+		border: 1px solid rgba(0, 0, 0, 0.05) !important;
+		/*box-shadow: 0 4px 8px rgba(0, 0, 0, 0.25) !important;*/
+		/*border-radius: 2px !important;*/
+		box-shadow: 0 0 0 1px rgba(0,0,0,.1), 0 12px 18px 1px rgba(0,0,0,.2);
+		border-radius: 2px;
+		min-width: 627px;
+		/*}*/
+		.swal2-styled:not(.swal2-loading) {
+			border-radius: 2px;
+		}
+	}
 }
-//
-// -webkit-filter: blur(2px);
-// filter: blur(2px);
-//
-// background-color: #000;
-// opacity: .7;
-//
-// box-shadow: 0 4px 8px rgba(0, 0, 0, 0.25);
-// border-radius: 2px;
 // Styles for old LinkedIn
 @import url(https://fonts.googleapis.com/css?family=Open+Sans:400,700,300);
 
 #buttonWrapper {
-  .setup {
-    &.profile-actions {
-      padding: 2%;
-      width: 96%;
+	.setup {
+		&.profile-actions {
+			padding: 2%;
+			width: 96%;
 
-      #btnSetupExtension {
-        line-height: 10px;
-        text-align: center;
-        border: 1px solid #df0909;
-        -webkit-border-radius: 3px;
-        -moz-border-radius: 3px;
-        border-radius: 3px;
-        font-size: 12px;
-        font-family: arial, helvetica, sans-serif;
-        padding: 10px;
-        text-decoration: none;
-        display: inline-block;
-        text-shadow: 0 0 0 rgba(0, 0, 0, 0.3);
-        font-weight: bold;
-        color: #FFFFFF;
-        background-color: #f62b2b;
+			#btnSetupExtension {
+				line-height: 10px;
+				text-align: center;
+				border: 1px solid #df0909;
+				-webkit-border-radius: 3px;
+				-moz-border-radius: 3px;
+				border-radius: 3px;
+				font-size: 12px;
+				font-family: arial, helvetica, sans-serif;
+				padding: 10px;
+				text-decoration: none;
+				display: inline-block;
+				text-shadow: 0 0 0 rgba(0, 0, 0, 0.3);
+				font-weight: bold;
+				color: #FFFFFF;
+				background-color: #f62b2b;
 
-        &:hover {
-          border: 1px solid #b30808;
-          background-color: #e40a0a;
-        }
-      }
-    }
-  }
+				&:hover {
+					border: 1px solid #b30808;
+					background-color: #e40a0a;
+				}
+			}
+		}
+	}
 
-  .profile-actions {
-    padding: 2%;
-    width: 96%;
-    display: inline-block;
+	.profile-actions {
+		padding: 2%;
+		width: 96%;
+		display: inline-block;
 
-    #btnCopyCandidateDetails,
-    #btnExportCandidateDetails,
-    #btnSetupExtension {
-      text-align: center;
-      width: 100%;
-      font-weight: bold;
-      border-width: 1px;
-      border-style: solid;
-      cursor: pointer;
-      margin: 0;
-      overflow: visible;
-      text-decoration: none !important;
-      text-shadow: 0 1px 1px rgba(0, 0, 0, 0.35);
-      border-radius: 3px;
-      padding: 0 13px;
-      height: 31px;
-      line-height: 29px;
-      box-sizing: border-box;
-      font-size: 13px;
-      color: #fff;
-      background-color: #287bbc;
-      border-color: #1b5480;
-      background-color: #287bbc; // Old browsers
-      white-space: nowrap;
-      display: inline-block;
-      vertical-align: middle;
-      zoom: 1;
-      vertical-align: middle;
-      margin: 5px 5px 0 0;
-      white-space: nowrap;
-      outline: none;
+		#btnCopyCandidateDetails,
+		#btnExportCandidateDetails,
+		#btnSetupExtension {
+			text-align: center;
+			width: 100%;
+			font-weight: bold;
+			border-width: 1px;
+			border-style: solid;
+			cursor: pointer;
+			margin: 0;
+			overflow: visible;
+			text-decoration: none !important;
+			text-shadow: 0 1px 1px rgba(0, 0, 0, 0.35);
+			border-radius: 3px;
+			padding: 0 13px;
+			height: 31px;
+			line-height: 29px;
+			box-sizing: border-box;
+			font-size: 13px;
+			color: #fff;
+			background-color: #287bbc;
+			border-color: #1b5480;
+			background-color: #287bbc; // Old browsers
+			white-space: nowrap;
+			display: inline-block;
+			vertical-align: middle;
+			zoom: 1;
+			vertical-align: middle;
+			margin: 5px 5px 0 0;
+			white-space: nowrap;
+			outline: none;
 
-      &:hover {
-        background-color: #2672ae;
+			&:hover {
+				background-color: #2672ae;
+				background-color: #2672ae; // Old browsers
+				box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
+			}
+		}
 
-        background-color: #2672ae; // Old browsers
-        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
-      }
-    }
+		#btnSetupExtension {}
+	}
+}
 
-    #btnSetupExtension {}
-  }
+.ember-view {
+	.application-outlet {
+		.msg-overlay-container {
+			/*left: 8px !important;
+			right: inherit;*/
+			display: none;
+		}
+	}
+}
+
+.pv-top-card-section__ramp {
+	p {
+		border-top: 1px #cdcfd2 solid;
+
+		.primary:nth-child(2) {
+			margin-left: 10px;
+		}
+	}
+}
+
+.pre-wrap {
+	white-space: pre-wrap;
+	padding-top: 15px;
 }

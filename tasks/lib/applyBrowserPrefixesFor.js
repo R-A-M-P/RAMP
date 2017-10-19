@@ -35,7 +35,7 @@ var vendor = '';
  */
 function iterator(obj){
     Object.keys(obj).forEach((key)=>{
-      let match = key.match(/^__(chrome|firefox|opera)__(.*)/);
+      let match = key.match(/^__(Chrome|Firefox|Opera)__(.*)/);
       if(match){
 
         // Swap key with non prefixed name

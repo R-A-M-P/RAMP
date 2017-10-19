@@ -22,9 +22,9 @@ const args = yargs
 
   .option('vendor', {
     string: true,
-    default: 'chrome',
+    default: 'Chrome',
     describe: 'Compile the extension for different vendors',
-    choices: ['chrome', 'firefox', 'opera']
+    choices: ['Chrome', 'Firefox', 'Opera']
   })
 
   .option('sourcemaps', {
@@ -40,4 +40,3 @@ if(typeof args.sourcemaps === 'undefined'){
 }
 
 export default args;
-

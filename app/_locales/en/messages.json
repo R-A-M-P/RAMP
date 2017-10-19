@@ -4,7 +4,7 @@
     "description": "The name of the application"
   },
   "appShortName": {
-    "message": "RAMP Shuttle",
+    "message": "RAMP Shuttle - Beta",
     "description": "The short_name (maximum of 12 characters recommended) is a short version of the app's name."
   },
   "appDescription": {
@@ -15,9 +15,13 @@
     "message": "RAMP",
     "description": "The title of the browser action button"
   },
-  "btnSendToRM": {
-    "message": "Send to Recruitment Manager",
-    "description": "The title of the Send to RM button"
+  "btnSaveCandidate": {
+    "message": "Save to Recman as Candidate",
+    "description": "The title of the Save Candidate to RM button"
+  },
+  "btnSaveContact": {
+    "message": "Save to Recman as Contact",
+    "description": "The title of the Save Contact to RM button"
   },
   "dialog__text_plain__dialog_error_title_generic": {
     "message": "We're sorry",

@@ -1,8 +1,10 @@
 import $ from 'jquery';
-import swal from 'sweetalert2';
-import * as firebase from 'firebase/app';
-import 'firebase/database';
+import * as firebase from "firebase";
+import intercom from 'simple-node-intercom-io';
 import * as toastr from 'toastr';
+import swal from 'sweetalert2';
+import select2 from 'select2';
+import typeahead from 'corejs-typeahead';
 console.log( 'RAMP loaded' );
 ( function ( window, document, $, undefined ) {
 	'use strict';
@@ -323,59 +325,61 @@ console.log( 'RAMP loaded' );
 		// RAMP.inHotjar();
 		// debugger;
 	}
-	var preferedLanguage = localStorage.getItem( 'preferedLanguage' );
-	console.log( 'Your prefered language is ' + preferedLanguage );
-	RAMP.whatThatLanguage = function () {
-		var i18nLocale = RAMP.i18nLocale;
-		console.log( i18nLocale );
+	if ( window.location.href.indexOf( 'https://www.linkedin.com/in/' ) > -1 ) {
+		var preferedLanguage = localStorage.getItem( 'preferedLanguage' );
+		console.log( 'Your prefered language is ' + preferedLanguage );
+		RAMP.whatThatLanguage = function () {
+			var i18nLocale = RAMP.i18nLocale;
+			console.log( i18nLocale );
 
-		function changeLanguage() {
-			swal( {
-				type: 'info',
-				title: 'RAMP currently supports English and Norwegian',
-				text: 'Please select your preferd language.',
-				allowOutsideClick: false,
-				allowEscapeKey: false,
-				confirmButtonText: 'English',
-				confirmButtonColor: '#0084BF',
-				showCancelButton: true,
-				cancelButtonText: 'Norwegian',
-				cancelButtonColor: '#0084BF'
-			} ).then( function ( result ) {
-				// handle confirm, result is needed for modals with input
-				preferedLanguage = 'en';
-				localStorage.setItem( 'preferedLanguage', preferedLanguage );
-				console.log( 'Your prefered language is ' + preferedLanguage );
-				i18nLocale = preferedLanguage;
-				location.reload();
-			}, function ( dismiss ) {
-				// dismiss can be "cancel" | "close" | "outside"
-				preferedLanguage = 'no';
-				localStorage.setItem( 'preferedLanguage', preferedLanguage );
-				console.log( 'Your prefered language is ' + preferedLanguage );
-				i18nLocale = preferedLanguage;
-				location.reload();
-			} );
-		}
-		if ( i18nLocale !== preferedLanguage ) {
-			console.log( 'i18nLocale is not the same as your prefered language: ' + i18nLocale + '/' + preferedLanguage );
-			if ( i18nLocale === 'no' || i18nLocale === 'en' ) {
+			function changeLanguage() {
+				swal( {
+					type: 'info',
+					title: 'RAMP currently supports English and Norwegian',
+					text: 'Please select your preferd language.',
+					allowOutsideClick: false,
+					allowEscapeKey: false,
+					confirmButtonText: 'English',
+					confirmButtonColor: '#0084BF',
+					showCancelButton: true,
+					cancelButtonText: 'Norwegian',
+					cancelButtonColor: '#0084BF'
+				} ).then( function ( result ) {
+					// handle confirm, result is needed for modals with input
+					preferedLanguage = 'en';
+					localStorage.setItem( 'preferedLanguage', preferedLanguage );
+					console.log( 'Your prefered language is ' + preferedLanguage );
+					i18nLocale = preferedLanguage;
+					location.reload( true );
+				}, function ( dismiss ) {
+					// dismiss can be "cancel" | "close" | "outside"
+					preferedLanguage = 'no';
+					localStorage.setItem( 'preferedLanguage', preferedLanguage );
+					console.log( 'Your prefered language is ' + preferedLanguage );
+					i18nLocale = preferedLanguage;
+					location.reload( true );
+				} );
+			}
+			if ( i18nLocale !== preferedLanguage ) {
+				console.log( 'i18nLocale is not the same as your prefered language: ' + i18nLocale + '/' + preferedLanguage );
+				if ( i18nLocale === 'no' || i18nLocale === 'en' ) {
+					preferedLanguage = i18nLocale;
+					localStorage.setItem( 'preferedLanguage', preferedLanguage );
+					console.log( 'Your prefered language is i18nLocale: ' + preferedLanguage );
+				} else if ( preferedLanguage === null ) {
+					changeLanguage();
+				}
+			} else if ( i18nLocale === 'no' || i18nLocale === 'en' ) {
 				preferedLanguage = i18nLocale;
 				localStorage.setItem( 'preferedLanguage', preferedLanguage );
 				console.log( 'Your prefered language is i18nLocale: ' + preferedLanguage );
-			} else if ( preferedLanguage === null ) {
-				changeLanguage();
 			}
-		} else if ( i18nLocale === 'no' || i18nLocale === 'en' ) {
-			preferedLanguage = i18nLocale;
-			localStorage.setItem( 'preferedLanguage', preferedLanguage );
-			console.log( 'Your prefered language is i18nLocale: ' + preferedLanguage );
+			chrome.extension.onMessage.addListener( function ( msg, sender, sendResponse ) {
+				if ( msg.action === 'change_language' ) {
+					changeLanguage();
+				}
+			} );
 		}
-		chrome.extension.onMessage.addListener( function ( msg, sender, sendResponse ) {
-			if ( msg.action === 'change_language' ) {
-				changeLanguage();
-			}
-		} );
 	}
 	RAMP.initIn = function () {
 		// var installType;
@@ -584,21 +588,22 @@ console.log( 'RAMP loaded' );
 								inMemberObject = inMemberObject[ 0 ];
 								if ( inMemberObject === undefined ) {
 									console.error( 'Error fetching "inMemberObject"...' );
-									swal( {
-										title: 'Working...',
-										text: 'Communicating with LinkedIn',
-										type: 'info',
-										allowOutsideClick: false,
-										allowEscapeKey: false,
-										confirmButtonText: 'Speed Up',
-										timer: 5000
-									} ).then( function () {
-										console.warn( 'Initializing page reloading...' );
-										location.reload();
-									}, function () {
-										console.warn( 'Initializing page reloading...' );
-										location.reload();
-									} ).catch( swal.noop )
+									// swal( {
+									// 	title: 'Working...',
+									// 	text: 'Communicating with LinkedIn',
+									// 	type: 'info',
+									// 	allowOutsideClick: false,
+									// 	allowEscapeKey: false,
+									// 	confirmButtonText: 'Speed Up',
+									// 	timer: 3000
+									// } ).then( function () {
+									// 	console.warn( 'Initializing page reloading...' );
+									// 	location.reload();
+									// }, function () {
+									// 	console.warn( 'Initializing page reloading...' );
+									// 	location.reload();
+									// } ).catch( swal.noop )
+									location.reload( true );
 								} else {
 									console.log( inMemberObject );
 									var candidateFirstName = inMemberObject.firstName;
@@ -613,7 +618,8 @@ console.log( 'RAMP loaded' );
 										console.log( 'success' );
 									} ).done( function ( callback ) {
 										console.log( callback );
-										console.log( callback.btnSendToRM.message );
+										console.log( callback.btnSaveCandidate.message );
+										console.log( callback.btnSaveContact.message );
 
 										function addRampBanner() {
 											var rampAdBannerH1 = '<h1>automagically</h1>';
@@ -634,11 +640,36 @@ console.log( 'RAMP loaded' );
 										} else if ( window.location.href === 'https://www.linkedin.com/in/finnmartinsen/' ) {
 											addRampBanner();
 										}
-										if ( $( '.pv-top-card-section__body .pv-top-card-section__overflow-wrapper' ).length ) {
-											$( '<button id="send_to_rm" class="connect primary top-card-action ember-view ramp" disabled><span class="default-text">' + callback.btnSendToRM.message + '</span></button>' ).insertBefore( '.pv-top-card-section__body .pv-top-card-section__overflow-wrapper' );
-										} else if ( $( '.pv-top-card-section__body .pv-top-card-section__actions' ).length ) {
-											$( '<button id="send_to_rm" class="connect primary top-card-action ember-view ramp" disabled><span class="default-text">' + callback.btnSendToRM.message + '</span></button>' ).appendTo( '.pv-top-card-section__body .pv-top-card-section__actions' );
+										// $( '<div class="pv-top-card-section__ramp mt4 ph2"><p class="text-align-center mt5 pt5"></p></div>' ).insertAfter( '.pv-top-card-section__body .pv-top-card-section__actions' );
+										if ( !$( '.pv-top-card-section__ramp' ).length ) {
+											$( '.pv-top-card-section__body .pv-top-card-section__actions' ).append( '<div class="pv-top-card-section__ramp mt4 ph2"><p class="text-align-center mt5 pt5"></p></div>' );
+											if ( !$( '#send_to_rm' ).length ) {
+												$( '.pv-top-card-section__ramp p' ).append( '<button id="send_to_rm" class="connect primary top-card-action ember-view ramp candidate" disabled><span class="default-text">' + callback.btnSaveCandidate.message + '</span></button>' );
+											}
 										}
+										// NOTE Intercom
+										// var intercomScriptPath = chrome.extension.getURL( 'scripts/intercom.js' );
+										// $( 'head' ).append( $( '<script>' ).attr( 'src', intercomScriptPath ) );
+										// Set key & setup must be called first.
+										function setupAnalytics() {
+											intercom.setKey( 'dG9rOmI1ZGNiYmRjXzE5NjZfNDVlMV9iMGNmX2UxYWQzOTI5NzdjYToxOjA' );
+											intercom.setup();
+										}
+										setupAnalytics();
+										// On login, boot intercom
+										function loginToMyApp() {
+											// name, email, created timestamp, meta
+											intercom.boot( storrageResult.intercom_employeee_name, storrageResult.intercom_employeee_email, storrageResult.intercom_employeee_created_at, {
+												// customUserProperty: 'value'
+											} );
+										}
+										loginToMyApp();
+										// $( '.pv-top-card-section__ramp p' ).append( '<button id="send_contact_to_rm" class="connect secondary top-card-action ember-view ramp contact" disabled><span class="default-text">' + callback.btnSaveContact.message + '</span></button>' );
+										// if ( $( '.pv-top-card-section__body .pv-top-card-section__overflow-wrapper' ).length ) {
+										// 	$( '<button id="send_to_rm" class="connect primary top-card-action ember-view ramp" disabled><span class="default-text">' + callback.btnSaveCandidate.message + '</span></button>' ).insertBefore( '.pv-top-card-section__body .pv-top-card-section__overflow-wrapper' );
+										// } else if ( $( '.pv-top-card-section__body .pv-top-card-section__actions' ).length ) {
+										// 	$( '<button id="send_to_rm" class="connect primary top-card-action ember-view ramp" disabled><span class="default-text">' + callback.btnSaveCandidate.message + '</span></button>' ).appendTo( '.pv-top-card-section__body .pv-top-card-section__actions' );
+										// }
 										var linkedInProfileId = inMemberId;
 										// // console.log(linkedInProfileId);
 										//
@@ -692,11 +723,18 @@ console.log( 'RAMP loaded' );
 										// 	console.log($seeMoreButton);
 										// 	$seeMoreButton.click();
 										// } );
+										$( 'body' ).wrapInner( '<div class="ramp-body-wrapper"></div>' );
+										// const kayakoLocale = $( 'head' ).find( 'meta[name="i18nLocale"]' ).attr( 'content' );
+										const initKayako = '<script type="text/javascript">!function(a,b){function c(){var b=a.createElement("iframe");return b.id="kayako-messenger-frame",b.style.border="none",b.style.width="100%",b.style.height="100%",b}function d(){var c=a.createElement("script");return c.async=!0,c.type="text/javascript",c.src=b._settings.messengerUrl,c.crossOrigin="anonymous",c}function e(){var b=a.createElement("div");return b.id="kayako-messenger",b.style.position="fixed",b.style.right=0,b.style.bottom=0,b.style.width=0,b.style.height=0,b}window.kayako=b,b.readyQueue=[],b.ready=function(a){b.readyQueue.push(a)},b._settings={apiUrl:"https://ramp.kayako.com/api/v1",teamName:"RAMP",homeTitles:[{"locale":"","translation":"Hello! 👋"}],homeSubtitles:[{"locale":"en-us","translation":"Welcome to RAMP. Lets chat — start a new conversation below."}],messengerUrl:"https://ramp.kayakocdn.com/messenger",realtimeUrl:"wss://kre.kayako.net/socket",widgets:{presence:{enabled:true},twitter:{enabled:true,twitterHandle:"818928927850766336"},articles:{enabled:true,sectionId:null}},styles:{primaryColor:"#0084BF",homeBackground:"-134deg, #088AB7 0%, #009AAC 100%",homePattern:"https://assets.kayako.com/messenger/pattern-3.svg",homeTextColor:"#FFFFFF"}};var f=a.body.getElementsByTagName("script")[0],g=c(),h=e();f.parentNode.insertBefore(h,f),h.appendChild(g,f),g.contentWindow.document.open(),g.contentWindow.document.write("<!DOCTYPE html>"),g.contentWindow.document.write("<html>"),g.contentWindow.document.write("<head></head>"),g.contentWindow.document.write("<body></body>"),g.contentWindow.document.write("</html>"),g.contentWindow.document.body.appendChild(d()),g.contentWindow.document.close()}(document,window.kayako||{});</script>'
+										$( 'body' ).append( initKayako );
+										swal.setDefaults( {
+											animation: false
+										} );
 										RAMP.scrapeExperiences = function () {
 											function fetchExperiences() {
 												if ( 'li.pv-position-entity' ) {
 													console.warn( 'Could not fetch Experience data automaticly. Initiating manuall scraping...' );
-													$( 'li.pv-position-entity' ).each( function ( index ) {
+													$( '.pv-profile-section.experience-section > ul > li' ).each( function ( index ) {
 														var $entry = $( this );
 														// $(this).find('button.pv-profile-section__show-more-detail').click();
 														var experienceTitle;
@@ -710,24 +748,28 @@ console.log( 'RAMP loaded' );
 															$showMoreButton.click();
 															setTimeout( function () {
 																var $experienceDescription = $entry.find( '.pv-entity__description' );
-																if ( $experienceDescription ) {
-																	experienceDescription = $experienceDescription.clone() //clone the element
-																		.children() //select all the children
-																		.remove() //remove all the children
-																		.end() //again go back to selected element
-																		.text();
-
-																	function myTrim( x ) {
-																		return x.replace( /^\s+|\s+$/gm, '' );
-																	}
-																	experienceDescription = myTrim( experienceDescription );
-																	experienceDescription = decodeHtml( experienceDescription );
-																	experienceDescription = experienceDescription.replace( /(<br>)+/g, '\n ' );
+																if ( $experienceDescription.length ) {
+																	var descriptionInnerHTML = $experienceDescription;
+																	// console.log( descriptionInnerHTML );
+																	experienceDescription = descriptionInnerHTML[ '0' ].innerText;
+																	// console.log( 'experienceDescription', experienceDescription );
+																	// experienceDescription = $experienceDescription.clone() //clone the element
+																	// 	.children() //select all the children
+																	// 	.remove() //remove all the children
+																	// 	.end() //again go back to selected element
+																	// 	.text();
+																	//
+																	// function myTrim( x ) {
+																	// 	return x.replace( /^\s+|\s+$/gm, '' );
+																	// }
+																	// experienceDescription = myTrim( experienceDescription );
+																	// experienceDescription = decodeHtml( experienceDescription );
+																	// experienceDescription = experienceDescription.replace( /(<br>)+/g, '\n ' );
 																	if ( experienceDescription.trim() ) {
 																		// console.log(experienceDescription);
 																	}
 																} else {
-																	console.log( 'No Experience description...' );
+																	// console.warn( 'No Experience description...' );
 																}
 															}, 400 );
 														}
@@ -915,9 +957,9 @@ console.log( 'RAMP loaded' );
 										}
 										RAMP.scrapeEducations = function () {
 											function fetchEducation() {
-												if ( '.education-section > .pv-education-entity' ) {
+												if ( '.pv-profile-section.education-section' ) {
 													console.warn( 'Could not fetch Education data automaticly. Initiating manuall scraping...' );
-													$( '.education-section li' ).each( function ( index ) {
+													$( '.pv-profile-section.education-section > ul > li' ).each( function ( index ) {
 														var $entry = $( this, '.pv-education-entity' );
 														// $(this).find('button.pv-profile-section__show-more-detail').click();
 														var educationSchoolName;
@@ -932,25 +974,29 @@ console.log( 'RAMP loaded' );
 														function grabEducationDescription() {
 															setTimeout( function () {
 																var $educationDescription = $entry.find( '.pv-entity__description' );
-																if ( $educationDescription ) {
-																	educationDescription = $educationDescription.clone() //clone the element
-																		.children() //select all the children
-																		.remove() //remove all the children
-																		.end() //again go back to selected element
-																		.text();
-
-																	function myTrim( x ) {
-																		return x.replace( /^\s+|\s+$/gm, '' );
-																	}
-																	educationDescription = myTrim( educationDescription );
-																	educationDescription = decodeHtml( educationDescription );
-																	educationDescription = educationDescription.replace( /(<br>)+/g, '\n ' );
+																if ( $educationDescription.length ) {
+																	var descriptionInnerHTML = $educationDescription;
+																	// console.log( 'descriptionInnerHTML', descriptionInnerHTML );
+																	educationDescription = descriptionInnerHTML[ '0' ].innerText;
+																	// console.log( 'educationDescription', educationDescription );
+																	// educationDescription = $educationDescription.clone() //clone the element
+																	// 	.children() //select all the children
+																	// 	.remove() //remove all the children
+																	// 	.end() //again go back to selected element
+																	// 	.text();
+																	//
+																	// function myTrim( x ) {
+																	// 	return x.replace( /^\s+|\s+$/gm, '' );
+																	// }
+																	// educationDescription = myTrim( educationDescription );
+																	// educationDescription = decodeHtml( educationDescription );
+																	// educationDescription = educationDescription.replace( /(<br>)+/g, '\n ' );
 																	// console.log( 'educationDescription', educationDescription );
 																	if ( educationDescription.trim() ) {
 																		// console.log( educationDescription );
 																	}
 																} else {
-																	console.log( 'No Education description...' );
+																	// console.warn( 'No Education description...' );
 																}
 															}, 400 );
 														}
@@ -981,22 +1027,30 @@ console.log( 'RAMP loaded' );
 															if ( $educationLocation ) {
 																//
 															}
+															var educationDateStart
+															var educationDateEnd
+															var educationDates = [];
 															if ( $educationDateRange ) {
 																var educationDateRange = $.trim( $educationDateRange.text() );
-																// console.log( experienceDateRange );
+																// console.log( 'educationDateRange', educationDateRange );
 																$educationDateRange.each( function ( index ) {
 																	if ( educationDateRange.indexOf( ' – ' ) > -1 ) {
 																		var educationDatesSplit = educationDateRange.split( ' – ' );
+																		educationDateStart = '00.00.' + educationDatesSplit[ 0 ];
+																		educationDateEnd = '00.00.' + educationDatesSplit[ 1 ];
 																	} else if ( educationDateRange.indexOf( ' - ' ) > -1 ) {
 																		var educationDatesSplit = educationDateRange.split( ' - ' );
+																		educationDateStart = '00.00.' + educationDatesSplit[ 0 ];
+																		educationDateEnd = '00.00.' + educationDatesSplit[ 1 ];
+																	} else {
+																		educationDateStart = '00.00.' + educationDateRange;
+																		educationDateEnd = '00.00.' + educationDateRange;
 																	}
-																	var educationDateStart = '15.08.' + educationDatesSplit[ 0 ];
-																	var educationDateEnd = '15.06.' + educationDatesSplit[ 1 ];
 																	// console.log( 'educationDateStart', educationDateStart );
 																	// console.log( 'educationDateEnd', educationDateEnd );
-																	var educationDates = [];
-																	educationDates.push( educationDateStart );
-																	educationDates.push( educationDateEnd );
+																	// var educationDates = [];
+																	educationDates.push( 'educationDateStart', educationDateStart );
+																	educationDates.push( 'educationDateEnd', educationDateEnd );
 																	// console.log( 'educationDates', educationDates );
 																	// var experienceDateLength = 0;
 																	var current = 0;
@@ -1014,19 +1068,30 @@ console.log( 'RAMP loaded' );
 																	// 	}
 																	//
 																	// } );
-																	education.push( {
-																		schoolName: educationSchoolName,
-																		educationType: educationType,
-																		degree: educationDegree,
-																		location: educationLocation,
-																		startDate: educationDateStart,
-																		endDate: educationDateEnd,
-																		description: educationDescription,
-																	} );
+																	// education.push( {
+																	// 	schoolName: educationSchoolName,
+																	// 	educationType: educationType,
+																	// 	degree: educationDegree,
+																	// 	location: educationLocation,
+																	// 	startDate: educationDateStart,
+																	// 	endDate: educationDateEnd,
+																	// 	description: educationDescription,
+																	// } );
 																	// console.log( 'education', education );
 																} );
 															}
-														}, 500 );
+															setTimeout( function () {
+																education.push( {
+																	schoolName: educationSchoolName,
+																	educationType: educationType,
+																	degree: educationDegree,
+																	location: educationLocation,
+																	startDate: educationDateStart,
+																	endDate: educationDateEnd,
+																	description: educationDescription,
+																} );
+															}, 250 );
+														}, 250 );
 													} );
 													// console.log(experience);
 													console.log( 'Education section scraped.' );
@@ -1088,28 +1153,50 @@ console.log( 'RAMP loaded' );
 												console.warn( 'Could not fetch Summary data automaticly. Initiating manuall scraping...' );
 												$( '.pv-top-card-section__summary' ).find( 'button.pv-top-card-section__summary-toggle-button' ).click();
 												setTimeout( function () {
-													var summaryText = $( '.pv-top-card-section__summary > .pv-top-card-section__summary-text' ).clone() //clone the element
-														.children() //select all the children
-														.remove() //remove all the children
-														.end() //again go back to selected element
-														.text();
-
-													function myTrim( x ) {
-														return x.replace( /^\s+|\s+$/gm, '' );
+													var $summaryDescription = $( '.pv-top-card-section__summary > .pv-top-card-section__summary-text' );
+													if ( $summaryDescription.length ) {
+														var descriptionInnerHTML = $summaryDescription;
+														// console.log( descriptionInnerHTML );
+														var summaryInnerText = descriptionInnerHTML[ '0' ].innerText;
+														// console.log( 'summaryInnerText', summaryInnerText );
+														summary.push( summaryInnerText );
+														// console.log( 'summary', summary );
+													} else {
+														console.warn( 'No profile description...' );
 													}
-													summaryText = myTrim( summaryText );
-													summaryText = decodeHtml( summaryText );
-													summaryText = summaryText.replace( /(<br>)+/g, '\n' );
-													summary.push( summaryText );
+													// var summaryInnerHTML = $( '.pv-top-card-section__summary > .pv-top-card-section__summary-text' );
+													// console.log( summaryInnerText );
+													// var summaryInnerText = summaryInnerHTML[ '0' ].innerText
+													// summary.push( summaryInnerText );
+													// console.log( 'summary', summary );
+													// console.log( summaryInnerText );
+													// var summaryText = $( '.pv-top-card-section__summary > .pv-top-card-section__summary-text' ).clone() //clone the element
+													// 	.children() //select all the children
+													// 	.remove() //remove all the children
+													// 	.end() //again go back to selected element
+													// 	.text();
+													//
+													// function myTrim( x ) {
+													// 	return x.replace( /^\s+|\s+$/gm, '' );
+													// }
+													// summaryText = myTrim( summaryText );
+													// summaryText = decodeHtml( summaryText );
+													// summaryText = summaryText.replace( /(<br>)+/g, '\n' );
+													// summary.push( summaryInnerText );
 													// console.log( 'summaryText', summaryText );
 													// console.log( 'summary', summary );
 												}, 500 );
 											}
 										}
 										RAMP.scrapeProfilePicture = function () {
-											imageUrl = $( '.pv-top-card-section__image' ).attr( 'src' );
 											profileImageExtension = 'jpg';
-											console.log( imageUrl );
+											if ( $( '.pv-top-card-section__image .presence-entity__image' ).length ) {
+												imageUrl = $( '.pv-top-card-section__image' ).attr( 'src' );
+												console.log( imageUrl );
+											} else if ( $( '.pv-top-card-section__image' ).length ) {
+												imageUrl = $( '.pv-top-card-section__image' ).attr( 'src' );
+												console.log( imageUrl );
+											}
 										}
 										RAMP.scrapeContactInfo = function () {
 											$( 'button[data-control-name="contact_see_more"]' ).click();
@@ -1165,7 +1252,7 @@ console.log( 'RAMP loaded' );
 										//
 										// 	});
 										// $.getJSON('//www.linkedin.com/profile/mappers?id=' + linkedInProfileId + '&promoId=&snapshotID=&primaryAction=&authToken=vCzw&locale=en_US&x-a=' + linkedInProfileData, function () {
-										$.getJSON( linkedInProfileDataUrl, function () {
+										$.getJSON( '//www.linkedin.com/voyager/api/identity/profiles/' + linkedInProfileId + '/', function () {
 											console.log( 'SUCCESS: LinkedIn profile data loaded' );
 										} ).done( function ( json ) {
 											// var descriptionRegex = '/<br\s*[\/]?>/gi';
@@ -2296,6 +2383,7 @@ console.log( 'RAMP loaded' );
 												// console.log(profilePicture.extension);
 												// console.log(profilePicture.base64);
 												$( '#send_to_rm' ).prop( 'disabled', false );
+												// $( '#send_contact_to_rm' ).prop( 'disabled', false );
 												// console.log('candidateData', candidateData);
 												$( '#send_to_rm' ).on( 'click', function ( e ) {
 													candidateData = {
@@ -2672,152 +2760,145 @@ console.log( 'RAMP loaded' );
 											// }).then(function () {
 											// 	location.reload();
 											// })
-											RAMP.scrapeExperiences();
-											RAMP.scrapeEducations();
-											RAMP.scrapeSkills();
-											RAMP.scrapeSummary();
-											RAMP.scrapeContactInfo();
-											RAMP.scrapeProfilePicture();
-											setTimeout( function () {
-												toDataUrl( imageUrl, function ( base64Img ) {
-													// console.log(base64Img);
-													var base64ImgSplit = base64Img.split( ',' );
-													base64Img = base64ImgSplit[ 1 ];
-													var profilePicture = {
-														'extension': profileImageExtension,
-														'base64': base64Img
-													};
-													console.log( profilePicture );
-													// console.log(profilePicture.extension);
-													// console.log(profilePicture.base64);
-													// $('#send_to_rm').prop('disabled', false);
-													var getTagsSettings = {
-														'async': true,
-														'crossDomain': true,
-														'url': 'https://api.recman.no/v1.php?key=' + storrageResult.apiKey + '&type=json&scope=tag_list&fields=tagId',
-														'method': 'GET',
-														'headers': {
-															'cache-control': 'no-cache',
-															'postman-token': '807f9037-4484-5af4-52b3-a93723064423'
+											function scrapeTheShitOutOfThisProfile() {
+												RAMP.scrapeExperiences();
+												RAMP.scrapeEducations();
+												RAMP.scrapeSkills();
+												RAMP.scrapeSummary();
+												RAMP.scrapeContactInfo();
+												RAMP.scrapeProfilePicture();
+												setTimeout( function () {
+													toDataUrl( imageUrl, function ( base64Img ) {
+														// console.log(base64Img);
+														var base64ImgSplit = base64Img.split( ',' );
+														base64Img = base64ImgSplit[ 1 ];
+														var profilePicture = {
+															'extension': profileImageExtension,
+															'base64': base64Img
+														};
+														console.log( profilePicture );
+														// console.log(profilePicture.extension);
+														// console.log(profilePicture.base64);
+														// $('#send_to_rm').prop('disabled', false);
+														var getTagsSettings = {
+															'async': true,
+															'crossDomain': true,
+															'url': 'https://api.recman.no/v1.php?key=' + storrageResult.apiKey + '&type=json&scope=tag_list&fields=tagId',
+															'method': 'GET',
+															'headers': {
+																'cache-control': 'no-cache',
+																'postman-token': '807f9037-4484-5af4-52b3-a93723064423'
+															}
 														}
-													}
 
-													function readySetGo() {
-														$( '#send_to_rm' ).prop( 'disabled', false );
-														// console.log( 'candidateData', candidateData );
-													}
-													var tagLinkedInExsists = false;
-													var linkedInTagId;
-													var linkedInTagName = 'RAMP - LinkedIn';
+														function readySetGo() {
+															$( '#send_to_rm' ).prop( 'disabled', false );
+															// $( '#send_contact_to_rm' ).prop( 'disabled', false );
+															// console.log( 'candidateData', candidateData );
+														}
+														var tagLinkedInExsists = false;
+														var linkedInTagId;
+														var linkedInTagName = 'LinkedIn (RAMP)';
 
-													function populateLinkedInTagId() {
-														$.ajax( getTagsSettings ).done( function ( listTags ) {
-															$.each( listTags, function ( key, value ) {
-																if ( value.name === linkedInTagName ) {
-																	console.log( 'Found TAG remotely.' );
-																	console.log( value.name );
-																	console.log( value.tag_id );
-																	tagLinkedInExsists = true;
-																	linkedInTagId = value.tag_id;
-																	localStorage.setItem( 'linkedInTagId', linkedInTagId );
+														function populateLinkedInTagId() {
+															$.ajax( getTagsSettings ).done( function ( response ) {
+																if ( ~response.indexOf( '"success":false' ) ) {
+																	createRemoteLinkedInTag();
+																	console.warn( 'NO TAG remotely, initiating creation process...' );
+																} else {
+																	console.log( 'listTags', response );
+																	$.each( response, function ( key, value ) {
+																		if ( value.name === linkedInTagName ) {
+																			console.log( 'Found TAG remotely.' );
+																			console.log( value.name );
+																			console.log( value.tag_id );
+																			tagLinkedInExsists = true;
+																			linkedInTagId = value.tag_id;
+																			localStorage.setItem( 'linkedInTagId', linkedInTagId );
+																		}
+																	} );
+																	setTimeout( function () {
+																		if ( tagLinkedInExsists ) {
+																			readySetGo();
+																		} else {
+																			console.warn( 'NO TAG remotely, initiating creation process...' );
+																			createRemoteLinkedInTag();
+																		}
+																	}, 500 );
 																}
 															} );
-															setTimeout( function () {
-																if ( tagLinkedInExsists ) {
-																	readySetGo();
-																} else {
-																	createRemoteLinkedInTag();
-																	console.log( 'NO TAG remotly, initiating creation process.' );
-																}
-															}, 500 );
-														} );
-													}
+														}
 
-													function createRemoteLinkedInTag() {
-														var createTagRemotelyData = JSON.stringify( {
-															'key': storrageResult.apiKey,
-															'scope': 'tags',
-															'operation': 'insert',
-															'data': {
-																'name': linkedInTagName
-															}
-														} );
-														var xhr = new XMLHttpRequest();
-														// xhr.withCredentials = true;
-														xhr.addEventListener( 'readystatechange', function () {
-															var response = $.parseJSON( this.response );
-															// var response = this.response;
-															console.log( response );
-															if ( response.success === true ) {
-																// console.log( response );
-																// console.log( response.responseText );
-																console.log( 'Created TAG remotely. End.' );
+														function createRemoteLinkedInTag() {
+															var createTagRemotelyData = JSON.stringify( {
+																'key': storrageResult.apiKey,
+																'scope': 'tags',
+																'operation': 'insert',
+																'data': {
+																	'name': linkedInTagName
+																}
+															} );
+															var xhr = new XMLHttpRequest();
+															// xhr.withCredentials = true;
+															xhr.addEventListener( 'load', function () {
+																var response = $.parseJSON( this.response );
+																// var response = this.response;
+																console.log( response );
+																if ( response.success === true ) {
+																	// console.log( response );
+																	// console.log( response.responseText );
+																	console.log( 'Created TAG remotely. End.' );
+																	populateLinkedInTagId();
+																} else if ( response.success === false ) {
+																	console.log( 'Created TAG remotely failed. Checking why...' );
+																	// console.log( response.error[0].code );
+																	if ( response.error[ 0 ].code === 4 ) {
+																		console.log( 'code IS 4' );
+																		swal( {
+																			title: 'Oops...',
+																			html: 'Your API-key is missing the <strong>Tag Index</strong> permission!</br></br>Please enable this module for API-key <h6>' + storrageResult.apiKey + '</h6> in <a href="https://www.recman.no/user/api.settings.php" target="_blank">Recruitment Manager</a>, and then try again.',
+																			type: 'error',
+																			allowOutsideClick: false,
+																			allowEscapeKey: false,
+																			confirmButtonText: 'Try again'
+																		} ).then( function () {
+																			console.warn( 'Initializing page reloading...' );
+																			location.reload( true );
+																		} ).catch( swal.noop )
+																	} else {
+																		var responseErrorMsg = response.error;
+																		console.log( response.error );
+																		responseErrorMsg = responseErrorMsg.split( 'Tag already exist. TagId: ' );
+																		linkedInTagId = responseErrorMsg[ 1 ];
+																		console.log( 'TAG ID: ', linkedInTagId );
+																		// localStorage.setItem( 'linkedInTagId', linkedInTagId );
+																		// if ( !localStorage.getItem( 'linkedInTagId' ) ) {
+																		// 	console.warn( 'Creating TAG locally via fallback failed.' );
+																		// } else {
+																		// 	console.log( 'TAG created locally.End.' );
+																		// 	checkIfTagExistsSomeWhere();
+																		// }
+																	}
+																}
+															} );
+															xhr.open( 'POST', 'https://api.recman.no/post/' );
+															xhr.setRequestHeader( 'content-type', 'application/json' );
+															xhr.setRequestHeader( 'cache-control', 'no-cache' );
+															xhr.send( createTagRemotelyData );
+														}
+
+														function checkIfTagExistsSomeWhere() {
+															if ( !localStorage.getItem( 'linkedInTagId' ) ) {
 																populateLinkedInTagId();
-															} else if ( response.success === false ) {
-																console.log( 'Created TAG remotely failed. Trying local fallback creation.' );
-																var responseErrorMsg = response.error;
-																responseErrorMsg = responseErrorMsg.split( 'Tag already exist. TagId: ' );
-																linkedInTagId = responseErrorMsg[ 1 ];
-																console.log( 'TAG ID: ', linkedInTagId );
-																localStorage.setItem( 'linkedInTagId', linkedInTagId );
-																if ( !localStorage.getItem( 'linkedInTagId' ) ) {
-																	console.warn( 'Creating TAG locally via fallback failed.' );
-																} else {
-																	console.log( 'TAG created locally.End.' );
-																	checkIfTagExistsSomeWhere();
-																}
+																console.log( 'No TAG locally, checking remote.' );
+															} else {
+																linkedInTagId = localStorage.getItem( 'linkedInTagId' );
+																console.log( 'LinkedIn tagId = ', linkedInTagId );
+																console.log( 'Found TAG locally.' );
+																readySetGo();
 															}
-														} );
-														xhr.open( 'POST', 'https://api.recman.no/post/' );
-														xhr.setRequestHeader( 'content-type', 'application/json' );
-														xhr.setRequestHeader( 'cache-control', 'no-cache' );
-														xhr.send( createTagRemotelyData );
-													}
-
-													function checkIfTagExistsSomeWhere() {
-														if ( !localStorage.getItem( 'linkedInTagId' ) ) {
-															populateLinkedInTagId();
-															console.log( 'No TAG locally, checking remote.' );
-														} else {
-															linkedInTagId = localStorage.getItem( 'linkedInTagId' );
-															console.log( 'LinkedIn tagId = ', linkedInTagId );
-															console.log( 'Found TAG locally.' );
-															readySetGo();
 														}
-													}
-													checkIfTagExistsSomeWhere();
-													candidateData = {
-														'key': storrageResult.apiKey,
-														'scope': 'candidate',
-														'operation': 'insert',
-														'data': {
-															'corporationId': storrageResult.corporation_id,
-															'connectDepartment': [ storrageResult.department_id ],
-															'connectUser': [ storrageResult.intercom_employeee_id ],
-															'firstName': candidateFirstName,
-															'lastName': candidateLastName,
-															'title': inMemberObject.occupation,
-															'mobilePhone': mobilePhone,
-															'email': email,
-															'twitter': twitter,
-															'facebook': facebook,
-															'web': web,
-															'dob': dob,
-															'description': summary[ 0 ],
-															'linkedin': linkedin,
-															'experience': experience,
-															'education': education,
-															'skills': skills,
-															'profilePicture': profilePicture,
-															'certifications': certifications,
-															'languages': languages,
-															'notes': 'Imported by RAMP.',
-															// 'internal': 0,
-															'tags': [ linkedInTagId ]
-														}
-													};
-													console.info( candidateData );
-													$( '#send_to_rm' ).on( 'click', function ( e ) {
+														checkIfTagExistsSomeWhere();
 														candidateData = {
 															'key': storrageResult.apiKey,
 															'scope': 'candidate',
@@ -2848,118 +2929,395 @@ console.log( 'RAMP loaded' );
 																'tags': [ linkedInTagId ]
 															}
 														};
-														console.info( 'candidateData', candidateData );
-														candidateData = JSON.stringify( candidateData );
-														// var  candidateData = candidateData;
-														console.log( 'API Key: ' + storrageResult.apiKey );
-														console.log( 'Corporation ID: ' + storrageResult.corporation_id );
-														console.log( 'Department ID: ' + storrageResult.department_id );
-														console.log( 'User ID: ' + storrageResult.intercom_employeee_id );
-														swal( {
-															title: callback.dialog__text_plain__request_process_title_generic.message,
-															text: callback.dialog__text_plain__request_process_message_generic.message,
-															type: "info",
-															showLoaderOnConfirm: true,
-															onOpen: function () {
-																swal.clickConfirm();
-															},
-															preConfirm: function () {
-																return new Promise( function ( resolve ) {
+														console.info( candidateData );
+														$( '#send_to_rm' ).on( 'click', function ( e ) {
+															candidateData = {
+																'key': storrageResult.apiKey,
+																'scope': 'candidate',
+																'operation': 'insert',
+																'data': {
+																	'corporationId': storrageResult.corporation_id,
+																	'connectDepartment': [ storrageResult.department_id ],
+																	'connectUser': [ storrageResult.intercom_employeee_id ],
+																	'firstName': candidateFirstName,
+																	'lastName': candidateLastName,
+																	'title': inMemberObject.occupation,
+																	'mobilePhone': mobilePhone,
+																	'email': email,
+																	'twitter': twitter,
+																	'facebook': facebook,
+																	'web': web,
+																	'dob': dob,
+																	'description': summary[ 0 ],
+																	'linkedin': linkedin,
+																	'experience': experience,
+																	'education': education,
+																	'skills': skills,
+																	'profilePicture': profilePicture,
+																	'certifications': certifications,
+																	'languages': languages,
+																	'notes': 'Imported by RAMP.',
+																	// 'internal': 0,
+																	'tags': [ linkedInTagId ]
+																}
+															};
+															console.info( 'candidateData', candidateData );
+															candidateData = JSON.stringify( candidateData );
+															// var  candidateData = candidateData;
+															console.log( 'API Key: ' + storrageResult.apiKey );
+															console.log( 'Corporation ID: ' + storrageResult.corporation_id );
+															console.log( 'Department ID: ' + storrageResult.department_id );
+															console.log( 'User ID: ' + storrageResult.intercom_employeee_id );
+															swal( {
+																title: callback.dialog__text_plain__request_process_title_generic.message,
+																text: callback.dialog__text_plain__request_process_message_generic.message,
+																type: "info",
+																showLoaderOnConfirm: true,
+																onOpen: function () {
+																	swal.clickConfirm();
+																},
+																preConfirm: function () {
+																	return new Promise( function ( resolve ) {
+																		var xhr = new XMLHttpRequest();
+																		// xhr.withCredentials = true;
+																		xhr.addEventListener( 'readystatechange', function () {
+																			if ( this.readyState === 4 ) {
+																				var response = $.parseJSON( this.response );
+																				// var response = this.response;
+																				console.log( response );
+																				if ( response.success === true ) {
+																					console.group( 'CANDIDATE EXPORT INITIATED' );
+																					console.info( this.response );
+																					// console.info(this.responseText);
+																					var totalExportedLinkedInRef = firebase.database().ref( 'statistics/candidates/exported/LinkedIn' );
+																					totalExportedLinkedInRef.transaction( function ( currentExported ) {
+																						return currentExported + 1;
+																					}, function ( error, committed, snapshot ) {
+																						if ( error ) {
+																							console.log( 'Transaction failed abnormally!', error );
+																						} else if ( !committed ) {
+																							console.log( 'We aborted the transaction (because ada already exists).' );
+																						} else {
+																							var totalExportedRef = firebase.database().ref( 'statistics/candidates/exported/total' );
+																							totalExportedRef.transaction( function ( currentExported ) {
+																								return currentExported + 1;
+																							}, function ( error, committed, snapshot ) {
+																								if ( error ) {
+																									console.log( 'Transaction failed abnormally!', error );
+																								} else if ( !committed ) {
+																									console.log( 'We aborted the transaction (because ada already exists).' );
+																								} else {
+																									// setTimeout(function() {
+																									swal( {
+																										type: 'success',
+																										title: callback.dialog__text_plain__dialog_success_title_generic.message,
+																										text: candidateFirstName + ' ' + candidateLastName + ' ' + callback.dialog__text_plain__request_success_message.message + ' ' + callback.didialog__text_service__service_name_recruitmentmanager.message,
+																										timer: 3000
+																									} ).catch( swal.noop )
+																									// }, 2000)
+																									// console.log(candidateData);
+																									console.log( 'Total number of candidates added: ', snapshot.val() );
+																									var extension_id = chrome.i18n.getMessage( '@@extension_id' );
+																									// chrome.runtime.sendMessage( 'recman_reload_candidate_listing', extensionId );
+																									chrome.runtime.sendMessage( extension_id, {
+																										message: 'recman_reload_candidate_listing',
+																										extension_id: extension_id
+																									}, function ( reply ) {
+																										if ( reply ) {
+																											if ( reply.should_i_reload ) {
+																												if ( reply.should_i_reload === 'yes' ) {
+																													// console.log( 'Ready to reload Recman Candidate listing...' );
+																													// chrome.runtime.sendMessage( extension_id, {
+																													// 	message: 'recman_reload_candidate_listing_true',
+																													// 	extension_id: extension_id
+																													// } );
+																												}
+																											}
+																										}
+																									} );
+																								}
+																							} );
+																							console.log( 'Total number of candidates added from LinkedIn: ', snapshot.val() );
+																						}
+																					} );
+																					console.groupEnd();
+																				} else if ( response.success === false ) {
+																					console.log( response );
+																					setTimeout( function () {
+																						swal( {
+																							type: 'error',
+																							title: callback.dialog__text_plain__dialog_error_title_generic.message,
+																							text: callback.dialog__text_plain__request_error_message.message,
+																							allowOutsideClick: false,
+																							allowEscapeKey: false,
+																							showCancelButton: true,
+																							reverseButtons: true,
+																							cancelButtonText: callback.dialog__button_cancel__dialog_button_cancel.message,
+																							confirmButtonText: callback.dialog__button_confirm__dialog_button_try_again.message,
+																						} ).then( function () {
+																							$( '#send_to_rm' ).click();
+																						} )
+																					}, 2000 )
+																				} else {
+																					console.log( response );
+																					setTimeout( function () {
+																						swal( {
+																							type: 'error',
+																							title: callback.dialog__text_plain__dialog_error_title_generic.message,
+																							text: callback.dialog__text_plain__request_error_message.message,
+																							allowOutsideClick: false,
+																							allowEscapeKey: false,
+																							showCancelButton: true,
+																							reverseButtons: true,
+																							cancelButtonText: callback.dialog__button_cancel__dialog_button_cancel.message,
+																							confirmButtonText: callback.dialog__button_confirm__dialog_button_try_again.message,
+																						} ).then( function () {
+																							$( '#send_to_rm' ).click();
+																						} )
+																					}, 2000 )
+																				}
+																			}
+																		} );
+																		xhr.open( 'POST', 'https://api.recman.no/post/' );
+																		// xhr.open('POST', 'https://api.recman.no/dgfhfgh/');
+																		xhr.setRequestHeader( 'content-type', 'application/json' );
+																		xhr.setRequestHeader( 'cache-control', 'no-cache' );
+																		xhr.send( candidateData );
+																		// xhr.send(tagData);
+																	} );
+																},
+																allowOutsideClick: false
+															} );
+														} );
+													} );
+												}, 500 );
+											}
+											var isUsersProfile;
+
+											function isThisUsersProfile() {
+												if ( $( '.pv-dashboard-section' ).length > 0 ) {
+													console.log( 'you shall not pass' );
+													isUsersProfile = true;
+												} else {
+													isUsersProfile = false;
+													scrapeTheShitOutOfThisProfile();
+												}
+											}
+											isThisUsersProfile();
+											var isLiProfileDetails = window.location.href.indexOf( 'linkedin.com/in/' + publicIdentifier + '/detail/photo/' ) > -1;
+
+											function detectUrlChange() {
+												// var isLiProfileUrl = window.location.href.indexOf( 'linkedin.com/in/' ) != -1
+												console.log( 'isLiProfileDetails', isLiProfileDetails );
+												// store url on load
+												var currentPage = window.location.href;
+												// listen for changes
+												// if ( !isUsersProfile && !isLiProfileDetails ) {
+												var startInterval = setInterval( function () {
+													if ( currentPage != window.location.href ) {
+														isThisUsersProfile();
+														$( '#send_to_rm' ).prop( 'disabled', true );
+														// $( '#send_contact_to_rm' ).prop( 'disabled', true );
+														clearInterval( startInterval );
+														console.log( 'url change detected' );
+														// if ( !isUsersProfile && !isLiProfileDetails ) {
+														location.reload( true );
+														// }
+													}
+												}, 200 );
+												// }
+											}
+											$( document ).click( function () {
+												// console.log( 'click on page' );
+												// detectUrlChange();
+											} );
+											// $( '.pv-member-photo-modal' ).on( 'click', function () {
+											// 	detectUrlChange();
+											// } );
+											/*
+											// NOTE 5.0 – SEND AS CONTACT TO COMPANY
+											*/
+											RAMP.sendContactToRM = function () {
+												// NOTE 5.1 - open modal
+												function openSendContactModal() {
+													var recmanCompanies = [];
+													var listAllCompaniesPageNumber = 1;
+													swal( {
+														title: 'Retrieving companies from CRM',
+														text: callback.dialog__text_plain__request_process_message_generic.message,
+														type: "info",
+														showLoaderOnConfirm: true,
+														onOpen: function () {
+															swal.clickConfirm();
+														},
+														preConfirm: function () {
+															return new Promise( function ( resolve ) {
+																// NOTE 5.2 - list companies
+																function listAllCompanies() {
+																	var listAllCompaniesData = JSON.stringify( {
+																		// 'key': '161212075444k83d3345be4c4591326728edc6cbea28a1727308864',
+																		'key': storrageResult.apiKey,
+																		'scope': 'company',
+																		'operation': 'select',
+																		'data': {
+																			'page': listAllCompaniesPageNumber,
+																			'fields': [ 'companyId', 'name', 'branchCategoryId' ]
+																		}
+																	} );
 																	var xhr = new XMLHttpRequest();
-																	// xhr.withCredentials = true;
-																	xhr.addEventListener( 'readystatechange', function () {
+																	xhr.withCredentials = true;
+																	xhr.addEventListener( "readystatechange", function () {
 																		if ( this.readyState === 4 ) {
-																			var response = $.parseJSON( this.response );
-																			// var response = this.response;
-																			console.log( response );
+																			// console.log( this );
+																			var response = JSON.parse( this.response );
 																			if ( response.success === true ) {
-																				console.group( 'CANDIDATE EXPORT INITIATED' );
-																				console.info( this.response );
-																				// console.info(this.responseText);
-																				var totalExportedLinkedInRef = firebase.database().ref( 'statistics/candidates/exported/LinkedIn' );
-																				totalExportedLinkedInRef.transaction( function ( currentExported ) {
-																					return currentExported + 1;
-																				}, function ( error, committed, snapshot ) {
-																					if ( error ) {
-																						console.log( 'Transaction failed abnormally!', error );
-																					} else if ( !committed ) {
-																						console.log( 'We aborted the transaction (because ada already exists).' );
-																					} else {
-																						var totalExportedRef = firebase.database().ref( 'statistics/candidates/exported/total' );
-																						totalExportedRef.transaction( function ( currentExported ) {
-																							return currentExported + 1;
-																						}, function ( error, committed, snapshot ) {
-																							if ( error ) {
-																								console.log( 'Transaction failed abnormally!', error );
-																							} else if ( !committed ) {
-																								console.log( 'We aborted the transaction (because ada already exists).' );
-																							} else {
-																								// setTimeout(function() {
-																								swal( {
-																									type: 'success',
-																									title: callback.dialog__text_plain__dialog_success_title_generic.message,
-																									text: candidateFirstName + ' ' + candidateLastName + ' ' + callback.dialog__text_plain__request_success_message.message + ' ' + callback.didialog__text_service__service_name_recruitmentmanager.message,
-																									timer: 3000
-																								} ).catch( swal.noop )
-																								// }, 2000)
-																								// console.log(candidateData);
-																								console.log( 'Total number of candidates added: ', snapshot.val() );
-																							}
-																						} );
-																						console.log( 'Total number of candidates added from LinkedIn: ', snapshot.val() );
+																				var obj = response.data
+																				console.log( 'returned ' + Object.keys( obj ).length + ' objects.' );
+																				// console.log( 'response', response );
+																				for ( var key in obj ) {
+																					if ( obj.hasOwnProperty( key ) ) {
+																						// console.log( obj[ key ] );
+																						recmanCompanies.push( obj[ key ] );
 																					}
-																				} );
-																				console.groupEnd();
-																			} else if ( response.success === false ) {
-																				console.log( response );
-																				setTimeout( function () {
+																				}
+																				if ( Object.keys( obj ).length === 100 ) {
+																					listAllCompaniesPageNumber++
+																					listAllCompanies();
+																				} else {
+																					console.log( 'recmanCompanies', recmanCompanies );
+																					// resolve();
+																					// NOTE 5.3 - search companies
+																					var recmanCompaniesSelectData = $.map( recmanCompanies, function ( obj ) {
+																						obj.id = obj.id || obj.companyId;
+																						obj.text = obj.text || obj.name;
+																						return obj;
+																					} );
 																					swal( {
-																						type: 'error',
-																						title: callback.dialog__text_plain__dialog_error_title_generic.message,
-																						text: callback.dialog__text_plain__request_error_message.message,
+																						type: 'question',
+																						title: 'Please select the company',
+																						html: '<h4>you want this contact to be associated with</h4>',
+																						// html: '<div class="selectWrapper"></div>',
+																						confirmButtonText: 'Add XXX to Company XXX',
+																						confirmButtonClass: 'button-primary-large ml3',
+																						showCancelButton: true,
+																						cancelButtonClass: 'button-secondary-large-muted',
+																						buttonsStyling: false,
+																						reverseButtons: true,
+																						showCloseButton: true,
+																						useRejections: true,
 																						allowOutsideClick: false,
 																						allowEscapeKey: false,
-																						showCancelButton: true,
-																						reverseButtons: true,
-																						cancelButtonText: callback.dialog__button_cancel__dialog_button_cancel.message,
-																						confirmButtonText: callback.dialog__button_confirm__dialog_button_try_again.message,
+																						allowEnterKey: false,
+																						input: 'text',
+																						inputClass: 'recmanCompanies',
+																						// customClass: 'recmanCompanies',
+																						onOpen: function () {
+																							// console.log( $( 'input.recmanCompanies' ) )
+																							var substringMatcher = function ( strs ) {
+																								return function findMatches( q, cb ) {
+																									var matches, substrRegex;
+																									// an array that will be populated with substring matches
+																									matches = [];
+																									// regex used to determine if a string contains the substring `q`
+																									substrRegex = new RegExp( q, 'i' );
+																									// iterate through the pool of strings and for any string that
+																									// contains the substring `q`, add it to the `matches` array
+																									$.each( strs, function ( i, str ) {
+																										if ( substrRegex.test( str ) ) {
+																											matches.push( str );
+																										}
+																									} );
+																									cb( matches );
+																								};
+																							};
+																							var states = [ 'Alabama', 'Alaska', 'Arizona', 'Arkansas', 'California', 'Colorado', 'Connecticut', 'Delaware', 'Florida', 'Georgia', 'Hawaii', 'Idaho', 'Illinois', 'Indiana', 'Iowa', 'Kansas', 'Kentucky' ];
+																							$( 'input.recmanCompanies' ).typeahead( {
+																								hint: true,
+																								highlight: true,
+																								minLength: 1
+																							}, {
+																								name: 'states',
+																								source: substringMatcher( recmanCompanies )
+																							} );
+																							// $( '#recmanCompanies' ).select2( {
+																							// 	placeholder: 'Find your company',
+																							// 	data: recmanCompaniesSelectData,
+																							// 	// minimumInputLength: 1,
+																							// 	dropdownParent: $( '.swal2-container.swal2-shown' ),
+																							// 	language: {
+																							// 		noResults: function ( term ) {
+																							// 			return 'No company named <strong>' + event.target.value + '</strong> found in Recman CRM.<br><br> Check your spelling or click the link below to create a new company in Recruitment Manager</a>.<br><br><button id="noCompaniesResultsBtn" class="button-tertiary-small">Create a new company in Recruitment Manager</button>';
+																							// 		}
+																							// 	},
+																							// 	escapeMarkup: function ( markup ) {
+																							// 		return markup;
+																							// 	}
+																							// } );
+																							// Preserve last string query
+																							// var selectedValue = '';
+																							// $( document ).on( 'select2:closing', '.select2-hidden-accessible', function () {
+																							// 	$( this ).data( 'nextSearchTerm', $( '.select2-search__field' ).val() );
+																							// 	if ( $( this ).data( 'nextSearchTerm' ) !== selectedValue ) {
+																							// 		selectedValue = '';
+																							// 		$( '#recmanCompanies' ).val( null ).trigger( 'change' );
+																							// 	}
+																							// } );
+																							// $( document ).on( 'select2:open', '.select2-hidden-accessible', function () {
+																							// 	if ( typeof $( this ).data( 'nextSearchTerm' ) == 'undefined' ) {
+																							// 		return;
+																							// 	}
+																							// 	var prevValue = $( this ).data( 'nextSearchTerm' );
+																							// 	if ( selectedValue !== prevValue && selectedValue !== '' ) {
+																							// 		$( '.select2-search__field' ).trigger( 'keypress' ).val( selectedValue );
+																							// 	} else if ( prevValue !== '' ) {
+																							// 		$( '.select2-search__field' ).val( prevValue ).trigger( 'keydown' ).trigger( 'input' );
+																							// 	} else {
+																							// 		selectedValue = '';
+																							// 		$( '#recmanCompanies' ).val( null ).trigger( 'change' );
+																							// 	}
+																							// } );
+																							// $( '#recmanCompanies' ).on( 'select2:select', function ( e ) {
+																							// 	selectedValue = e.params.data.name;
+																							// 	$( '.select2-search__field' ).val( selectedValue ).trigger( 'keydown' ).trigger( 'input' );
+																							// } );
+																							$( document ).on( 'click', '#noCompaniesResultsBtn', function ( e ) {
+																								e.preventDefault();
+																								window.open( 'https://www.recman.no/user/new_customer.php', '_blank' );
+																							} );
+																						}
 																					} ).then( function () {
-																						$( '#send_to_rm' ).click();
-																					} )
-																				}, 2000 )
-																			} else {
-																				console.log( response );
-																				setTimeout( function () {
-																					swal( {
-																						type: 'error',
-																						title: callback.dialog__text_plain__dialog_error_title_generic.message,
-																						text: callback.dialog__text_plain__request_error_message.message,
-																						allowOutsideClick: false,
-																						allowEscapeKey: false,
-																						showCancelButton: true,
-																						reverseButtons: true,
-																						cancelButtonText: callback.dialog__button_cancel__dialog_button_cancel.message,
-																						confirmButtonText: callback.dialog__button_confirm__dialog_button_try_again.message,
-																					} ).then( function () {
-																						$( '#send_to_rm' ).click();
-																					} )
-																				}, 2000 )
+																						// swal( {
+																						// 	type: 'success',
+																						// 	title: callback.dialog__text_plain__dialog_success_title_generic.message,
+																						// 	text: candidateFirstName + ' ' + candidateLastName + ' ' + callback.dialog__text_plain__request_success_message.message + ' ' + 'Company XXX' + '.',
+																						// 	// timer: 3000
+																						// } ).catch( swal.noop )
+																					} );
+																				}
 																			}
 																		}
 																	} );
 																	xhr.open( 'POST', 'https://api.recman.no/post/' );
-																	// xhr.open('POST', 'https://api.recman.no/dgfhfgh/');
 																	xhr.setRequestHeader( 'content-type', 'application/json' );
-																	xhr.setRequestHeader( 'cache-control', 'no-cache' );
-																	xhr.send( candidateData );
-																	// xhr.send(tagData);
-																} );
-															},
-															allowOutsideClick: false
-														} );
-													} );
+																	xhr.setRequestHeader( 'cache-control', 'max-age=3600' );
+																	xhr.send( listAllCompaniesData );
+																}
+																listAllCompanies();
+															} );
+														},
+														allowOutsideClick: false
+													} ).then( function () {
+														//
+													} ).catch( swal.noop );
+												}
+												// NOTE 5.5 - button action
+												$( '#send_contact_to_rm' ).on( 'click', function ( e ) {
+													e.preventDefault();
+													console.log( 'send_contact_to_rm click' );
+													openSendContactModal();
+													// openSendContactModal();
 												} );
-											}, 500 );
+											}
 										} );
 									} ).fail( function ( jqxhr, settings, exception ) {
 										console.log( jqxhr, settings, exception );
@@ -2973,7 +3331,7 @@ console.log( 'RAMP loaded' );
 											reverseButtons: true,
 											confirmButtonText: callback.dialog__button_confirm__dialog_button_try_again.message,
 										} ).then( function () {
-											location.reload();
+											location.reload( true );
 										} )
 									} )
 								}
@@ -2985,6 +3343,53 @@ console.log( 'RAMP loaded' );
 				}
 			}
 		} );
+		// RAMP.loadHelpCrunch = function () {
+		// 	console.log( 'helpcrunch init' );
+		// 	var helpcrunchScriptPath = chrome.extension.getURL( 'scripts/helpcrunch-sdk-code.js' );
+		// 	// $( 'head' ).append( $( '<script>' ).attr( 'src', helpcrunchLoaderPath ) );
+		// 	( function ( w, d ) {
+		// 		w.HelpCrunch = function () { w.HelpCrunch.q.push( arguments ) };
+		// 		w.HelpCrunch.q = [];
+		//
+		// 		function r() {
+		// 			var s = document.createElement( 'script' );
+		// 			s.async = 1;
+		// 			s.type = 'text/javascript';
+		// 			s.src = helpcrunchScriptPath;
+		// 			( d.body || d.head ).appendChild( s );
+		// 		}
+		// 		if ( w.attachEvent ) { w.attachEvent( 'onload', r ) } else { w.addEventListener( 'load', r, false ) }
+		// 	} )( window, document )
+		// }
+		// RAMP.initHelpChrunch = function () {
+		// 	HelpCrunch( 'init', 'ramp', {
+		// 		applicationId: 1749,
+		// 		applicationSecret: 'A4wXKoKrkapufLrurc/pE5qRn4qBbTpVYHSyrq0/7nxj66bvQEDAKj2pMdMlGRPfNzOCJMTGpHN75x7xSFeGSg=='
+		// 	} );
+		// 	HelpCrunch( 'showChatWidget' );
+		// }
+		// RAMP.loadHelpCrunch();
+		// RAMP.initHelpChrunch();
+		// RAMP.initGTM = function () {
+		// 	console.log( 'GTM init' );
+		// 	( function ( w, d, s, l, i ) {
+		// 		w[ l ] = w[ l ] || [];
+		// 		w[ l ].push( {
+		// 			'gtm.start': new Date().getTime(),
+		// 			event: 'gtm.js'
+		// 		} );
+		// 		var f = d.getElementsByTagName( s )[ 0 ],
+		// 			j = d.createElement( s ),
+		// 			dl = l != 'dataLayer' ? '&l=' + l : '';
+		// 		j.async = true;
+		// 		j.src = 'https://www.googletagmanager.com/gtm.js?id=' + i + dl;
+		// 		f.parentNode.insertBefore( j, f );
+		// 	} )( window, document, 'script', 'dataLayer', 'GTM-MNXZ7SS' );
+		// }
+		// $( 'body' ).prepend( '<!-- Google Tag Manager (noscript) --><noscript><iframe src="//www.googletagmanager.com/ns.html?id=GTM-MNXZ7SS" height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript><!-- End Google Tag Manager (noscript) -->' )
+		// RAMP.initGTM();
+		// $( '.application-outlet' ).append( '<div class="ramp-bar"></div>' );
+		// // $( '.ramp-bar' ).html( '<iframe src="http://google.com"></iframe>' );
 	}
 	// RAMP.inHotjar = function() {
 	//   (function(h, o, t, j, a, r) {
@@ -3009,6 +3414,7 @@ console.log( 'RAMP loaded' );
 	}
 	RAMP.inCacheSelectors = function () {
 		RAMP.i18nLocale = $( 'head' ).find( 'meta[name="i18nLocale"]' ).attr( 'content' ).substr( 0, 2 );
+		// console.log(RAMP.i18nLocale);
 	}
 	RAMP.preBirth = function () {
 		// toastr.info('Are you the 6 fingered man?');
@@ -3016,7 +3422,7 @@ console.log( 'RAMP loaded' );
 	RAMP.startOver = function () {
 		chrome.runtime.onMessage.addListener( function ( request, sender, sendResponse ) {
 			if ( request.message === 'clicked_browser_action' ) {
-				location.reload();
+				location.reload( true );
 			}
 		} );
 	}
@@ -3031,10 +3437,10 @@ console.log( 'RAMP loaded' );
 			timer: 5000
 		} ).then( function () {
 			console.warn( 'Initializing page reloading...' );
-			location.reload();
+			location.reload( true );
 		}, function () {
 			console.warn( 'Initializing page reloading...' );
-			location.reload();
+			location.reload( true );
 		} ).catch( swal.noop )
 	}
 	RAMP.whoThatMember = function () {
@@ -3111,6 +3517,30 @@ console.log( 'RAMP loaded' );
 			RAMP.preBirth();
 			console.log( 'Finn' );
 			chrome.extension.sendMessage( 'showPageActionFinn' );
+		} else if ( location.hostname.match( 'recman.no' ) ) {
+			console.log( 'Recman.no' );
+			chrome.extension.sendMessage( 'showPageActionRecman' );
+			if ( window.location.href.indexOf( '/user/candidate.php?candidate_id=' ) > -1 ) {
+				console.log( 'https://www.recman.no/user/candidate.php?candidate_id=' );
+				console.log( window.location.href.substr( window.location.href.lastIndexOf( '=' ) + 1 ) );
+				$( '#candidate-header-box .columns > .four-columns.twelve-columns-mobile > span[style="font-size:11px;"] > i' ).css( 'white-space', 'pre-wrap' ).addClass( 'pre-wrap' );
+				$( 'a[onclick="addWorkExperience()"]' ).closest( '.box.thin' ).find( 'ul.list li > p' ).css( 'white-space', 'pre-wrap' ).addClass( 'pre-wrap' );
+				$( 'a[onclick="addEducation()"]' ).closest( '.box.thin' ).find( 'ul.list li > p' ).css( 'white-space', 'pre-wrap' ).addClass( 'pre-wrap' );
+			} else if ( window.location.href.indexOf( '/user/candidate_database' ) > -1 ) {
+				// chrome.runtime.onMessage.addListener( function ( request, sender, sendResponse ) {
+				// 	if ( request ) {
+				// 		if ( request.message ) {
+				// 			console.info( 'Message received...' );
+				// 			console.log( request );
+				// 			if ( request.message == 'recman_reload_candidate_listing_true' ) {
+				// 				location.reload( true );
+				// 				console.log( 'candidate added' );
+				// 			}
+				// 		}
+				// 	}
+				// 	return true;
+				// } );
+			}
 		} else {
 			console.log( 'FUBAR!' );
 		}
@@ -3118,7 +3548,7 @@ console.log( 'RAMP loaded' );
 	RAMP.initFirebase = function () {
 		// Set the configuration the Firebase app
 		var config = {
-			apiKey: 'firebase-ramphq',
+			apiKey: 'AIzaSyDWgeVYYCFNDYwedozcQAFrmsvIdEQJRS4',
 			authDomain: ' firebase-ramphq.firebaseapp.com',
 			databaseURL: 'https://ramphq.firebaseio.com',
 		};
