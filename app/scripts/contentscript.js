@@ -5,8 +5,20 @@ import * as toastr from 'toastr';
 import swal from 'sweetalert2';
 import select2 from 'select2';
 import typeahead from 'corejs-typeahead';
-console.log( 'RAMP loaded' );
+import Bugsnag from 'bugsnag-js';
+Bugsnag.apiKey = "644311e3211c68c4bf0a1e63f0d20c2a";
+Bugsnag.notifyHandler = 'xhr';
+Bugsnag.beforeNotify = function ( error, metaData ) {
+	error.stacktrace = error.stacktrace.replace( /chrome-extension:/g, "chromeextension:" );
+}
+Bugsnag.appVersion = chrome.runtime.getManifest().version_name;
+console.log( 'Bugsnag', window.Bugsnag );
+// Bugsnag.notify( 'ErrorName', 'Another one!' );
+$( document ).ajaxError( function ( event, jqxhr, settings, thrownError ) {
+	Bugsnag.notify( "AjaxError", thrownError );
+} );
 ( function ( window, document, $, undefined ) {
+	console.log( 'RAMP loaded' );
 	'use strict';
 	window.RAMP = {};
 	var candidateFirstName;
@@ -20,6 +32,12 @@ console.log( 'RAMP loaded' );
 	var dob;
 	var summary = [];
 	var experience = [];
+	// try {
+	// 	// Some code which might throw an exception
+	// 	console.log(experience);
+	// } catch ( e ) {
+	// 	Bugsnag.notifyException( e );
+	// }
 	var education = [];
 	var skills = [];
 	var certifications = [];
@@ -430,7 +448,7 @@ console.log( 'RAMP loaded' );
 		//       text: 'Setup was successful and RAMP is ready!',
 		//       confirmButtonText: 'Start using RAMP',
 		//     }).then(function() {
-		//       location.reload();
+		//       location.reload(
 		//     })
 		//
 		//   }
@@ -472,6 +490,11 @@ console.log( 'RAMP loaded' );
 				sessionStorage.setItem( 'sessionStorage_intercom_employeee_name', storrageResult.intercom_employeee_name );
 				sessionStorage.setItem( 'sessionStorage_intercom_employeee_email', storrageResult.intercom_employeee_email );
 				sessionStorage.setItem( 'sessionStorage_intercom_employeee_created_at', storrageResult.intercom_employeee_created_at );
+				Bugsnag.user = {
+					id: storrageResult.intercom_employeee_id,
+					name: storrageResult.intercom_employeee_name,
+					email: storrageResult.intercom_employeee_email
+				};
 				// var extension_state = 'activated';
 				// var apiKey = result.apiKey;
 				// var plan = result.plan;
@@ -928,15 +951,12 @@ console.log( 'RAMP loaded' );
 													console.warn( 'Sorry, no Experience to scrape...' );
 												}
 											}
-											const $profileDetail = $('.profile-detail');
-											console.info('profileDetail', $profileDetail);
-
-											const $pvProfileSection_seeMoreInlineLink = $( '.pv-profile-section.experience-section').find('.pv-profile-section__actions-inline ember-view' ).find('button.pv-profile-section__see-more-inline link');
-
-											console.log('pvProfileSection_seeMoreInlineLink', $pvProfileSection_seeMoreInlineLink);
-
-											if ( $( '.pv-profile-section__actions-inline').find('.pv-profile-section__see-more-inline.link' ).length ) {
-												console.info('Found "See more positions" button!');
+											const $profileDetail = $( '.profile-detail' );
+											console.info( 'profileDetail', $profileDetail );
+											const $pvProfileSection_seeMoreInlineLink = $( '.pv-profile-section.experience-section' ).find( '.pv-profile-section__actions-inline ember-view' ).find( 'button.pv-profile-section__see-more-inline link' );
+											console.log( 'pvProfileSection_seeMoreInlineLink', $pvProfileSection_seeMoreInlineLink );
+											if ( $( '.pv-profile-section__actions-inline' ).find( '.pv-profile-section__see-more-inline.link' ).length ) {
+												console.info( 'Found "See more positions" button!' );
 												var setIntervalValue = 0;
 
 												function startSetInterval() {
@@ -1149,7 +1169,7 @@ console.log( 'RAMP loaded' );
 															'rating': 0
 														} )
 													} );
-													console.log('Skills section scraped.');
+													console.log( 'Skills section scraped.' );
 												}, 500 );
 											}
 										}
@@ -1171,7 +1191,7 @@ console.log( 'RAMP loaded' );
 														// console.log( 'summaryInnerText', summaryInnerText );
 														summary.push( summaryInnerText );
 														// console.log( 'summary', summary );
-														console.log('Summary section scraped.');
+														console.log( 'Summary section scraped.' );
 													} else {
 														console.warn( 'No profile description...' );
 													}
@@ -1199,49 +1219,31 @@ console.log( 'RAMP loaded' );
 												}, 500 );
 											}
 										}
-
 										RAMP.scrapeProfilePicture = function () {
-
 											profileImageExtension = 'jpg';
-
-											if ( $('.presence-entity.pv-top-card-section__image .presence-entity__image').length ) {
-
-												if ( $('.presence-entity.pv-top-card-section__image > .presence-entity__image').hasClass('ghost-person') ) {
-
-													console.warn('Fetching *ghost person*...');
-	 												profileImageExtension = 'png';
-	 												imageUrl = 'https://static.licdn-ei.com/scds/common/u/images/themes/katy/ghosts/person/ghost_person_200x200_v1.png';
-
+											if ( $( '.presence-entity.pv-top-card-section__image .presence-entity__image' ).length ) {
+												if ( $( '.presence-entity.pv-top-card-section__image > .presence-entity__image' ).hasClass( 'ghost-person' ) ) {
+													console.warn( 'Fetching *ghost person*...' );
+													profileImageExtension = 'png';
+													imageUrl = 'https://static.licdn-ei.com/scds/common/u/images/themes/katy/ghosts/person/ghost_person_200x200_v1.png';
 												} else {
-
-													imageUrl = $('.presence-entity.pv-top-card-section__image > .presence-entity__image').css('background-image');
-         				 					imageUrl = imageUrl.replace('url(','').replace(')','').replace(/\"/gi, "");
-
+													imageUrl = $( '.presence-entity.pv-top-card-section__image > .presence-entity__image' ).css( 'background-image' );
+													imageUrl = imageUrl.replace( 'url(', '' ).replace( ')', '' ).replace( /\"/gi, "" );
 												}
-
 											} else if ( $( '.pv-top-card-section__image' ).length ) {
-
 												imageUrl = $( '.pv-top-card-section__image' ).attr( 'src' );
 												// console.log('imageUrl', imageUrl );
-
 											} else if ( $( '.pv-top-card-section__image .presence-entity__image' ).length ) {
-
-											 	imageUrl = $( '.pv-top-card-section__image' ).attr( 'src' );
-											 	// console.log('imageUrl', imageUrl );
-
-										 	}
-
-											if (imageUrl !== undefined) {
-
-												console.log('imageUrl', imageUrl );
-
+												imageUrl = $( '.pv-top-card-section__image' ).attr( 'src' );
+												// console.log('imageUrl', imageUrl );
+											}
+											if ( imageUrl !== undefined ) {
+												console.log( 'imageUrl', imageUrl );
 											} else {
-
-												console.warn('Profilpicture is undefined, fetching *ghost person*...');
+												console.warn( 'Profilpicture is undefined, fetching *ghost person*...' );
 												profileImageExtension = 'png';
 												imageUrl = 'https://static.licdn-ei.com/scds/common/u/images/themes/katy/ghosts/person/ghost_person_200x200_v1.png';
-												console.log('imageUrl', imageUrl );
-
+												console.log( 'imageUrl', imageUrl );
 											}
 										}
 										RAMP.scrapeContactInfo = function () {
@@ -1266,19 +1268,16 @@ console.log( 'RAMP loaded' );
 												mobilePhone = mobilePhone[ 1 ];
 												console.log( mobilePhone );
 											}
-
 										}
+
 										function scrapeTheShitOutOfThisProfile() {
-
 											setTimeout( function () {
-
 												RAMP.scrapeProfilePicture();
 												RAMP.scrapeExperiences();
 												RAMP.scrapeEducations();
 												RAMP.scrapeSkills();
 												RAMP.scrapeSummary();
 												RAMP.scrapeContactInfo();
-
 												setTimeout( function () {
 													// if (imageUrl !== undefined) {
 													//
@@ -1609,11 +1608,8 @@ console.log( 'RAMP loaded' );
 														} );
 													} );
 												}, 500 );
-
 											}, 500 );
-
 										}
-
 										var isUsersProfile;
 
 										function isThisUsersProfile() {
@@ -1840,8 +1836,6 @@ console.log( 'RAMP loaded' );
 												// openSendContactModal();
 											} );
 										}
-
-
 									} ).fail( function ( jqxhr, settings, exception ) {
 										console.log( jqxhr, settings, exception );
 										swal( {
