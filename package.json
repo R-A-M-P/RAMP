@@ -1,7 +1,7 @@
 {
   "name": "RAMP",
   "private": true,
-  "version": "1.29.10.62",
+  "version": "1.29.10.64",
   "description": "Easily export candidate details from LinkedIn to Recruitment Manager.",
   "scripts": {
     "start": "npm run dev:chrome",
