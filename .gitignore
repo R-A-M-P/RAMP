@@ -1,9 +1,6 @@
-
 .DS_Store
-
 node_modules
 npm-debug.log
-
-/dist/
-/build/
-packages/
+dist
+build
+packages
