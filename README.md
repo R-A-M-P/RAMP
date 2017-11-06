@@ -1,5 +1,7 @@
 # RAMP
 
+[![Greenkeeper badge](https://badges.greenkeeper.io/R-A-M-P/RAMP.svg)](https://greenkeeper.io/)
+
 User Experience extension crafted especially for [Recruitment Manager](https://www.recman.no).
 
 ## Installation
